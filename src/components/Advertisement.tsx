@@ -15,8 +15,9 @@ const Advertisement = () => {
     const loadAdSettings = async () => {
       setLoading(true);
       try {
+        // Using any type to bypass TypeScript errors until database types are updated
         const { data, error } = await supabase
-          .from('settings')
+          .from('settings' as any)
           .select('value')
           .eq('type', 'ads')
           .single();
@@ -26,8 +27,11 @@ const Advertisement = () => {
           return;
         }
 
-        if (data?.value && (data.value as AdSettings).htmlCode) {
-          setAdHtml((data.value as AdSettings).htmlCode);
+        if (data && data.value) {
+          const adSettings = data.value as AdSettings;
+          if (adSettings.htmlCode) {
+            setAdHtml(adSettings.htmlCode);
+          }
         }
       } catch (error) {
         console.error("Error in loadAdSettings:", error);

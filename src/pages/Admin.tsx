@@ -75,7 +75,7 @@ const Admin = () => {
     try {
       // Load AI settings
       const { data: aiData, error: aiError } = await supabase
-        .from('settings')
+        .from('settings' as any)
         .select('*')
         .eq('type', 'ai')
         .single();
@@ -83,12 +83,12 @@ const Admin = () => {
       if (aiError && aiError.code !== 'PGSQL_ERROR_RELATION_DOES_NOT_EXIST') {
         console.error("Error loading AI settings:", aiError);
       } else if (aiData) {
-        setAISettings(aiData.value);
+        setAISettings(aiData.value as AISettings);
       }
 
       // Load ad settings
       const { data: adData, error: adError } = await supabase
-        .from('settings')
+        .from('settings' as any)
         .select('*')
         .eq('type', 'ads')
         .single();
@@ -96,7 +96,7 @@ const Admin = () => {
       if (adError && adError.code !== 'PGSQL_ERROR_RELATION_DOES_NOT_EXIST') {
         console.error("Error loading Ad settings:", adError);
       } else if (adData) {
-        setAdSettings(adData.value);
+        setAdSettings(adData.value as AdSettings);
       }
     } catch (error) {
       console.error("Error in loadSettings:", error);
@@ -107,11 +107,11 @@ const Admin = () => {
   const saveAISettings = async () => {
     try {
       const { error } = await supabase
-        .from('settings')
+        .from('settings' as any)
         .upsert({ 
           type: 'ai', 
           value: aiSettings 
-        }, { 
+        } as any, { 
           onConflict: 'type' 
         });
 
@@ -135,11 +135,11 @@ const Admin = () => {
   const saveAdSettings = async () => {
     try {
       const { error } = await supabase
-        .from('settings')
+        .from('settings' as any)
         .upsert({ 
           type: 'ads', 
           value: adSettings 
-        }, { 
+        } as any, { 
           onConflict: 'type' 
         });
 
