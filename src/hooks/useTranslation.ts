@@ -14,6 +14,7 @@ export const useTranslation = () => {
     setLanguage(prevLang => (prevLang === 'en' ? 'ar' : 'en'));
   }, [setLanguage]);
 
+  // Apply RTL direction for Arabic language
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   return { t, language, toggleLanguage, dir };
