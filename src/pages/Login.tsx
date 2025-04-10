@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { toast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
   const { t, dir } = useTranslation();
@@ -23,8 +24,19 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await login(email, password)) {
+    const success = await login(email, password);
+    if (success) {
+      toast({
+        title: t('loginSuccess'),
+        description: t('welcomeBack'),
+      });
       navigate('/dashboard');
+    } else {
+      toast({
+        title: t('loginFailed'),
+        description: t('invalidCredentials'),
+        variant: 'destructive',
+      });
     }
   };
 

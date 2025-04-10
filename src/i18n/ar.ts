@@ -26,5 +26,8 @@ export const ar = {
   password: "كلمة المرور",
   loginButton: "تسجيل الدخول",
   invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-  logout: "تسجيل الخروج"
+  logout: "تسجيل الخروج",
+  loginSuccess: "تم تسجيل الدخول بنجاح",
+  welcomeBack: "مرحبًا بعودتك!",
+  loginFailed: "فشل تسجيل الدخول"
 };

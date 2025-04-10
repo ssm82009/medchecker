@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { Language, translations, TranslationKey } from '../i18n';
 
@@ -16,6 +16,12 @@ export const useTranslation = () => {
 
   // Apply RTL direction for Arabic language
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+
+  // Apply direction to document body
+  useEffect(() => {
+    document.documentElement.dir = dir;
+    document.documentElement.lang = language;
+  }, [language, dir]);
 
   return { t, language, toggleLanguage, dir };
 };

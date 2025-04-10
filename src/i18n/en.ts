@@ -26,5 +26,8 @@ export const en = {
   password: "Password",
   loginButton: "Login",
   invalidCredentials: "Invalid email or password",
-  logout: "Logout"
+  logout: "Logout",
+  loginSuccess: "Login successful",
+  welcomeBack: "Welcome back!",
+  loginFailed: "Login failed"
 };
