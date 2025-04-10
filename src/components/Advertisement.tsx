@@ -27,8 +27,10 @@ const Advertisement = () => {
           return;
         }
 
-        if (data && data.value) {
-          const adSettings = data.value as AdSettings;
+        // Cast the entire data object to any before accessing properties
+        const settings = data as any;
+        if (settings && settings.value) {
+          const adSettings = settings.value as AdSettings;
           if (adSettings.htmlCode) {
             setAdHtml(adSettings.htmlCode);
           }

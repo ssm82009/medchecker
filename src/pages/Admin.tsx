@@ -83,7 +83,11 @@ const Admin = () => {
       if (aiError && aiError.code !== 'PGSQL_ERROR_RELATION_DOES_NOT_EXIST') {
         console.error("Error loading AI settings:", aiError);
       } else if (aiData) {
-        setAISettings(aiData.value as AISettings);
+        // Cast the entire data object to any before accessing properties
+        const aiSettings = (aiData as any).value;
+        if (aiSettings) {
+          setAISettings(aiSettings as AISettings);
+        }
       }
 
       // Load ad settings
@@ -96,7 +100,11 @@ const Admin = () => {
       if (adError && adError.code !== 'PGSQL_ERROR_RELATION_DOES_NOT_EXIST') {
         console.error("Error loading Ad settings:", adError);
       } else if (adData) {
-        setAdSettings(adData.value as AdSettings);
+        // Cast the entire data object to any before accessing properties
+        const adSettings = (adData as any).value;
+        if (adSettings) {
+          setAdSettings(adSettings as AdSettings);
+        }
       }
     } catch (error) {
       console.error("Error in loadSettings:", error);
