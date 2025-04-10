@@ -8,13 +8,14 @@ const Advertisement: React.FC = () => {
   useEffect(() => {
     const fetchAdvertisement = async () => {
       try {
+        // Use type assertion to handle the type issue with Supabase client
         const { data, error } = await supabase
           .from('settings')
           .select('value')
           .eq('type', 'advertisement')
-          .single();
+          .maybeSingle();
         
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error('Error fetching advertisement:', error);
           return;
         }

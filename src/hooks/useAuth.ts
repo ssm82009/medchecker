@@ -18,18 +18,19 @@ export const useAuth = () => {
     setError(null);
     
     try {
+      // Use type assertion to handle the type issue with Supabase client
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('email, role, password')
         .eq('email', email)
         .eq('password', password)
-        .single();
+        .maybeSingle();
       
       if (error || !data) {
         throw new Error('Invalid email or password');
       }
       
-      setUser({ email: data.email, role: data.role });
+      setUser({ email: data.email as string, role: data.role as string });
       return true;
     } catch (err) {
       console.error('Login error:', err);

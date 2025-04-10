@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,11 +46,12 @@ const Admin: React.FC = () => {
     // Fetch advertisement HTML from Supabase
     const fetchAdvertisement = async () => {
       try {
+        // Use type assertion to handle the type issue with Supabase client
         const { data, error } = await supabase
           .from('settings')
           .select('value')
           .eq('type', 'advertisement')
-          .single();
+          .maybeSingle();
         
         if (error && error.code !== 'PGRST116') {
           console.error('Error fetching advertisement:', error);
@@ -81,6 +81,7 @@ const Admin: React.FC = () => {
     setIsSaving(true);
     
     try {
+      // Use type assertion to handle the type issue with Supabase client
       const { error } = await supabase
         .from('settings')
         .upsert(
