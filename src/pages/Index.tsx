@@ -1,12 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React, { useEffect } from 'react';
+import MedicationInteractionChecker from '@/components/MedicationInteractionChecker';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/hooks/useTranslation';
+
+const Index: React.FC = () => {
+  const { dir } = useTranslation();
+  
+  // Apply RTL direction to the whole document if needed
+  useEffect(() => {
+    document.documentElement.dir = dir;
+    return () => {
+      document.documentElement.dir = 'ltr';
+    };
+  }, [dir]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <header className="border-b p-4">
+        <div className="container mx-auto flex justify-end">
+          <LanguageSwitcher />
+        </div>
+      </header>
+      <main className="container mx-auto py-8">
+        <MedicationInteractionChecker />
+      </main>
     </div>
   );
 };
