@@ -93,7 +93,29 @@ const resources = {
       // 404 page
       pageNotFound: "Page Not Found",
       pageNotFoundDesc: "Sorry, the page you're looking for doesn't exist or has been moved.",
-      returnHome: "Return Home"
+      returnHome: "Return Home",
+
+      // Authentication translations
+      login: "Login",
+      register: "Register",
+      logout: "Logout",
+      fullName: "Full Name",
+      loginDesc: "Sign in to your account",
+      registerDesc: "Create a new account",
+      loggingIn: "Logging in...",
+      registering: "Registering...",
+      loginSuccess: "Login Successful",
+      welcomeBack: "Welcome back!",
+      loginError: "Login Failed",
+      registrationSuccess: "Registration Successful",
+      checkEmailVerification: "Please check your email for verification.",
+      registrationError: "Registration Failed",
+      logoutSuccess: "Logged Out",
+      comeBackSoon: "Come back soon!",
+      logoutError: "Logout Failed",
+      tryAgainLater: "Please try again later.",
+      myAccount: "My Account",
+      home: "Home"
     }
   },
   ar: {
@@ -185,7 +207,29 @@ const resources = {
       // 404 page
       pageNotFound: "الصفحة غير موجودة",
       pageNotFoundDesc: "عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
-      returnHome: "العودة للرئيسية"
+      returnHome: "العودة للرئيسية",
+
+      // Authentication translations
+      login: "تسجيل الدخول",
+      register: "تسجيل جديد",
+      logout: "تسجيل الخروج",
+      fullName: "الاسم الكامل",
+      loginDesc: "تسجيل الدخول إلى حسابك",
+      registerDesc: "إنشاء حساب جديد",
+      loggingIn: "جاري تسجيل الدخول...",
+      registering: "جاري التسجيل...",
+      loginSuccess: "تم تسجيل الدخول بنجاح",
+      welcomeBack: "مرحباً بعودتك!",
+      loginError: "فشل تسجيل الدخول",
+      registrationSuccess: "تم التسجيل بنجاح",
+      checkEmailVerification: "يرجى التحقق من بريدك الإلكتروني للتحقق.",
+      registrationError: "فشل التسجيل",
+      logoutSuccess: "تم تسجيل الخروج",
+      comeBackSoon: "عد قريباً!",
+      logoutError: "فشل تسجيل الخروج",
+      tryAgainLater: "يرجى المحاولة مرة أخرى لاحقاً.",
+      myAccount: "حسابي",
+      home: "الرئيسية"
     }
   }
 };
