@@ -53,5 +53,9 @@ export const en = {
   error: "Error",
   
   // Disclaimer
-  disclaimer: "This application was created using artificial intelligence for educational purposes. Always consult a doctor or pharmacist before using any medication."
+  disclaimer: "This application was created using artificial intelligence for educational purposes. Always consult a doctor or pharmacist before using any medication.",
+  
+  // New keys for the result section
+  ageWarnings: "Age-related warnings:",
+  alternatives: "Suggested alternatives:"
 };
