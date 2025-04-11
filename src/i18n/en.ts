@@ -6,7 +6,7 @@ export const en = {
   healthCondition: "Current Health Condition (Optional)",
   checkInteractions: "Check Interactions",
   results: "Results",
-  loading: "Checking interactions...",
+  loading: "Checking...",
   noInteractions: "No interactions found. These medications can be safely taken together.",
   interactionsFound: "Potential interactions found:",
   alternativeSuggestion: "Suggested alternatives:",
@@ -21,8 +21,8 @@ export const en = {
   saveSettings: "Save Settings",
   advertisement: "Advertisement HTML",
   secondaryAdvertisement: "Secondary Advertisement HTML",
-  saveAd: "Save Advertisement", 
-  saveSecondaryAd: "Save Secondary Advertisement",
+  saveAd: "Save Ad",
+  saveSecondaryAd: "Save Secondary Ad",
   login: "Login",
   email: "Email",
   password: "Password",
@@ -36,11 +36,11 @@ export const en = {
   logoText: "Logo Text",
   saveLogo: "Save Logo",
   
-  // New translations
+  // Patient information translations
   age: "Age",
   enterAge: "Enter patient age",
   weight: "Weight (kg)",
-  selectWeight: "Select patient weight",
+  selectWeight: "Select weight",
   allergies: "Allergies (Optional)",
   enterAllergies: "List any allergies separated by commas",
   patientInfo: "Patient Information",
