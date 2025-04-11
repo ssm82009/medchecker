@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navbar: React.FC = () => {
+  // Consolidate all required hooks at the top
   const { t, dir, language, toggleLanguage } = useTranslation();
   const { user, logout } = useAuth();
   const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
@@ -16,6 +18,7 @@ const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   
+  // Single language change handler used consistently
   const handleLanguageChange = () => {
     toggleLanguage();
     
@@ -27,6 +30,7 @@ const Navbar: React.FC = () => {
     });
   };
 
+  // Single mobile menu toggle handler
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
