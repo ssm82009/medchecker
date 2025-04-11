@@ -9,54 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      appearance_settings: {
-        Row: {
-          background_color: string
-          created_at: string
-          font_family: string
-          footer_color: string
-          id: number
-          logo_icon: string
-          logo_text: string
-          navbar_color: string
-          primary_color: string
-          secondary_color: string
-          text_color: string
-          theme: Database["public"]["Enums"]["theme_type"]
-          updated_at: string
-        }
-        Insert: {
-          background_color?: string
-          created_at?: string
-          font_family?: string
-          footer_color?: string
-          id?: number
-          logo_icon?: string
-          logo_text?: string
-          navbar_color?: string
-          primary_color?: string
-          secondary_color?: string
-          text_color?: string
-          theme?: Database["public"]["Enums"]["theme_type"]
-          updated_at?: string
-        }
-        Update: {
-          background_color?: string
-          created_at?: string
-          font_family?: string
-          footer_color?: string
-          id?: number
-          logo_icon?: string
-          logo_text?: string
-          navbar_color?: string
-          primary_color?: string
-          secondary_color?: string
-          text_color?: string
-          theme?: Database["public"]["Enums"]["theme_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -122,31 +74,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_appearance_settings: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          background_color: string
-          created_at: string
-          font_family: string
-          footer_color: string
-          id: number
-          logo_icon: string
-          logo_text: string
-          navbar_color: string
-          primary_color: string
-          secondary_color: string
-          text_color: string
-          theme: Database["public"]["Enums"]["theme_type"]
-          updated_at: string
-        }[]
-      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
     Enums: {
-      theme_type: "light" | "dark" | "purple" | "blue" | "green"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -261,8 +195,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      theme_type: ["light", "dark", "purple", "blue", "green"],
-    },
+    Enums: {},
   },
 } as const

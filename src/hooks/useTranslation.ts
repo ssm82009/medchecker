@@ -4,7 +4,7 @@ import { useLocalStorage } from './useLocalStorage';
 import { Language, translations, TranslationKey } from '../i18n';
 
 export const useTranslation = () => {
-  const [language, setLanguage] = useLocalStorage<Language>('language', 'ar'); // تعيين العربية كلغة افتراضية
+  const [language, setLanguage] = useLocalStorage<Language>('language', 'en');
   const [isChanging, setIsChanging] = useState(false);
 
   const t = useCallback((key: TranslationKey): string => {
@@ -21,24 +21,24 @@ export const useTranslation = () => {
 
   // Apply direction to document body with a smoother transition
   useEffect(() => {
-    // Apply new language direction and attributes
-    document.documentElement.dir = dir;
-    document.documentElement.lang = language;
-    
-    // Apply language-specific classes
-    if (language === 'ar') {
-      document.body.classList.add('rtl');
-      document.body.classList.remove('ltr');
-      document.querySelector('html')?.setAttribute('dir', 'rtl');
-    } else {
-      document.body.classList.add('ltr');
-      document.body.classList.remove('rtl');
-      document.querySelector('html')?.setAttribute('dir', 'ltr');
-    }
-    
     if (isChanging) {
       // Add transition class
       document.body.classList.add('language-transition');
+      
+      // Apply new language direction and attributes
+      document.documentElement.dir = dir;
+      document.documentElement.lang = language;
+      
+      // Apply language-specific classes
+      if (language === 'ar') {
+        document.body.classList.add('rtl');
+        document.body.classList.remove('ltr');
+        document.querySelector('html')?.setAttribute('dir', 'rtl');
+      } else {
+        document.body.classList.add('ltr');
+        document.body.classList.remove('rtl');
+        document.querySelector('html')?.setAttribute('dir', 'ltr');
+      }
       
       // Force immediate application rerender by updating all elements with data-i18n attributes
       const updateElements = () => {
