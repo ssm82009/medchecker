@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
             <div className="order-3 md:order-1 mt-4 md:mt-0">
               <Link 
                 to="/login" 
-                className="text-xs text-gray-500 hover:text-primary transition-colors"
+                className="text-xs text-gray-700 hover:text-primary transition-colors"
               >
                 {t('login')}
               </Link>
@@ -67,20 +67,22 @@ const Footer: React.FC = () => {
             
             {/* Copyright (center) */}
             <div className="order-1 md:order-2 mb-4 md:mb-0">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-800 text-sm">
                 &copy; {new Date().getFullYear()} {t('footerCopyright')}
               </p>
             </div>
             
             {/* Contact Us (left in RTL, right in LTR) */}
             <div className="order-2 md:order-3 mb-4 md:mb-0">
-              <Link 
-                to="/contact" 
-                className="flex items-center gap-2 text-primary hover:underline transition-colors"
+              <a 
+                href="https://t.me/icodexteam" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 <span>{t('contactUs')}</span>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
