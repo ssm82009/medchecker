@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { toast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
@@ -42,10 +41,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" dir={dir}>
-      <div className="absolute top-4 right-4">
-        <LanguageSwitcher />
-      </div>
-      
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{t('login')}</CardTitle>
