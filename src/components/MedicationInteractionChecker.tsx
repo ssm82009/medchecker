@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle } from 'lucide-react';
+import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle, Info } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Medication {
   id: string;
@@ -354,7 +354,6 @@ const MedicationInteractionChecker: React.FC = () => {
         {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
-      {/* Added extra spacing here with mt-8 (2rem of top margin) */}
       <div className="w-full bg-transparent mt-8">
         <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
@@ -539,6 +538,15 @@ const MedicationInteractionChecker: React.FC = () => {
                   )}
                 </div>
               )}
+              
+              <Alert className="mt-6 bg-blue-50 border-blue-100">
+                <Info className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-blue-500`} />
+                <AlertDescription className="text-sm text-blue-700">
+                  {language === 'ar' 
+                    ? 'هذا التطبيق تم صناعته باستخدام الذكاء الاصطناعي للأغراض التعليمية ولابد من استشارة الطبيب أو الصيدلي قبل استخدام الدواء'
+                    : 'This application was created using artificial intelligence for educational purposes. Always consult a doctor or pharmacist before using any medication.'}
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
         )}

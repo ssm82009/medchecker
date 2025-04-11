@@ -50,5 +50,8 @@ export const en = {
   contactUs: 'Contact Us',
   
   // Error messages
-  error: "Error"
+  error: "Error",
+  
+  // Disclaimer
+  disclaimer: "This application was created using artificial intelligence for educational purposes. Always consult a doctor or pharmacist before using any medication."
 };
