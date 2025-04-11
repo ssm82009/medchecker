@@ -33,9 +33,11 @@ export const useTranslation = () => {
       if (language === 'ar') {
         document.body.classList.add('rtl');
         document.body.classList.remove('ltr');
+        document.querySelector('html')?.setAttribute('dir', 'rtl');
       } else {
         document.body.classList.add('ltr');
         document.body.classList.remove('rtl');
+        document.querySelector('html')?.setAttribute('dir', 'ltr');
       }
       
       // Force immediate application rerender by updating all elements with data-i18n attributes

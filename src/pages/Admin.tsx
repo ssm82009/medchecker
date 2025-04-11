@@ -213,7 +213,7 @@ const AdvertisementSettings = () => {
           {isSaving ? (
             <span className="flex items-center gap-2">
               <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-              {t('saving')}
+              {t('loading')}
             </span>
           ) : (
             <span className="flex items-center gap-2">

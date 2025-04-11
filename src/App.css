@@ -51,19 +51,42 @@
 /* RTL (Arabic) language styles */
 .rtl {
   direction: rtl;
+  text-align: right;
 }
 
 .rtl * {
   letter-spacing: 0;
+}
+
+.rtl button svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.rtl .flex.items-center.gap-2 svg:first-child {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.rtl .mr-2 {
+  margin-right: 0 !important;
+  margin-left: 0.5rem !important;
+}
+
+.rtl input[type="text"],
+.rtl input[type="email"],
+.rtl input[type="password"],
+.rtl textarea {
+  text-align: right;
+}
+
+.rtl .form-label {
   text-align: right;
 }
 
 /* LTR (English) language styles */
 .ltr {
   direction: ltr;
-}
-
-.ltr * {
   text-align: left;
 }
 
@@ -134,4 +157,27 @@ input:focus, select:focus, textarea:focus {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* RTL-specific styles for Navbar and Admin page */
+html[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+html[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+html[dir="rtl"] .flex.justify-between {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
 }
