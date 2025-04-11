@@ -18,15 +18,8 @@ const Index: React.FC = () => {
   }, [dir]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-orange-400" dir={dir}>
-      <main className="w-full py-8 px-0 flex items-center justify-center min-h-[calc(100vh-80px)]">
-        <div className="glass-card p-6 sm:p-10 w-full max-w-none mx-0 flex-grow">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-indigo-900">
-            آداة سريعة للتحقق من التفاعلات الدوائية
-          </h1>
-          <MedicationInteractionChecker />
-        </div>
-      </main>
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-orange-400 flex items-center justify-center" dir={dir}>
+      <MedicationInteractionChecker />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -29,7 +28,6 @@ interface InteractionResult {
   alternatives?: string[];
 }
 
-// Mock dataset for interactions (for demonstration)
 const MOCK_INTERACTIONS = {
   'أسبرين+باراسيتامول': {
     hasInteractions: true,
@@ -90,7 +88,7 @@ const MOCK_INTERACTIONS = {
   'روفيناك+بنادول': {
     hasInteractions: true,
     interactions: [
-      'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهضمي',
+      'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهض��ي',
       'قد يكون له تأثير على مرضى السكري'
     ],
     alternatives: [
@@ -100,7 +98,6 @@ const MOCK_INTERACTIONS = {
   }
 };
 
-// English version of mock interactions
 const MOCK_INTERACTIONS_EN = {
   'aspirin+paracetamol': {
     hasInteractions: true,
@@ -211,7 +208,6 @@ const MedicationInteractionChecker: React.FC = () => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
   };
 
-  // Check for interactions using either API or fallback to mock data
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
@@ -223,12 +219,9 @@ const MedicationInteractionChecker: React.FC = () => {
     try {
       const medicationNames = validMedications.map(med => med.name.toLowerCase());
       
-      // Check if OpenAI API key is available in aiSettings
       const apiKey = aiSettings.apiKey;
       if (!apiKey) {
-        // If no API key is available, use mock data
         setApiKeyError(true);
-        // Create medication pair keys for lookup
         const medPairs = [];
         for (let i = 0; i < medicationNames.length; i++) {
           for (let j = i + 1; j < medicationNames.length; j++) {
@@ -237,7 +230,6 @@ const MedicationInteractionChecker: React.FC = () => {
           }
         }
         
-        // Check for interactions in mock data
         let foundInteraction = false;
         let interactionData: InteractionResult = { hasInteractions: false };
         
@@ -251,7 +243,6 @@ const MedicationInteractionChecker: React.FC = () => {
           }
         }
         
-        // If no exact match found, check for partial matches
         if (!foundInteraction) {
           for (const pair of medPairs) {
             for (const mockPair in mockData) {
@@ -275,7 +266,6 @@ const MedicationInteractionChecker: React.FC = () => {
         return;
       }
       
-      // If API key exists, proceed with OpenAI API call
       const patientContext = [
         patientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${patientInfo.age}` : '',
         patientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${patientInfo.weight} kg` : '',
@@ -344,7 +334,6 @@ const MedicationInteractionChecker: React.FC = () => {
         variant: "destructive"
       });
       
-      // Fallback to mock data
       setTimeout(() => {
         setResult({
           hasInteractions: false
@@ -357,195 +346,201 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   return (
-    <div className={`w-full ${isMobile ? 'max-w-full px-2' : 'max-w-4xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
+    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-8`} dir={dir}>
       <Advertisement />
       
-      <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50 mb-6 ${isMobile ? 'w-full' : 'w-full'}`}>
-        <CardHeader className="bg-primary/5 rounded-t-lg">
-          <CardTitle className="flex items-center text-primary">
-            <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
-            {t('appTitle')}
-          </CardTitle>
-          <CardDescription>{t('enterMedication')}</CardDescription>
-        </CardHeader>
-        <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
-          <div className="space-y-4">
-            {medications.map((med, index) => (
-              <div key={med.id} className="flex items-center gap-2 group transition duration-200 animate-in fade-in">
-                <div className="flex-1 transition-all duration-200">
-                  <Input 
-                    value={med.name} 
-                    onChange={(e) => updateMedication(med.id, e.target.value)} 
-                    placeholder={`${t('medication')} ${index + 1}`}
-                    className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
-                    dir={dir}
-                  />
-                </div>
-                {medications.length > 2 && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => removeMedication(med.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            
-            <Button 
-              variant="outline" 
-              onClick={addMedication} 
-              className="w-full group hover:bg-primary/5 hover:text-primary transition-colors"
-            >
-              <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
-              {t('addMedication')}
-            </Button>
-
-            <div className={`mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md ${isMobile ? 'px-2' : 'px-3'}`}>
-              <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
-                <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
-                {t('patientInfo')}
-              </h3>
-              
-              <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid`}>
-                <div className="space-y-1">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
-                    {t('age')}
-                  </div>
-                  <Input 
-                    value={patientInfo.age} 
-                    onChange={(e) => handlePatientInfo('age', e.target.value)} 
-                    placeholder={t('enterAge')}
-                    type="number"
-                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
-                    dir={dir}
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Weight className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
-                    {t('weight')}
-                  </div>
-                  <Input 
-                    value={patientInfo.weight} 
-                    onChange={(e) => handlePatientInfo('weight', e.target.value)} 
-                    placeholder={t('selectWeight')}
-                    type="number"
-                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
-                    dir={dir}
-                  />
-                </div>
-              </div>
-              
-              <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid mt-2`}>
-                <div className="space-y-1">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
-                    {t('allergies')}
-                  </div>
-                  <Input 
-                    value={patientInfo.allergies} 
-                    onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
-                    placeholder={t('enterAllergies')}
-                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
-                    dir={dir}
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
-                    {t('healthCondition')}
-                  </div>
-                  <Input 
-                    value={patientInfo.healthCondition}
-                    onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
-                    placeholder={t('enterHealthCondition')}
-                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
-                    dir={dir}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className={`${isMobile ? 'px-3 flex-col items-stretch' : ''}`}>
-          {apiKeyError && (
-            <div className={`w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs ${isMobile ? 'text-center justify-center' : ''}`}>
-              <AlertTriangle className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-yellow-500`} />
-              {language === 'ar' 
-                ? 'لم يتم العثور على مفتاح API. يتم استخدام بيانات تجريبية للتوضيح.'
-                : 'No API key found. Using demo data for illustration.'}
-            </div>
-          )}
-          <Button 
-            onClick={checkInteractions} 
-            disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
-            className={`${isMobile ? 'w-full mt-2' : 'w-full'} bg-primary hover:bg-primary/90 transition-colors`}
-          >
-            {loading ? t('loading') : t('checkInteractions')}
-          </Button>
-        </CardFooter>
-      </Card>
-      
-      {result && (
-        <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'}`}>
-          <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
-            <CardTitle className="flex items-center">
-              {result.hasInteractions ? (
-                <>
-                  <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-red-500`} />
-                  <span className="text-red-700">{t('results')}</span>
-                </>
-              ) : (
-                <>
-                  <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-green-500`} />
-                  <span className="text-green-700">{t('results')}</span>
-                </>
-              )}
+      <div className="w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-white">
+          {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
+        </h1>
+        
+        <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6`}>
+          <CardHeader className="bg-primary/5 rounded-t-lg">
+            <CardTitle className="flex items-center text-primary">
+              <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
+              {t('appTitle')}
             </CardTitle>
+            <CardDescription>{t('enterMedication')}</CardDescription>
+          </CardHeader>
+          <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+            <div className="space-y-4">
+              {medications.map((med, index) => (
+                <div key={med.id} className="flex items-center gap-2 group transition duration-200 animate-in fade-in">
+                  <div className="flex-1 transition-all duration-200">
+                    <Input 
+                      value={med.name} 
+                      onChange={(e) => updateMedication(med.id, e.target.value)} 
+                      placeholder={`${t('medication')} ${index + 1}`}
+                      className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
+                      dir={dir}
+                    />
+                  </div>
+                  {medications.length > 2 && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeMedication(med.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              
+              <Button 
+                variant="outline" 
+                onClick={addMedication} 
+                className="w-full group hover:bg-primary/5 hover:text-primary transition-colors"
+              >
+                <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
+                {t('addMedication')}
+              </Button>
+
+              <div className={`mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md ${isMobile ? 'px-2' : 'px-3'}`}>
+                <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
+                  <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
+                  {t('patientInfo')}
+                </h3>
+                
+                <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid`}>
+                  <div className="space-y-1">
+                    <div className="flex items-center text-xs text-gray-500">
+                      <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                      {t('age')}
+                    </div>
+                    <Input 
+                      value={patientInfo.age} 
+                      onChange={(e) => handlePatientInfo('age', e.target.value)} 
+                      placeholder={t('enterAge')}
+                      type="number"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      dir={dir}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Weight className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                      {t('weight')}
+                    </div>
+                    <Input 
+                      value={patientInfo.weight} 
+                      onChange={(e) => handlePatientInfo('weight', e.target.value)} 
+                      placeholder={t('selectWeight')}
+                      type="number"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      dir={dir}
+                    />
+                  </div>
+                </div>
+                
+                <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid mt-2`}>
+                  <div className="space-y-1">
+                    <div className="flex items-center text-xs text-gray-500">
+                      <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                      {t('allergies')}
+                    </div>
+                    <Input 
+                      value={patientInfo.allergies} 
+                      onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
+                      placeholder={t('enterAllergies')}
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      dir={dir}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center text-xs text-gray-500">
+                      <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                      {t('healthCondition')}
+                    </div>
+                    <Input 
+                      value={patientInfo.healthCondition}
+                      onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
+                      placeholder={t('enterHealthCondition')}
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      dir={dir}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className={`${isMobile ? 'px-3 flex-col items-stretch' : ''}`}>
             {apiKeyError && (
-              <div className="mt-2 p-2 bg-yellow-50/50 text-yellow-700 rounded-md text-xs flex items-center">
-                <AlertTriangle className="h-3 w-3 mr-1 text-yellow-500" />
+              <div className={`w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs ${isMobile ? 'text-center justify-center' : ''}`}>
+                <AlertTriangle className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-yellow-500`} />
                 {language === 'ar' 
-                  ? 'ملاحظة: النتائج أدناه تستند إلى بيانات تجريبية للتوضيح فقط.'
-                  : 'Note: Results below are based on demo data for illustration only.'}
+                  ? 'لم يتم العثور على مفتاح API. يتم استخدام بيانات تجريبية للتوضيح.'
+                  : 'No API key found. Using demo data for illustration.'}
               </div>
             )}
-          </CardHeader>
-          <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
-            {!result.hasInteractions ? (
-              <p className="text-green-700 font-medium">{t('noInteractions')}</p>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2 text-red-700">{t('interactionsFound')}</h3>
-                  <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
-                    {result.interactions?.map((interaction, i) => (
-                      <li key={i} className="mb-2 text-sm">{interaction}</li>
-                    ))}
-                  </ul>
+            <Button 
+              onClick={checkInteractions} 
+              disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
+              className={`${isMobile ? 'w-full mt-2' : 'w-full'} bg-primary hover:bg-primary/90 transition-colors`}
+            >
+              {loading ? t('loading') : t('checkInteractions')}
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        {result && (
+          <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'}`}>
+            <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
+              <CardTitle className="flex items-center">
+                {result.hasInteractions ? (
+                  <>
+                    <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-red-500`} />
+                    <span className="text-red-700">{t('results')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-green-500`} />
+                    <span className="text-green-700">{t('results')}</span>
+                  </>
+                )}
+              </CardTitle>
+              {apiKeyError && (
+                <div className="mt-2 p-2 bg-yellow-50/50 text-yellow-700 rounded-md text-xs flex items-center">
+                  <AlertTriangle className="h-3 w-3 mr-1 text-yellow-500" />
+                  {language === 'ar' 
+                    ? 'ملاحظة: النتائج أدناه تستند إلى بيانات تجريبية للتوضيح فقط.'
+                    : 'Note: Results below are based on demo data for illustration only.'}
                 </div>
-                
-                {result.alternatives && result.alternatives.length > 0 && (
+              )}
+            </CardHeader>
+            <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+              {!result.hasInteractions ? (
+                <p className="text-green-700 font-medium">{t('noInteractions')}</p>
+              ) : (
+                <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold mb-2 text-blue-700">{t('alternativeSuggestion')}</h3>
+                    <h3 className="font-semibold mb-2 text-red-700">{t('interactionsFound')}</h3>
                     <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
-                      {result.alternatives.map((alternative, i) => (
-                        <li key={i} className="mb-2 text-sm">{alternative}</li>
+                      {result.interactions?.map((interaction, i) => (
+                        <li key={i} className="mb-2 text-sm">{interaction}</li>
                       ))}
                     </ul>
                   </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  
+                  {result.alternatives && result.alternatives.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2 text-blue-700">{t('alternativeSuggestion')}</h3>
+                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
+                        {result.alternatives.map((alternative, i) => (
+                          <li key={i} className="mb-2 text-sm">{alternative}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
