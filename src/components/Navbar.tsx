@@ -26,14 +26,14 @@ const Navbar: React.FC = () => {
   };
   
   return (
-    <nav className="navbar fixed top-0 left-0 right-0 z-50 flex items-center px-6 py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" dir={dir}>
-      {/* نزيل justify-between ليتم عرض العناصر بشكل مناسب في RTL */}
+    <nav className="navbar fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" dir={dir}>
+      {/* Added justify-between to create space between the logo and navigation links */}
       
       <div className="navbar-brand text-xl font-bold text-white">
         <Link to="/">{logoText}</Link>
       </div>
       
-      <div className={`flex items-center gap-4 ${language === 'ar' ? 'mr-auto' : 'ml-auto'}`}>
+      <div className="flex items-center gap-4">
         {user && (
           <>
             {user.role === 'admin' && (
