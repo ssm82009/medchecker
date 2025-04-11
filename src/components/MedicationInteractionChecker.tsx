@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -353,7 +354,8 @@ const MedicationInteractionChecker: React.FC = () => {
         {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
-      <div className="w-full bg-transparent">
+      {/* Added extra spacing here with mt-8 (2rem of top margin) */}
+      <div className="w-full bg-transparent mt-8">
         <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
             <CardTitle className="flex items-center text-gray-700">
