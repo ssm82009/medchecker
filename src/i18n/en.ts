@@ -36,6 +36,15 @@ export const en = {
   logoText: "Logo Text",
   saveLogo: "Save Logo",
   
+  // New translations
+  age: "Age",
+  enterAge: "Enter patient age",
+  weight: "Weight (kg)",
+  selectWeight: "Select patient weight",
+  allergies: "Allergies (Optional)",
+  enterAllergies: "List any allergies separated by commas",
+  patientInfo: "Patient Information",
+  
   // Footer translations
   footerCopyright: 'All Rights Reserved',
   contactUs: 'Contact Us'

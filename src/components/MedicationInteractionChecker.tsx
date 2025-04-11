@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, X, Heart, Pill, Stethoscope, Baby, Weight, Activity } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import Advertisement from './Advertisement';
 
@@ -20,13 +21,27 @@ interface InteractionResult {
   alternatives?: string[];
 }
 
+interface PatientInfo {
+  age: string;
+  weight: string;
+  allergies: string;
+  healthCondition: string;
+}
+
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const [medications, setMedications] = useState<Medication[]>([
     { id: '1', name: '' },
     { id: '2', name: '' }
   ]);
-  const [healthCondition, setHealthCondition] = useState('');
+  
+  const [patientInfo, setPatientInfo] = useState<PatientInfo>({
+    age: '',
+    weight: '',
+    allergies: '',
+    healthCondition: ''
+  });
+  
   const [result, setResult] = useState<InteractionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [apiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
@@ -44,6 +59,10 @@ const MedicationInteractionChecker: React.FC = () => {
   const updateMedication = (id: string, name: string) => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
   };
+  
+  const handlePatientInfoChange = (field: keyof PatientInfo, value: string) => {
+    setPatientInfo(prev => ({ ...prev, [field]: value }));
+  };
 
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
@@ -55,12 +74,20 @@ const MedicationInteractionChecker: React.FC = () => {
     try {
       const medicationNames = validMedications.map(med => med.name);
       
+      // Create patient context string including new fields
+      const patientContext = [
+        patientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${patientInfo.age}` : '',
+        patientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${patientInfo.weight} kg` : '',
+        patientInfo.allergies ? `${language === 'ar' ? 'الحساسية:' : 'Allergies:'} ${patientInfo.allergies}` : '',
+        patientInfo.healthCondition ? `${language === 'ar' ? 'الحالة الصحية:' : 'Health condition:'} ${patientInfo.healthCondition}` : ''
+      ].filter(Boolean).join(', ');
+      
       // منطق مختلف حسب اللغة المحددة
       let prompt = "";
       if (language === 'ar') {
-        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${healthCondition ? `. المريض لديه الحالات الصحية التالية: ${healthCondition}` : ''}. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة لكل دواء مشكل باللغة العربية"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة لكل دواء مشكل باللغة العربية"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
       } else {
-        prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${healthCondition ? `. The patient has the following health conditions: ${healthCondition}` : ''}. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives for each problematic medication"] }. If there are no interactions, return { "hasInteractions": false }.`;
+        prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives for each problematic medication"] }. If there are no interactions, return { "hasInteractions": false }.`;
       }
       
       // تعيين لغة النظام بناءً على لغة الواجهة
@@ -119,72 +146,147 @@ const MedicationInteractionChecker: React.FC = () => {
     }
   };
 
+  // Generate weight options from 1 to 150 kg
+  const weightOptions = Array.from({ length: 150 }, (_, i) => (i + 1).toString());
+
   return (
     <div className={`w-full max-w-4xl mx-auto p-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
       <Advertisement />
       
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{t('appTitle')}</CardTitle>
-          <CardDescription>{t('enterMedication')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {medications.map((med, index) => (
-            <div key={med.id} className="flex items-center gap-2">
-              <div className="flex-1">
-                <Input 
-                  value={med.name} 
-                  onChange={(e) => updateMedication(med.id, e.target.value)} 
-                  placeholder={`${t('medication')} ${index + 1}`}
-                />
-              </div>
-              {medications.length > 2 && (
-                <Button variant="ghost" size="icon" onClick={() => removeMedication(med.id)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          
-          <Button variant="outline" onClick={addMedication} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            {t('addMedication')}
-          </Button>
-          
-          <div className="pt-4">
-            <label className="block text-sm font-medium mb-1">{t('healthCondition')}</label>
-            <Textarea 
-              value={healthCondition}
-              onChange={(e) => setHealthCondition(e.target.value)}
-              placeholder={t('enterHealthCondition')}
-              className="w-full"
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={checkInteractions} 
-            disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
-            className="w-full"
-          >
-            {loading ? t('loading') : t('checkInteractions')}
-          </Button>
-        </CardFooter>
-      </Card>
-      
-      {result && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('results')}</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Medications Card */}
+        <Card className="md:col-span-2 shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50">
+          <CardHeader className="bg-primary/5 rounded-t-lg">
+            <CardTitle className="flex items-center text-primary">
+              <Pill className="mr-2 h-5 w-5" />
+              {t('appTitle')}
+            </CardTitle>
+            <CardDescription>{t('enterMedication')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4 pt-6">
+            {medications.map((med, index) => (
+              <div key={med.id} className="flex items-center gap-2 group">
+                <div className="flex-1 transition-all duration-200 hover:scale-102">
+                  <Input 
+                    value={med.name} 
+                    onChange={(e) => updateMedication(med.id, e.target.value)} 
+                    placeholder={`${t('medication')} ${index + 1}`}
+                    className="border-primary/20 focus:border-primary/60"
+                  />
+                </div>
+                {medications.length > 2 && (
+                  <Button variant="ghost" size="icon" onClick={() => removeMedication(med.id)} 
+                    className="opacity-50 group-hover:opacity-100 transition-opacity">
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            
+            <Button variant="outline" onClick={addMedication} className="w-full group hover:bg-primary/5 hover:text-primary transition-colors">
+              <Plus className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              {t('addMedication')}
+            </Button>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={checkInteractions} 
+              disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
+              className="w-full bg-primary hover:bg-primary/90 transition-colors"
+            >
+              {loading ? t('loading') : t('checkInteractions')}
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        {/* Patient Info Card */}
+        <Card className="shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50">
+          <CardHeader className="bg-secondary/5 rounded-t-lg">
+            <CardTitle className="flex items-center text-secondary">
+              <Baby className="mr-2 h-5 w-5" />
+              {t('patientInfo')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('age')}</label>
+              <Input 
+                value={patientInfo.age} 
+                onChange={(e) => handlePatientInfoChange('age', e.target.value)} 
+                placeholder={t('enterAge')}
+                type="number"
+                className="border-secondary/20 focus:border-secondary/60"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('weight')}</label>
+              <Select 
+                value={patientInfo.weight}
+                onValueChange={(value) => handlePatientInfoChange('weight', value)}
+              >
+                <SelectTrigger className="border-secondary/20 focus:border-secondary/60">
+                  <SelectValue placeholder={t('selectWeight')} />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {weightOptions.map((weight) => (
+                    <SelectItem key={weight} value={weight}>
+                      {weight} kg
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('allergies')}</label>
+              <Input 
+                value={patientInfo.allergies} 
+                onChange={(e) => handlePatientInfoChange('allergies', e.target.value)} 
+                placeholder={t('enterAllergies')}
+                className="border-secondary/20 focus:border-secondary/60"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('healthCondition')}</label>
+              <Textarea 
+                value={patientInfo.healthCondition}
+                onChange={(e) => handlePatientInfoChange('healthCondition', e.target.value)}
+                placeholder={t('enterHealthCondition')}
+                className="w-full border-secondary/20 focus:border-secondary/60"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Results Card */}
+      {result && (
+        <Card className="animate-fade-in shadow-lg transition-all duration-300">
+          <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
+            <CardTitle className="flex items-center">
+              {result.hasInteractions ? (
+                <>
+                  <Activity className="mr-2 h-5 w-5 text-red-500" />
+                  <span className="text-red-700">{t('results')}</span>
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-5 w-5 text-green-500" />
+                  <span className="text-green-700">{t('results')}</span>
+                </>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
             {!result.hasInteractions ? (
-              <p>{t('noInteractions')}</p>
+              <p className="text-green-600 font-medium">{t('noInteractions')}</p>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold mb-2">{t('interactionsFound')}</h3>
-                  <ul className="list-disc pl-5">
+                  <h3 className="font-semibold mb-2 text-red-700">{t('interactionsFound')}</h3>
+                  <ul className="list-disc pl-5 space-y-2">
                     {result.interactions?.map((interaction, i) => (
                       <li key={i} className="mb-2">{interaction}</li>
                     ))}
@@ -193,8 +295,8 @@ const MedicationInteractionChecker: React.FC = () => {
                 
                 {result.alternatives && result.alternatives.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-2">{t('alternativeSuggestion')}</h3>
-                    <ul className="list-disc pl-5">
+                    <h3 className="font-semibold mb-2 text-blue-700">{t('alternativeSuggestion')}</h3>
+                    <ul className="list-disc pl-5 space-y-2">
                       {result.alternatives.map((alternative, i) => (
                         <li key={i} className="mb-2">{alternative}</li>
                       ))}

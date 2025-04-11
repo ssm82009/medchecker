@@ -36,6 +36,15 @@ export const ar = {
   logoText: "نص الشعار",
   saveLogo: "حفظ الشعار",
   
+  // New translations
+  age: "العمر",
+  enterAge: "أدخل عمر المريض",
+  weight: "الوزن (كجم)",
+  selectWeight: "اختر وزن المريض",
+  allergies: "الحساسية (اختياري)",
+  enterAllergies: "قم بإدراج أي حساسية مفصولة بفواصل",
+  patientInfo: "معلومات المريض",
+  
   // Footer translations
   footerCopyright: 'جميع الحقوق محفوظة',
   contactUs: 'اتصل بنا'
