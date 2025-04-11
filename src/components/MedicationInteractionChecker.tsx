@@ -351,7 +351,7 @@ const MedicationInteractionChecker: React.FC = () => {
       <Advertisement />
       
       <div className="w-full bg-transparent">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-white">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-primary">
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
         
