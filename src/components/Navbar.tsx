@@ -38,17 +38,9 @@ const Navbar: React.FC = () => {
         className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" 
         dir={dir}
       >
-        {/* Logo - Always on the right side for Arabic, left side for English */}
-        <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
-          <Link to="/" className="flex items-center gap-2">
-            <Pill className="h-6 w-6 text-white" />
-            <span>{logoText}</span>
-          </Link>
-        </div>
-        
         {/* Desktop Navigation */}
         {!isMobile && (
-          <div className={`flex items-center gap-3 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
+          <div className={`flex items-center gap-3 ${language === 'en' ? 'order-first' : 'order-last'}`}>
             {user && (
               <>
                 {user.role === 'admin' && (
@@ -72,6 +64,14 @@ const Navbar: React.FC = () => {
             </Button>
           </div>
         )}
+        
+        {/* Logo - Always on the right side for Arabic, left side for English */}
+        <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'en' ? 'order-last' : 'order-first'}`}>
+          <Link to="/" className="flex items-center gap-2">
+            <Pill className="h-6 w-6 text-white" />
+            <span>{logoText}</span>
+          </Link>
+        </div>
         
         {/* Mobile Menu Toggle */}
         {isMobile && (
