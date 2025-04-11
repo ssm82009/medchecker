@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,7 +34,7 @@ const Navbar: React.FC = () => {
   return (
     <div className="sticky top-0 z-50 w-full">
       <nav 
-        className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 shadow-md mx-0 mt-0" 
+        className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0" 
         dir={dir}
       >
         {/* Desktop Navigation */}
@@ -89,7 +88,7 @@ const Navbar: React.FC = () => {
       
       {/* Mobile Menu */}
       {isMobile && mobileMenuOpen && (
-        <div className="bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 px-4 py-3 shadow-lg" dir={dir}>
+        <div className="navbar px-4 py-3 shadow-lg" dir={dir}>
           <div className="flex flex-col gap-3">
             {user && (
               <>
