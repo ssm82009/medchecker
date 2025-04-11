@@ -9,11 +9,11 @@ const urlsToCache = [
   '/src/main.tsx',
   '/src/index.css',
   '/src/App.tsx',
-  '/lovable-uploads/00603cfc-b55d-4982-9bdd-816a020d0dd6.png',
-  '/lovable-uploads/ee383530-07ca-46df-b565-919c083ae6be.png',
-  '/lovable-uploads/79bd3aec-827d-4235-8d65-98981645d628.png',
-  '/lovable-uploads/e761e37c-1c08-4a2b-8ad1-5bf00b094fa1.png',
-  '/lovable-uploads/da09156a-50c4-49ac-9007-7cb081465785.png'
+  '/lovable-uploads/29abcb36-507a-440e-b78a-ab8c08b596f7.png',
+  '/lovable-uploads/824e3d1f-eb0a-4fbd-b507-771e74f9d4f3.png',
+  '/lovable-uploads/3177a7d1-0b87-48fd-8c05-8398e232e7e1.png',
+  '/lovable-uploads/3d2cd062-f87e-4cfe-88b0-86eb3059089c.png',
+  '/lovable-uploads/0a1e8a0d-5362-4027-b17c-7aac53e5ae78.png'
 ];
 
 // تثبيت Service Worker وتخزين الملفات في الكاش
