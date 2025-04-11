@@ -1,14 +1,28 @@
+
+# دواء آمن - Dawaa Amen
+# تطبيق للتحقق من تفاعلات الأدوية
+
+User-agent: *
+Allow: /
+
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# محركات البحث الرئيسية
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+User-agent: Yandexbot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# محركات البحث الاجتماعية
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
 Allow: /
