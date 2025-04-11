@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -81,7 +80,7 @@ const MOCK_INTERACTIONS = {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
-      'زيادة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
+      'زي��دة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
     ],
     alternatives: [
       'استخدم أحد الدوائين فقط وليس كليهما (فيفادول أو بنادول)',
@@ -690,11 +689,6 @@ const MedicationInteractionChecker: React.FC = () => {
                   )}
                 </div>
               )}
-              
-              <Alert className="mt-6 bg-amber-50 border border-amber-300 text-amber-800 shadow-sm">
-                <AlertTriangle className="h-4 w-4 inline-block mr-2 text-amber-500" />
-                <AlertDescription className="text-xs">{t('disclaimer')}</AlertDescription>
-              </Alert>
             </CardContent>
           </Card>
         )}
