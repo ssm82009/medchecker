@@ -1,3 +1,4 @@
+
 export const ar = {
   appTitle: "فاحص تعارضات الأدوية",
   medication: "الدواء",
@@ -19,7 +20,9 @@ export const ar = {
   model: "النموذج",
   saveSettings: "حفظ الإعدادات",
   advertisement: "كود HTML للإعلان",
+  secondaryAdvertisement: "كود HTML للإعلان الثانوي",
   saveAd: "حفظ الإعلان",
+  saveSecondaryAd: "حفظ الإعلان الثانوي",
   login: "تسجيل الدخول",
   email: "البريد الإلكتروني",
   password: "كلمة المرور",

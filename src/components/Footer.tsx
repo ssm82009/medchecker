@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Mail } from 'lucide-react';
 import Advertisement from './Advertisement';
+import { supabase } from '@/integrations/supabase/client';
 
 const SecondaryAdvertisement: React.FC = () => {
   const [htmlContent, setHtmlContent] = React.useState<string>('');
@@ -11,26 +12,26 @@ const SecondaryAdvertisement: React.FC = () => {
   React.useEffect(() => {
     const fetchAdvertisement = async () => {
       try {
-        const { data, error } = await fetch('/api/secondary-ad').then(res => res.json());
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'secondary_advertisement')
+          .maybeSingle();
         
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error('Error fetching secondary advertisement:', error);
           return;
         }
         
-        if (data && data.html) {
-          setHtmlContent(data.html);
+        if (data?.value && typeof data.value === 'object' && 'html' in data.value) {
+          setHtmlContent((data.value as any).html as string);
         }
       } catch (error) {
         console.error('Error in secondary advertisement component:', error);
       }
     };
     
-    // Mock data for demonstration purposes
-    setHtmlContent('<div class="bg-yellow-100 p-4 text-center text-yellow-800">هذا إعلان ثانوي للعرض</div>');
-    
-    // Uncomment to fetch from API when ready
-    // fetchAdvertisement();
+    fetchAdvertisement();
   }, []);
 
   if (!htmlContent) return null;

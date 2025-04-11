@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,7 +135,7 @@ const LogoSettings = () => {
   );
 };
 
-// Advertisement settings component
+// Primary Advertisement settings component
 const AdvertisementSettings = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -227,6 +226,97 @@ const AdvertisementSettings = () => {
   );
 };
 
+// Secondary Advertisement settings component
+const SecondaryAdvertisementSettings = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [adHtml, setAdHtml] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  useEffect(() => {
+    const fetchAdvertisement = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'secondary_advertisement')
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching secondary advertisement:', error);
+          return;
+        }
+        
+        if (data?.value && typeof data.value === 'object' && 'html' in data.value) {
+          setAdHtml((data.value as any).html as string);
+        }
+      } catch (error) {
+        console.error('Error in admin component:', error);
+      }
+    };
+    
+    fetchAdvertisement();
+  }, []);
+  
+  const saveAdvertisement = async () => {
+    setIsSaving(true);
+    
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert(
+          { type: 'secondary_advertisement', value: { html: adHtml } } as any,
+          { onConflict: 'type' }
+        );
+      
+      if (error) throw error;
+      
+      toast({
+        title: "تم حفظ الإعلان الثانوي",
+        description: "تم تحديث HTML الإعلان الثانوي بنجاح",
+      });
+    } catch (error) {
+      console.error('Error saving secondary advertisement:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ HTML الإعلان الثانوي",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>الإعلان الثانوي</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Textarea
+          value={adHtml}
+          onChange={(e) => setAdHtml(e.target.value)}
+          placeholder="<div>Your secondary ad HTML here</div>"
+          className="min-h-[200px]"
+        />
+        <Button onClick={saveAdvertisement} className="w-full" disabled={isSaving}>
+          {isSaving ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              {t('loading')}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              حفظ الإعلان الثانوي
+            </span>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Main Admin component
 const Admin: React.FC = () => {
   const { t, dir } = useTranslation();
@@ -281,6 +371,7 @@ const Admin: React.FC = () => {
         <TabsContent value="general" className="space-y-6">
           <LogoSettings />
           <AdvertisementSettings />
+          <SecondaryAdvertisementSettings />
         </TabsContent>
         
         <TabsContent value="appearance" className="space-y-6">

@@ -1,3 +1,4 @@
+
 export const en = {
   appTitle: "Medication Interactions Checker",
   medication: "Medication",
@@ -19,7 +20,9 @@ export const en = {
   model: "Model",
   saveSettings: "Save Settings",
   advertisement: "Advertisement HTML",
-  saveAd: "Save Advertisement",
+  secondaryAdvertisement: "Secondary Advertisement HTML",
+  saveAd: "Save Advertisement", 
+  saveSecondaryAd: "Save Secondary Advertisement",
   login: "Login",
   email: "Email",
   password: "Password",
