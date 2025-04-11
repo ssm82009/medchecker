@@ -12,6 +12,14 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { Cog, Palette, MessageSquare } from 'lucide-react';
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 
 const Admin: React.FC = () => {
   const { t, dir } = useTranslation();
@@ -23,6 +31,10 @@ const Admin: React.FC = () => {
   const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
+  
+  // إعدادات الشعار
+  const [logoText, setLogoText] = useLocalStorage<string>('logoText', 'دواء آمن');
+  const [newLogoText, setNewLogoText] = useState('');
   
   // إعدادات الإعلان
   const [adHtml, setAdHtml] = useState('');
@@ -49,11 +61,11 @@ const Admin: React.FC = () => {
     // تهيئة النموذج بقيم التخزين المحلي
     setApiKey(apiSettings.apiKey || '');
     setModel(apiSettings.model || 'gpt-4o-mini');
+    setNewLogoText(logoText);
     
     // جلب HTML الإعلان من Supabase
     const fetchAdvertisement = async () => {
       try {
-        // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
         const { data, error } = await supabase
           .from('settings')
           .select('value')
@@ -74,13 +86,21 @@ const Admin: React.FC = () => {
     };
     
     fetchAdvertisement();
-  }, [user, navigate, logout, isAdmin, apiSettings, toast]);
+  }, [user, navigate, logout, isAdmin, apiSettings, toast, logoText]);
 
   const saveApiSettings = () => {
     setApiSettings({ apiKey, model });
     toast({
-      title: "تم حفظ الإعدادات",
+      title: t('saveSettings'),
       description: "تم حفظ إعدادات مزود الذكاء الاصطناعي في التخزين المحلي",
+    });
+  };
+
+  const saveLogoText = () => {
+    setLogoText(newLogoText);
+    toast({
+      title: "تم حفظ نص الشعار",
+      description: "تم تحديث نص الشعار بنجاح",
     });
   };
 
@@ -88,7 +108,6 @@ const Admin: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
       const { error } = await supabase
         .from('settings')
         .upsert(
@@ -120,9 +139,9 @@ const Admin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-6" dir={dir}>
+    <div className="min-h-screen p-6 bg-gray-50" dir={dir}>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">{t('adminPanel')}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">{t('adminPanel')}</h1>
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -131,9 +150,35 @@ const Admin: React.FC = () => {
         </div>
       </div>
       
+      <Menubar className="mb-6">
+        <MenubarMenu>
+          <MenubarTrigger className="cursor-pointer">
+            <Cog className="h-4 w-4 mr-2" />
+            الإعدادات
+          </MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              <Palette className="h-4 w-4 mr-2" />
+              تخصيص المظهر
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger className="cursor-pointer">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            المساعدة
+          </MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              دليل الاستخدام
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* إعدادات مزود الذكاء الاصطناعي */}
-        <Card>
+        <Card className="container-light">
           <CardHeader>
             <CardTitle>{t('aiSettings')}</CardTitle>
           </CardHeader>
@@ -169,8 +214,31 @@ const Admin: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* إعدادات نص الشعار */}
+        <Card className="container-light">
+          <CardHeader>
+            <CardTitle>إعدادات الشعار</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
+                نص الشعار
+              </label>
+              <Input
+                type="text"
+                value={newLogoText}
+                onChange={(e) => setNewLogoText(e.target.value)}
+                placeholder="نص الشعار الذي سيظهر في النافبار"
+              />
+            </div>
+            <Button onClick={saveLogoText} className="w-full">
+              حفظ نص الشعار
+            </Button>
+          </CardContent>
+        </Card>
+        
         {/* HTML الإعلان */}
-        <Card>
+        <Card className="container-light md:col-span-2">
           <CardHeader>
             <CardTitle>{t('advertisement')}</CardTitle>
           </CardHeader>

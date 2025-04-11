@@ -29,5 +29,8 @@ export const en = {
   logout: "Logout",
   loginSuccess: "Login successful",
   welcomeBack: "Welcome back!",
-  loginFailed: "Login failed"
+  loginFailed: "Login failed",
+  logoSettings: "Logo Settings",
+  logoText: "Logo Text",
+  saveLogo: "Save Logo"
 };

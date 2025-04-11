@@ -29,5 +29,8 @@ export const ar = {
   logout: "تسجيل الخروج",
   loginSuccess: "تم تسجيل الدخول بنجاح",
   welcomeBack: "مرحبًا بعودتك!",
-  loginFailed: "فشل تسجيل الدخول"
+  loginFailed: "فشل تسجيل الدخول",
+  logoSettings: "إعدادات الشعار",
+  logoText: "نص الشعار",
+  saveLogo: "حفظ الشعار"
 };

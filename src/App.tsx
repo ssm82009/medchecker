@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import { useAuth } from "./hooks/useAuth";
 import { useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
+import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
 
@@ -61,20 +62,25 @@ const AppWrapper = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen">
+            <Navbar />
+            <div className="container mx-auto px-4">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Admin />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          </div>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
