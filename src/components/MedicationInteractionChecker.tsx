@@ -347,10 +347,10 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   return (
-    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-8`} dir={dir}>
+    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-8 bg-transparent`} dir={dir}>
       <Advertisement />
       
-      <div className="w-full">
+      <div className="w-full bg-transparent">
         <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-white">
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
