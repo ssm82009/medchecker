@@ -52,11 +52,11 @@ const Footer: React.FC = () => {
       {/* Secondary Advertisement Area */}
       <SecondaryAdvertisement />
       
-      <footer className="bg-white border-t mt-auto py-6 px-6" dir={dir}>
+      <footer className="bg-white border-t mt-auto py-4 sm:py-6 px-4 sm:px-6" dir={dir}>
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
             {/* Login Link (right in RTL, left in LTR) */}
-            <div className="order-3 md:order-1 mt-4 md:mt-0">
+            <div className="order-3 sm:order-1 w-full sm:w-auto text-center sm:text-start">
               <Link 
                 to="/login" 
                 className="text-xs text-gray-700 hover:text-primary transition-colors"
@@ -66,19 +66,19 @@ const Footer: React.FC = () => {
             </div>
             
             {/* Copyright (center) */}
-            <div className="order-1 md:order-2 mb-4 md:mb-0">
+            <div className="order-1 sm:order-2 w-full sm:w-auto text-center mb-2 sm:mb-0">
               <p className="text-gray-800 text-sm">
                 &copy; {new Date().getFullYear()} دواء آمن - {t('footerCopyright')}
               </p>
             </div>
             
             {/* Contact Us (left in RTL, right in LTR) */}
-            <div className="order-2 md:order-3 mb-4 md:mb-0">
+            <div className="order-2 sm:order-3 w-full sm:w-auto text-center sm:text-end mb-2 sm:mb-0">
               <a 
                 href="https://t.me/icodexteam" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
+                className="inline-flex items-center justify-center sm:justify-start gap-2 text-gray-700 hover:text-primary transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 <span>{t('contactUs')}</span>
