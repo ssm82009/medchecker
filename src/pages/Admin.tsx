@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +19,12 @@ const Admin: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
   const { toast } = useToast();
   
-  // AI Settings
+  // إعدادات الذكاء الاصطناعي
   const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
   
-  // Advertisement Settings
+  // إعدادات الإعلان
   const [adHtml, setAdHtml] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
@@ -33,20 +34,26 @@ const Admin: React.FC = () => {
       return;
     }
 
+    // تحقق من صلاحيات المشرف
     if (!isAdmin()) {
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "أنت لست مشرفًا",
+        variant: "destructive"
+      });
       logout();
       navigate('/login');
       return;
     }
     
-    // Initialize form with local storage values
+    // تهيئة النموذج بقيم التخزين المحلي
     setApiKey(apiSettings.apiKey || '');
     setModel(apiSettings.model || 'gpt-4o-mini');
     
-    // Fetch advertisement HTML from Supabase
+    // جلب HTML الإعلان من Supabase
     const fetchAdvertisement = async () => {
       try {
-        // Use type assertion to handle the type issue with Supabase client
+        // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
         const { data, error } = await supabase
           .from('settings')
           .select('value')
@@ -58,8 +65,8 @@ const Admin: React.FC = () => {
           return;
         }
         
-        if (data && typeof data.value === 'object' && 'html' in data.value) {
-          setAdHtml(data.value.html as string);
+        if (data?.value && typeof data.value === 'object' && 'html' in data.value) {
+          setAdHtml((data.value as any).html as string);
         }
       } catch (error) {
         console.error('Error in admin component:', error);
@@ -67,13 +74,13 @@ const Admin: React.FC = () => {
     };
     
     fetchAdvertisement();
-  }, [user, navigate, logout, isAdmin, apiSettings]);
+  }, [user, navigate, logout, isAdmin, apiSettings, toast]);
 
   const saveApiSettings = () => {
     setApiSettings({ apiKey, model });
     toast({
-      title: "Settings saved",
-      description: "AI provider settings have been saved to local storage.",
+      title: "تم حفظ الإعدادات",
+      description: "تم حفظ إعدادات مزود الذكاء الاصطناعي في التخزين المحلي",
     });
   };
 
@@ -81,25 +88,25 @@ const Admin: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // Use type assertion to handle the type issue with Supabase client
+      // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
       const { error } = await supabase
         .from('settings')
         .upsert(
-          { type: 'advertisement', value: { html: adHtml } },
+          { type: 'advertisement', value: { html: adHtml } } as any,
           { onConflict: 'type' }
         );
       
       if (error) throw error;
       
       toast({
-        title: "Advertisement saved",
-        description: "The advertisement HTML has been updated successfully.",
+        title: "تم حفظ الإعلان",
+        description: "تم تحديث HTML الإعلان بنجاح",
       });
     } catch (error) {
       console.error('Error saving advertisement:', error);
       toast({
-        title: "Error",
-        description: "Failed to save advertisement HTML.",
+        title: "خطأ",
+        description: "فشل في حفظ HTML الإعلان",
         variant: "destructive",
       });
     } finally {
@@ -125,7 +132,7 @@ const Admin: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* AI Provider Settings */}
+        {/* إعدادات مزود الذكاء الاصطناعي */}
         <Card>
           <CardHeader>
             <CardTitle>{t('aiSettings')}</CardTitle>
@@ -162,7 +169,7 @@ const Admin: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Advertisement HTML */}
+        {/* HTML الإعلان */}
         <Card>
           <CardHeader>
             <CardTitle>{t('advertisement')}</CardTitle>

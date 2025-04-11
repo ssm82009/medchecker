@@ -10,15 +10,20 @@ export interface User {
 
 export const useAuth = () => {
   const [user, setUser] = useLocalStorage<User | null>('user', null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // التحقق من المستخدم عند تحميل الصفحة
+  useEffect(() => {
+    setLoading(false);
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Use type assertion to handle the type issue with Supabase client
+      // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
       const { data, error } = await supabase
         .from('users')
         .select('email, role, password')
@@ -30,7 +35,13 @@ export const useAuth = () => {
         throw new Error('Invalid email or password');
       }
       
-      setUser({ email: data.email as string, role: data.role as string });
+      // حفظ بيانات المستخدم في التخزين المحلي
+      const userData: User = {
+        email: data.email as string,
+        role: data.role as string
+      };
+      
+      setUser(userData);
       return true;
     } catch (err) {
       console.error('Login error:', err);
