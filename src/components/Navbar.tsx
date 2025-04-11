@@ -26,10 +26,10 @@ const Navbar: React.FC = () => {
   };
   
   return (
-    <nav className="navbar flex items-center px-6 py-4 mb-6 bg-white shadow-sm rounded-lg mx-4 mt-4" dir={dir}>
+    <nav className="navbar fixed top-0 left-0 right-0 z-50 flex items-center px-6 py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" dir={dir}>
       {/* نزيل justify-between ليتم عرض العناصر بشكل مناسب في RTL */}
       
-      <div className="navbar-brand text-xl font-bold text-primary">
+      <div className="navbar-brand text-xl font-bold text-white">
         <Link to="/">{logoText}</Link>
       </div>
       
@@ -37,11 +37,11 @@ const Navbar: React.FC = () => {
         {user && (
           <>
             {user.role === 'admin' && (
-              <Button variant="ghost" asChild className="hover:bg-primary/10">
+              <Button variant="ghost" asChild className="hover:bg-white/10 text-white">
                 <Link to="/dashboard">{t('dashboard')}</Link>
               </Button>
             )}
-            <Button variant="ghost" onClick={logout} className="hover:bg-primary/10">
+            <Button variant="ghost" onClick={logout} className="hover:bg-white/10 text-white">
               {t('logout')}
             </Button>
           </>
@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
         <Button 
           variant="outline" 
           onClick={handleLanguageChange} 
-          className="flex items-center gap-2 border-primary/20 hover:bg-primary/10"
+          className="flex items-center gap-2 border-white/30 hover:bg-white/10 text-white"
         >
           <Globe className="h-4 w-4" />
           <span>{language === 'en' ? 'العربية' : 'English'}</span>

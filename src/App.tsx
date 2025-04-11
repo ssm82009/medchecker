@@ -70,9 +70,9 @@ const AppWrapper = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400 via-purple-500 to-orange-400">
             <Navbar />
-            <div className="container mx-auto px-4 flex-grow">
+            <div className="container mx-auto px-4 flex-grow pt-24"> {/* Added pt-24 for navbar space */}
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={

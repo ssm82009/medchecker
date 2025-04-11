@@ -18,9 +18,14 @@ const Index: React.FC = () => {
   }, [dir]);
 
   return (
-    <div className="min-h-screen bg-background" dir={dir}>
+    <div className="min-h-screen bg-gradient-animation" dir={dir}>
       <main className="container mx-auto py-8">
-        <MedicationInteractionChecker />
+        <div className="glass-card p-8 mb-8">
+          <h1 className="text-3xl font-bold text-center mb-6 text-indigo-900">
+            آداة سريعة للتحقق من التفاعلات الدوائية
+          </h1>
+          <MedicationInteractionChecker />
+        </div>
       </main>
     </div>
   );
