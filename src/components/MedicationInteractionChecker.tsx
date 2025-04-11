@@ -1,11 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle, Info } from 'lucide-react';
+import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle, Info, Copy, Printer, CheckCircle } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -101,7 +100,7 @@ const MOCK_INTERACTIONS = {
     ],
     alternatives: [
       'استخدم أحد الدوائين فقط وليس كليهما (روفيناك أو كاتافاست)',
-      'يمكن استخدام الباراسيتامول (الاسم التجاري: بنادول، تايلينول) كبديل أكثر أمانًا ل��ألم'
+      'يمكن استخدام الباراسيتامول (الاسم التجاري: بنادول، تايلينول) كبديل أكثر أمانًا للألم'
     ],
     ageWarnings: [
       'مضادات الالتهاب غير الستيرويدية غير موصى بها عادة للأطفال أقل من 12 سنة إلا بوصفة طبية',
@@ -240,6 +239,8 @@ const MedicationInteractionChecker: React.FC = () => {
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
   const [aiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
+  const resultRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
   
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
@@ -257,6 +258,53 @@ const MedicationInteractionChecker: React.FC = () => {
 
   const updateMedication = (id: string, name: string) => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
+  };
+
+  const copyResults = () => {
+    if (!resultRef.current) return;
+    
+    const resultText = resultRef.current.innerText;
+    navigator.clipboard.writeText(resultText).then(() => {
+      setCopied(true);
+      toast({
+        title: language === 'ar' ? 'تم النسخ' : 'Copied',
+        description: language === 'ar' ? 'تم نسخ النتائج بنجاح' : 'Results copied successfully',
+        duration: 2000,
+      });
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  
+  const printResults = () => {
+    const printContent = document.createElement('div');
+    printContent.innerHTML = resultRef.current?.innerHTML || '';
+    
+    // Add some basic styling for the print
+    printContent.style.fontFamily = 'Arial, sans-serif';
+    printContent.style.padding = '20px';
+    printContent.style.direction = dir;
+    
+    const windowPrint = window.open('', '', 'height=600,width=800');
+    
+    if (windowPrint) {
+      windowPrint.document.write('<html><head><title>');
+      windowPrint.document.write(language === 'ar' ? 'نتائج التفاعلات الدوائية' : 'Medication Interaction Results');
+      windowPrint.document.write('</title>');
+      windowPrint.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; }</style>');
+      windowPrint.document.write('</head><body>');
+      windowPrint.document.write(printContent.innerHTML);
+      windowPrint.document.write('</body></html>');
+      windowPrint.document.close();
+      windowPrint.focus();
+      
+      // Add a slight delay before printing
+      setTimeout(() => {
+        windowPrint.print();
+        windowPrint.close();
+      }, 250);
+    }
   };
 
   const checkInteractions = async () => {
@@ -569,6 +617,30 @@ const MedicationInteractionChecker: React.FC = () => {
                   </>
                 )}
               </CardTitle>
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copyResults}
+                  className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                  ) : (
+                    <Copy className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
+                  )}
+                  <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={printResults}
+                  className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+                >
+                  <Printer className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
+                  <span>{language === 'ar' ? 'طباعة' : 'Print'}</span>
+                </Button>
+              </div>
               {apiKeyError && (
                 <div className="mt-2 p-2 bg-yellow-50/50 text-yellow-700 rounded-md text-xs flex items-center">
                   <AlertTriangle className="h-3 w-3 mr-1 text-yellow-500" />
@@ -578,7 +650,7 @@ const MedicationInteractionChecker: React.FC = () => {
                 </div>
               )}
             </CardHeader>
-            <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+            <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`} ref={resultRef}>
               {!result.hasInteractions ? (
                 <p className="text-green-700 font-medium">{t('noInteractions')}</p>
               ) : (
@@ -594,42 +666,4 @@ const MedicationInteractionChecker: React.FC = () => {
                   
                   {result.ageWarnings && result.ageWarnings.length > 0 && (
                     <div>
-                      <h3 className="font-semibold mb-2 text-orange-600">
-                        {language === 'ar' ? 'تحذيرات متعلقة بالعمر:' : 'Age-related warnings:'}
-                      </h3>
-                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
-                        {result.ageWarnings.map((warning, i) => (
-                          <li key={i} className="mb-2 text-sm text-orange-700">{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {result.alternatives && result.alternatives.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold mb-2 text-blue-700">{t('alternativeSuggestion')}</h3>
-                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
-                        {result.alternatives.map((alternative, i) => (
-                          <li key={i} className="mb-2 text-sm">{alternative}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <Alert className="mt-6 bg-blue-50 border-blue-100">
-                <Info className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-blue-500`} />
-                <AlertDescription className="text-sm text-blue-700">
-                  {t('disclaimer')}
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default MedicationInteractionChecker;
+                      <h3 className="font
