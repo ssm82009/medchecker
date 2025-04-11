@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -49,6 +50,15 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* متغيرات الألوان المخصصة للمظهر */
+    --primary-color: #4B5563;
+    --secondary-color: #9b87f5;
+    --background-color: #F8F9FA;
+    --navbar-color: #FFFFFF;
+    --footer-color: #FFFFFF;
+    --text-color: #1A1F2C;
+    --font-family: 'Tajawal', sans-serif;
   }
 
   .dark {
@@ -87,6 +97,84 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* متغيرات الألوان المخصصة للمظهر في الوضع الداكن */
+    --primary-color: #F8F9FA;
+    --secondary-color: #9b87f5;
+    --background-color: #121212;
+    --navbar-color: #1E1E1E;
+    --footer-color: #1E1E1E;
+    --text-color: #F8F9FA;
+    --font-family: 'Tajawal', sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-color: var(--background-color, #F8F9FA);
+    color: var(--text-color, #1A1F2C);
+    font-family: var(--font-family, 'Tajawal', sans-serif);
+  }
+  
+  /* تطبيق الألوان المخصصة على عناصر الواجهة */
+  .bg-primary {
+    background-color: var(--primary-color, #4B5563);
+  }
+  
+  .text-primary {
+    color: var(--primary-color, #4B5563);
+  }
+  
+  .border-primary {
+    border-color: var(--primary-color, #4B5563);
+  }
+  
+  .bg-secondary {
+    background-color: var(--secondary-color, #9b87f5);
+  }
+  
+  .text-secondary {
+    color: var(--secondary-color, #9b87f5);
+  }
+  
+  .border-secondary {
+    border-color: var(--secondary-color, #9b87f5);
+  }
+  
+  /* تحسينات لنماذج الألوان المختلفة */
+  .theme-purple {
+    --primary-color: #6E59A5;
+    --secondary-color: #D6BCFA;
+    --background-color: #F1F0FB;
+    --navbar-color: #E5DEFF;
+    --footer-color: #E5DEFF;
+    --text-color: #1A1F2C;
+    --font-family: 'Poppins', sans-serif;
+  }
+  
+  .theme-blue {
+    --primary-color: #0EA5E9;
+    --secondary-color: #D3E4FD;
+    --background-color: #F0F9FF;
+    --navbar-color: #EFF6FF;
+    --footer-color: #EFF6FF;
+    --text-color: #1E3A8A;
+    --font-family: 'Cairo', sans-serif;
+  }
+  
+  .theme-green {
+    --primary-color: #10B981;
+    --secondary-color: #F2FCE2;
+    --background-color: #ECFDF5;
+    --navbar-color: #D1FAE5;
+    --footer-color: #D1FAE5;
+    --text-color: #065F46;
+    --font-family: 'IBM Plex Sans Arabic', sans-serif;
   }
 }
 
@@ -98,4 +186,152 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Language transition styles */
+.language-transition {
+  transition: all 0.3s ease-in-out;
+  opacity: 0.95;
+}
+
+/* RTL (Arabic) language styles */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl * {
+  letter-spacing: 0;
+}
+
+.rtl button svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.rtl .flex.items-center.gap-2 svg:first-child {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.rtl .mr-2 {
+  margin-right: 0 !important;
+  margin-left: 0.5rem !important;
+}
+
+.rtl input[type="text"],
+.rtl input[type="email"],
+.rtl input[type="password"],
+.rtl textarea {
+  text-align: right;
+}
+
+.rtl .form-label {
+  text-align: right;
+}
+
+/* LTR (English) language styles */
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Force re-render for language change */
+[data-i18n] {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Fix for content during language transition */
+body {
+  transition: opacity 0.1s;
+}
+
+/* Improved UI colors and styles */
+.navbar {
+  background-color: var(--navbar-color, white);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: var(--primary-color, #1A1F2C);
+}
+
+.container-light {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+/* Card styles */
+.card {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.2s ease;
+}
+
+/* Form elements */
+input, select, textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(155, 135, 245, 0.2);
+}
+
+/* Page transitions */
+.page-transition {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* RTL-specific styles for Navbar and Admin page */
+html[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+html[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+html[dir="rtl"] .flex.justify-between {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* Footer RTL specific styles */
+html[dir="rtl"] footer .flex.items-center.gap-2 svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+html[dir="rtl"] footer {
+  text-align: right;
 }

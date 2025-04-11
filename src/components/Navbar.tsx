@@ -1,18 +1,34 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Globe, Pill, HeartPulse, Stethoscope, Leaf } from 'lucide-react';
+import { useAppearance } from '@/hooks/useAppearance';
+
+// مكون أيقونة الشعار
+const LogoIcon = ({ iconName }: { iconName: string }) => {
+  switch (iconName) {
+    case 'pill':
+      return <Pill className="h-5 w-5" />;
+    case 'heart-pulse':
+      return <HeartPulse className="h-5 w-5" />;
+    case 'stethoscope':
+      return <Stethoscope className="h-5 w-5" />;
+    case 'leaf':
+      return <Leaf className="h-5 w-5" />;
+    default:
+      return <Pill className="h-5 w-5" />;
+  }
+};
 
 const Navbar: React.FC = () => {
   const { t, dir, language, toggleLanguage } = useTranslation();
   const { user, logout } = useAuth();
-  const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
   const { toast } = useToast();
+  const { settings, loading } = useAppearance();
   
   const handleLanguageChange = () => {
     toggleLanguage();
@@ -25,10 +41,29 @@ const Navbar: React.FC = () => {
     });
   };
   
+  if (loading) {
+    return (
+      <nav className="navbar flex justify-between items-center px-6 py-4 mb-6 bg-white shadow-sm rounded-lg mx-4 mt-4" dir={dir}>
+        <div className="navbar-brand text-xl font-bold text-primary">
+          <span>دواء آمن</span>
+        </div>
+        <div></div>
+      </nav>
+    );
+  }
+  
   return (
-    <nav className="navbar flex justify-between items-center px-6 py-4 mb-6 bg-white shadow-sm rounded-lg mx-4 mt-4" dir={dir}>
-      <div className="navbar-brand text-xl font-bold text-primary">
-        <Link to="/">{logoText}</Link>
+    <nav 
+      className="navbar flex justify-between items-center px-6 py-4 mb-6 shadow-sm rounded-lg mx-4 mt-4" 
+      dir={dir}
+      style={{ 
+        backgroundColor: settings.navbar_color,
+        fontFamily: settings.font_family 
+      }}
+    >
+      <div className="navbar-brand text-xl font-bold flex items-center gap-2" style={{ color: settings.primary_color }}>
+        <LogoIcon iconName={settings.logo_icon} />
+        <Link to="/">{settings.logo_text}</Link>
       </div>
       
       <div className="flex items-center gap-4">

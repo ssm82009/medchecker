@@ -25,6 +25,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
+import AppearanceSettingsComponent from '@/components/admin/AppearanceSettings';
 
 // Settings component for AI configuration
 const AISettings = () => {
@@ -375,14 +376,7 @@ const Admin: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="appearance" className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>إعدادات المظهر</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">سيتم تطوير إعدادات المظهر قريباً.</p>
-            </CardContent>
-          </Card>
+          <AppearanceSettingsComponent />
         </TabsContent>
         
         <TabsContent value="api" className="space-y-6">

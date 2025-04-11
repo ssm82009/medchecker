@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Mail } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { supabase } from '@/integrations/supabase/client';
+import { useAppearance } from '@/hooks/useAppearance';
 
 const SecondaryAdvertisement: React.FC = () => {
   const [htmlContent, setHtmlContent] = React.useState<string>('');
@@ -46,20 +47,33 @@ const SecondaryAdvertisement: React.FC = () => {
 
 const Footer: React.FC = () => {
   const { t, dir } = useTranslation();
+  const { settings, loading } = useAppearance();
+  
+  if (loading) {
+    return <footer className="bg-white border-t mt-auto py-6 px-6" dir={dir}></footer>;
+  }
   
   return (
     <>
       {/* Secondary Advertisement Area */}
       <SecondaryAdvertisement />
       
-      <footer className="bg-white border-t mt-auto py-6 px-6" dir={dir}>
+      <footer 
+        className="border-t mt-auto py-6 px-6" 
+        dir={dir}
+        style={{ 
+          backgroundColor: settings.footer_color,
+          fontFamily: settings.font_family 
+        }}
+      >
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             {/* Login Link (right in RTL, left in LTR) */}
             <div className="order-3 md:order-1 mt-4 md:mt-0">
               <Link 
                 to="/login" 
-                className="text-xs text-gray-500 hover:text-primary transition-colors"
+                className="text-xs hover:text-primary transition-colors"
+                style={{ color: settings.text_color }}
               >
                 {t('login')}
               </Link>
@@ -67,7 +81,7 @@ const Footer: React.FC = () => {
             
             {/* Copyright (center) */}
             <div className="order-1 md:order-2 mb-4 md:mb-0">
-              <p className="text-gray-500 text-sm">
+              <p className="text-sm" style={{ color: settings.text_color }}>
                 &copy; {new Date().getFullYear()} {t('footerCopyright')}
               </p>
             </div>
@@ -76,7 +90,8 @@ const Footer: React.FC = () => {
             <div className="order-2 md:order-3 mb-4 md:mb-0">
               <Link 
                 to="/contact" 
-                className="flex items-center gap-2 text-primary hover:underline transition-colors"
+                className="flex items-center gap-2 hover:underline transition-colors"
+                style={{ color: settings.primary_color }}
               >
                 <Mail className="h-4 w-4" />
                 <span>{t('contactUs')}</span>

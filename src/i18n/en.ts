@@ -50,5 +50,27 @@ export const en = {
   contactUs: 'Contact Us',
   
   // Error messages
-  error: "Error"
+  error: "Error",
+  
+  // Appearance settings
+  appearanceSettings: "Appearance Settings",
+  theme: "Theme",
+  primaryColor: "Primary Color",
+  secondaryColor: "Secondary Color",
+  backgroundColor: "Background Color",
+  navbarColor: "Navbar Color",
+  footerColor: "Footer Color",
+  textColor: "Text Color",
+  fontFamily: "Font Family",
+  logoIcon: "Logo Icon",
+  saveAppearance: "Save Appearance",
+  themeLight: "Light",
+  themeDark: "Dark",
+  themePurple: "Purple",
+  themeBlue: "Blue",
+  themeGreen: "Green",
+  previewTheme: "Preview",
+  resetTheme: "Reset to Default",
+  applyTheme: "Apply Theme",
+  appearanceUpdated: "Appearance updated successfully"
 };

@@ -50,5 +50,27 @@ export const ar = {
   contactUs: 'اتصل بنا',
   
   // Error messages
-  error: "خطأ"
+  error: "خطأ",
+  
+  // Appearance settings
+  appearanceSettings: "إعدادات المظهر",
+  theme: "النمط",
+  primaryColor: "اللون الرئيسي",
+  secondaryColor: "اللون الثانوي",
+  backgroundColor: "لون الخلفية",
+  navbarColor: "لون شريط التنقل",
+  footerColor: "لون التذييل",
+  textColor: "لون النص",
+  fontFamily: "نوع الخط",
+  logoIcon: "أيقونة الشعار",
+  saveAppearance: "حفظ المظهر",
+  themeLight: "فاتح",
+  themeDark: "داكن",
+  themePurple: "بنفسجي",
+  themeBlue: "أزرق",
+  themeGreen: "أخضر",
+  previewTheme: "معاينة",
+  resetTheme: "إعادة تعيين",
+  applyTheme: "تطبيق النمط",
+  appearanceUpdated: "تم تحديث المظهر بنجاح"
 };
