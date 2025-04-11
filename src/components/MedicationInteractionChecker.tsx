@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -584,8 +585,8 @@ const MedicationInteractionChecker: React.FC = () => {
           </CardContent>
           <CardFooter className={`${isMobile ? 'px-3 flex-col items-stretch' : ''}`}>
             {apiKeyError && (
-              <div className={`w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs ${isMobile ? 'text-center justify-center' : ''}`}>
-                <AlertTriangle className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-yellow-500`} />
+              <div className={`w-full mb-3 p-2 bg-gray-800 text-white rounded-md flex items-center text-xs ${isMobile ? 'text-center justify-center' : ''}`}>
+                <AlertTriangle className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-yellow-300`} />
                 {language === 'ar' 
                   ? 'لم يتم العثور على مفتاح API. يتم استخدام بيانات تجريبية للتوضيح.'
                   : 'No API key found. Using demo data for illustration.'}
@@ -602,7 +603,7 @@ const MedicationInteractionChecker: React.FC = () => {
         </Card>
         
         {result && (
-          <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'} border-0`}>
+          <Card className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0">
             <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
               <CardTitle className="flex items-center">
                 {result.hasInteractions ? (
@@ -642,8 +643,8 @@ const MedicationInteractionChecker: React.FC = () => {
                 </Button>
               </div>
               {apiKeyError && (
-                <div className="mt-2 p-2 bg-yellow-50/50 text-yellow-700 rounded-md text-xs flex items-center">
-                  <AlertTriangle className="h-3 w-3 mr-1 text-yellow-500" />
+                <div className="mt-2 p-2 bg-gray-800 text-white rounded-md text-xs flex items-center">
+                  <AlertTriangle className="h-3 w-3 mr-1 text-yellow-300" />
                   {language === 'ar' 
                     ? 'ملاحظة: النتائج أدناه تستند إلى بيانات تجريبية للتوضيح فقط.'
                     : 'Note: Results below are based on demo data for illustration only.'}
@@ -666,4 +667,33 @@ const MedicationInteractionChecker: React.FC = () => {
                   
                   {result.ageWarnings && result.ageWarnings.length > 0 && (
                     <div>
-                      <h3 className="font
+                      <h3 className="font-semibold mb-2 text-amber-700">{t('ageWarnings')}</h3>
+                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
+                        {result.ageWarnings.map((warning, i) => (
+                          <li key={i} className="mb-2 text-sm">{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {result.alternatives && result.alternatives.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2 text-blue-700">{t('alternatives')}</h3>
+                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
+                        {result.alternatives.map((alternative, i) => (
+                          <li key={i} className="mb-2 text-sm">{alternative}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MedicationInteractionChecker;
