@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -354,7 +355,7 @@ const MedicationInteractionChecker: React.FC = () => {
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
         
-        <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6`}>
+        <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
             <CardTitle className="flex items-center text-primary">
               <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
@@ -487,7 +488,7 @@ const MedicationInteractionChecker: React.FC = () => {
         </Card>
         
         {result && (
-          <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'}`}>
+          <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'} border-0`}>
             <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
               <CardTitle className="flex items-center">
                 {result.hasInteractions ? (
