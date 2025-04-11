@@ -40,7 +40,7 @@ export const en = {
   age: "Age (Optional)",
   enterAge: "Enter age",
   weight: "Weight (kg) (Optional)",
-  selectWeight: "Select weight",
+  selectWeight: "Enter weight",
   allergies: "Allergies (Optional)",
   enterAllergies: "Enter allergies",
   patientInfo: "Patient Info",

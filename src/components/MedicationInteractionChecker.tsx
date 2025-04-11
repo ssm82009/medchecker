@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X, Heart, Pill, User, Weight, ActivitySquare } from 'lucide-react';
 import Advertisement from './Advertisement';
 
@@ -217,21 +215,14 @@ const MedicationInteractionChecker: React.FC = () => {
                     <Weight className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                     {t('weight')}
                   </div>
-                  <Select 
-                    value={patientInfo.weight}
-                    onValueChange={(value) => handlePatientInfo('weight', value)}
-                  >
-                    <SelectTrigger className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm" dir={dir}>
-                      <SelectValue placeholder={t('selectWeight')} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] overflow-y-auto" dir={dir}>
-                      {weightOptions.map((weight) => (
-                        <SelectItem key={weight} value={weight}>
-                          {weight} kg
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input 
+                    value={patientInfo.weight} 
+                    onChange={(e) => handlePatientInfo('weight', e.target.value)} 
+                    placeholder={t('selectWeight')}
+                    type="number"
+                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm"
+                    dir={dir}
+                  />
                 </div>
               </div>
               

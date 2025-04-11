@@ -40,7 +40,7 @@ export const ar = {
   age: "العمر (اختياري)",
   enterAge: "أدخل العمر",
   weight: "الوزن (كجم) (اختياري)",
-  selectWeight: "اختر الوزن",
+  selectWeight: "أدخل الوزن",
   allergies: "الحساسية (اختياري)",
   enterAllergies: "أدخل الحساسية",
   patientInfo: "معلومات المريض",
