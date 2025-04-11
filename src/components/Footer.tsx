@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
             {/* Copyright (center) */}
             <div className="order-1 sm:order-2 w-full text-center mb-2 sm:mb-0">
               <p className="text-gray-800 text-sm">
-                "© جميع الحقوق محفوظة © لـ تطبيق دواء آمن"
+                جميع الحقوق محفوظة © لـ تطبيق دواء آمن
               </p>
             </div>
             
