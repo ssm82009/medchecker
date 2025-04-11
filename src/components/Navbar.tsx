@@ -45,7 +45,7 @@ const Navbar: React.FC = () => {
         <Button 
           variant="outline" 
           onClick={handleLanguageChange} 
-          className="flex items-center gap-2 border-white/30 hover:bg-white/10 text-white"
+          className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
         >
           <Globe className="h-4 w-4" />
           <span>{language === 'en' ? 'العربية' : 'English'}</span>
