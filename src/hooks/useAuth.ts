@@ -10,12 +10,21 @@ export interface User {
 
 export const useAuth = () => {
   const [user, setUser] = useLocalStorage<User | null>('user', null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // التحقق من المستخدم عند تحميل الصفحة
+  // Check for user on page load
   useEffect(() => {
-    setLoading(false);
+    // Initialize auth state from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+        localStorage.removeItem('user');
+      }
+    }
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -23,7 +32,7 @@ export const useAuth = () => {
     setError(null);
     
     try {
-      // استخدام نوع التأكيد للتعامل مع مشكلة النوع مع عميل Supabase
+      // Query to find the user with matching email and password
       const { data, error } = await supabase
         .from('users')
         .select('email, role, password')
@@ -31,14 +40,19 @@ export const useAuth = () => {
         .eq('password', password)
         .maybeSingle();
       
-      if (error || !data) {
+      if (error) {
+        console.error('Login query error:', error);
+        throw new Error('Error checking credentials');
+      }
+      
+      if (!data) {
         throw new Error('Invalid email or password');
       }
       
-      // حفظ بيانات المستخدم في التخزين المحلي
+      // Save user data in localStorage
       const userData: User = {
-        email: data.email as string,
-        role: data.role as string
+        email: data.email,
+        role: data.role
       };
       
       setUser(userData);
@@ -53,6 +67,7 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    localStorage.removeItem('user');
     setUser(null);
   };
 

@@ -11,59 +11,139 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { Cog, Palette, MessageSquare } from 'lucide-react';
+import { 
+  Cog, 
+  Palette, 
+  MessageSquare, 
+  Save,
+  Settings,
+  LogOut,
+  Key
+} from 'lucide-react';
 import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
 
-const Admin: React.FC = () => {
-  const { t, dir } = useTranslation();
-  const navigate = useNavigate();
-  const { user, logout, isAdmin } = useAuth();
+// Settings component for AI configuration
+const AISettings = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
-  
-  // إعدادات الذكاء الاصطناعي
   const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
   
-  // إعدادات الشعار
+  useEffect(() => {
+    setApiKey(apiSettings.apiKey || '');
+    setModel(apiSettings.model || 'gpt-4o-mini');
+  }, [apiSettings]);
+  
+  const saveApiSettings = () => {
+    setApiSettings({ apiKey, model });
+    toast({
+      title: t('saveSettings'),
+      description: "تم حفظ إعدادات مزود الذكاء الاصطناعي في التخزين المحلي",
+    });
+  };
+  
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>{t('aiSettings')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">
+            {t('apiKey')}
+          </label>
+          <Input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="sk-..."
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">
+            {t('model')}
+          </label>
+          <Select value={model} onValueChange={setModel}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
+              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button 
+          onClick={saveApiSettings} 
+          className="w-full"
+          variant="default"
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {t('saveSettings')}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Logo settings component
+const LogoSettings = () => {
+  const { toast } = useToast();
   const [logoText, setLogoText] = useLocalStorage<string>('logoText', 'دواء آمن');
   const [newLogoText, setNewLogoText] = useState('');
   
-  // إعدادات الإعلان
+  useEffect(() => {
+    setNewLogoText(logoText);
+  }, [logoText]);
+  
+  const saveLogoText = () => {
+    setLogoText(newLogoText);
+    toast({
+      title: "تم حفظ نص الشعار",
+      description: "تم تحديث نص الشعار بنجاح",
+    });
+  };
+  
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>إعدادات الشعار</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">
+            نص الشعار
+          </label>
+          <Input
+            type="text"
+            value={newLogoText}
+            onChange={(e) => setNewLogoText(e.target.value)}
+            placeholder="نص الشعار الذي سيظهر في النافبار"
+          />
+        </div>
+        <Button onClick={saveLogoText} className="w-full" variant="default">
+          <Save className="mr-2 h-4 w-4" />
+          حفظ نص الشعار
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Advertisement settings component
+const AdvertisementSettings = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [adHtml, setAdHtml] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    // تحقق من صلاحيات المشرف
-    if (!isAdmin()) {
-      toast({
-        title: "خطأ في الصلاحيات",
-        description: "أنت لست مشرفًا",
-        variant: "destructive"
-      });
-      logout();
-      navigate('/login');
-      return;
-    }
-    
-    // تهيئة النموذج بقيم التخزين المحلي
-    setApiKey(apiSettings.apiKey || '');
-    setModel(apiSettings.model || 'gpt-4o-mini');
-    setNewLogoText(logoText);
-    
-    // جلب HTML الإعلان من Supabase
     const fetchAdvertisement = async () => {
       try {
         const { data, error } = await supabase
@@ -86,24 +166,8 @@ const Admin: React.FC = () => {
     };
     
     fetchAdvertisement();
-  }, [user, navigate, logout, isAdmin, apiSettings, toast, logoText]);
-
-  const saveApiSettings = () => {
-    setApiSettings({ apiKey, model });
-    toast({
-      title: t('saveSettings'),
-      description: "تم حفظ إعدادات مزود الذكاء الاصطناعي في التخزين المحلي",
-    });
-  };
-
-  const saveLogoText = () => {
-    setLogoText(newLogoText);
-    toast({
-      title: "تم حفظ نص الشعار",
-      description: "تم تحديث نص الشعار بنجاح",
-    });
-  };
-
+  }, []);
+  
   const saveAdvertisement = async () => {
     setIsSaving(true);
     
@@ -132,6 +196,56 @@ const Admin: React.FC = () => {
       setIsSaving(false);
     }
   };
+  
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>{t('advertisement')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Textarea
+          value={adHtml}
+          onChange={(e) => setAdHtml(e.target.value)}
+          placeholder="<div>Your ad HTML here</div>"
+          className="min-h-[200px]"
+        />
+        <Button onClick={saveAdvertisement} className="w-full" disabled={isSaving}>
+          {isSaving ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              {t('saving')}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              {t('saveAd')}
+            </span>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main Admin component
+const Admin: React.FC = () => {
+  const { t, dir } = useTranslation();
+  const navigate = useNavigate();
+  const { user, logout, isAdmin } = useAuth();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // Check admin permissions
+    if (!isAdmin()) {
+      console.log("Not admin, redirecting...");
+      logout();
+      navigate('/login');
+    }
+  }, [user, navigate, logout, isAdmin]);
 
   const handleLogout = () => {
     logout();
@@ -142,119 +256,48 @@ const Admin: React.FC = () => {
     <div className="min-h-screen p-6 bg-gray-50" dir={dir}>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">{t('adminPanel')}</h1>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
-            {t('logout')}
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+          <LogOut className="h-4 w-4" />
+          {t('logout')}
+        </Button>
       </div>
       
-      <Menubar className="mb-6">
-        <MenubarMenu>
-          <MenubarTrigger className="cursor-pointer">
-            <Cog className="h-4 w-4 mr-2" />
-            الإعدادات
-          </MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem>
-              <Palette className="h-4 w-4 mr-2" />
-              تخصيص المظهر
-            </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="cursor-pointer">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            المساعدة
-          </MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem>
-              دليل الاستخدام
-            </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* إعدادات مزود الذكاء الاصطناعي */}
-        <Card className="container-light">
-          <CardHeader>
-            <CardTitle>{t('aiSettings')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                {t('apiKey')}
-              </label>
-              <Input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-..."
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                {t('model')}
-              </label>
-              <Select value={model} onValueChange={setModel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
-                  <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={saveApiSettings} className="w-full">
-              {t('saveSettings')}
-            </Button>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="mb-6 grid w-full grid-cols-3">
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            عام
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            المظهر
+          </TabsTrigger>
+          <TabsTrigger value="api" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            واجهات API
+          </TabsTrigger>
+        </TabsList>
         
-        {/* إعدادات نص الشعار */}
-        <Card className="container-light">
-          <CardHeader>
-            <CardTitle>إعدادات الشعار</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                نص الشعار
-              </label>
-              <Input
-                type="text"
-                value={newLogoText}
-                onChange={(e) => setNewLogoText(e.target.value)}
-                placeholder="نص الشعار الذي سيظهر في النافبار"
-              />
-            </div>
-            <Button onClick={saveLogoText} className="w-full">
-              حفظ نص الشعار
-            </Button>
-          </CardContent>
-        </Card>
+        <TabsContent value="general" className="space-y-6">
+          <LogoSettings />
+          <AdvertisementSettings />
+        </TabsContent>
         
-        {/* HTML الإعلان */}
-        <Card className="container-light md:col-span-2">
-          <CardHeader>
-            <CardTitle>{t('advertisement')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              value={adHtml}
-              onChange={(e) => setAdHtml(e.target.value)}
-              placeholder="<div>Your ad HTML here</div>"
-              className="min-h-[200px]"
-            />
-            <Button onClick={saveAdvertisement} className="w-full" disabled={isSaving}>
-              {isSaving ? '...' : t('saveAd')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="appearance" className="space-y-6">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>إعدادات المظهر</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">سيتم تطوير إعدادات المظهر قريباً.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="api" className="space-y-6">
+          <AISettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
