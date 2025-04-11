@@ -43,15 +43,15 @@ const Navbar: React.FC = () => {
       >
         {/* Desktop Navigation */}
         {!isMobile && (
-          <div className={`flex items-center gap-3 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
+          <div className={`flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
             {user && (
               <>
                 {user.role === 'admin' && (
-                  <Button variant="ghost" asChild className="hover:bg-white/10 text-white">
+                  <Button variant="ghost" asChild className="hover:bg-white/10 text-white text-sm h-8 px-2">
                     <Link to="/dashboard">{t('dashboard')}</Link>
                   </Button>
                 )}
-                <Button variant="ghost" onClick={logout} className="hover:bg-white/10 text-white">
+                <Button variant="ghost" onClick={logout} className="hover:bg-white/10 text-white text-sm h-8 px-2">
                   {t('logout')}
                 </Button>
               </>
@@ -60,9 +60,10 @@ const Navbar: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={handleLanguageChange} 
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
+              className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg text-xs px-2 py-1 h-8"
+              size="sm"
             >
-              <Globe className="h-4 w-4" />
+              <Globe className="h-3 w-3" />
               <span>{language === 'en' ? 'العربية' : 'English'}</span>
             </Button>
           </div>
@@ -97,11 +98,11 @@ const Navbar: React.FC = () => {
             {user && (
               <>
                 {user.role === 'admin' && (
-                  <Button variant="ghost" asChild className="w-full justify-start hover:bg-white/10 text-white">
+                  <Button variant="ghost" asChild className="w-full justify-start hover:bg-white/10 text-white text-sm">
                     <Link to="/dashboard">{t('dashboard')}</Link>
                   </Button>
                 )}
-                <Button variant="ghost" onClick={logout} className="w-full justify-start hover:bg-white/10 text-white">
+                <Button variant="ghost" onClick={logout} className="w-full justify-start hover:bg-white/10 text-white text-sm">
                   {t('logout')}
                 </Button>
               </>
@@ -110,9 +111,10 @@ const Navbar: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={handleLanguageChange} 
-              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
+              className="flex items-center justify-center gap-1 w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg text-xs px-2 py-1 h-8"
+              size="sm"
             >
-              <Globe className="h-4 w-4" />
+              <Globe className="h-3 w-3" />
               <span>{language === 'en' ? 'العربية' : 'English'}</span>
             </Button>
           </div>
