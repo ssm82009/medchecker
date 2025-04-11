@@ -357,10 +357,10 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   return (
-    <div className={`w-full ${isMobile ? 'max-w-full px-[0.5%]' : 'max-w-4xl'} mx-auto p-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
+    <div className={`w-full ${isMobile ? 'max-w-full px-2' : 'max-w-4xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
       <Advertisement />
       
-      <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50 mb-6 ${isMobile ? 'w-[99%]' : 'w-full'}`}>
+      <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50 mb-6 ${isMobile ? 'w-full' : 'w-full'}`}>
         <CardHeader className="bg-primary/5 rounded-t-lg">
           <CardTitle className="flex items-center text-primary">
             <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
@@ -368,7 +368,7 @@ const MedicationInteractionChecker: React.FC = () => {
           </CardTitle>
           <CardDescription>{t('enterMedication')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 pt-6">
+        <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
           <div className="space-y-4">
             {medications.map((med, index) => (
               <div key={med.id} className="flex items-center gap-2 group transition duration-200 animate-in fade-in">
@@ -403,13 +403,13 @@ const MedicationInteractionChecker: React.FC = () => {
               {t('addMedication')}
             </Button>
 
-            <div className="mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md px-3">
+            <div className={`mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md ${isMobile ? 'px-2' : 'px-3'}`}>
               <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
                 <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
                 {t('patientInfo')}
               </h3>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid`}>
                 <div className="space-y-1">
                   <div className="flex items-center text-xs text-gray-500">
                     <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
@@ -441,7 +441,7 @@ const MedicationInteractionChecker: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid mt-2`}>
                 <div className="space-y-1">
                   <div className="flex items-center text-xs text-gray-500">
                     <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
@@ -473,10 +473,10 @@ const MedicationInteractionChecker: React.FC = () => {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className={`${isMobile ? 'px-3 flex-col items-stretch' : ''}`}>
           {apiKeyError && (
-            <div className="w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs">
-              <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
+            <div className={`w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs ${isMobile ? 'text-center justify-center' : ''}`}>
+              <AlertTriangle className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-yellow-500`} />
               {language === 'ar' 
                 ? 'لم يتم العثور على مفتاح API. يتم استخدام بيانات تجريبية للتوضيح.'
                 : 'No API key found. Using demo data for illustration.'}
@@ -485,7 +485,7 @@ const MedicationInteractionChecker: React.FC = () => {
           <Button 
             onClick={checkInteractions} 
             disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
-            className="w-full bg-primary hover:bg-primary/90 transition-colors"
+            className={`${isMobile ? 'w-full mt-2' : 'w-full'} bg-primary hover:bg-primary/90 transition-colors`}
           >
             {loading ? t('loading') : t('checkInteractions')}
           </Button>
@@ -493,7 +493,7 @@ const MedicationInteractionChecker: React.FC = () => {
       </Card>
       
       {result && (
-        <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-[99%]' : 'w-full'}`}>
+        <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-full' : 'w-full'}`}>
           <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
             <CardTitle className="flex items-center">
               {result.hasInteractions ? (
@@ -517,7 +517,7 @@ const MedicationInteractionChecker: React.FC = () => {
               </div>
             )}
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
             {!result.hasInteractions ? (
               <p className="text-green-700 font-medium">{t('noInteractions')}</p>
             ) : (
@@ -526,7 +526,7 @@ const MedicationInteractionChecker: React.FC = () => {
                   <h3 className="font-semibold mb-2 text-red-700">{t('interactionsFound')}</h3>
                   <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
                     {result.interactions?.map((interaction, i) => (
-                      <li key={i} className="mb-2">{interaction}</li>
+                      <li key={i} className="mb-2 text-sm">{interaction}</li>
                     ))}
                   </ul>
                 </div>
@@ -536,7 +536,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     <h3 className="font-semibold mb-2 text-blue-700">{t('alternativeSuggestion')}</h3>
                     <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
                       {result.alternatives.map((alternative, i) => (
-                        <li key={i} className="mb-2">{alternative}</li>
+                        <li key={i} className="mb-2 text-sm">{alternative}</li>
                       ))}
                     </ul>
                   </div>

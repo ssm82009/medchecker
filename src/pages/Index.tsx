@@ -19,9 +19,9 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-animation" dir={dir}>
-      <main className="container mx-auto py-8">
-        <div className="glass-card p-8 mb-8">
-          <h1 className="text-3xl font-bold text-center mb-6 text-indigo-900">
+      <main className="container mx-auto py-8 px-2 sm:px-4">
+        <div className="glass-card p-4 sm:p-8 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-indigo-900">
             آداة سريعة للتحقق من التفاعلات الدوائية
           </h1>
           <MedicationInteractionChecker />
