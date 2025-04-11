@@ -469,9 +469,10 @@ const MedicationInteractionChecker: React.FC = () => {
         {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
-      {/* إضافة التنبيه الذي يخلي المسؤولية */}
-      <Alert className="mb-4 bg-gray-800 text-white border-0">
-        <AlertDescription className="text-sm">{t('disclaimer')}</AlertDescription>
+      {/* إضافة التنبيه الذي يخلي المسؤولية بشكل بارز */}
+      <Alert className="mb-6 bg-amber-50 border border-amber-300 text-amber-800 shadow-md animate-fade-in">
+        <AlertTriangle className="h-5 w-5 inline-block mr-2 text-amber-500" />
+        <AlertDescription className="text-sm font-medium">{t('disclaimer')}</AlertDescription>
       </Alert>
       
       <div className="w-full bg-transparent mt-8">
@@ -699,8 +700,9 @@ const MedicationInteractionChecker: React.FC = () => {
       </div>
       
       {/* إضافة التنبيه الذي يخلي المسؤولية مرة أخرى في نهاية الصفحة للتأكيد */}
-      <Alert className="mt-8 mb-4 bg-gray-800 text-white border-0">
-        <AlertDescription className="text-sm">{t('disclaimer')}</AlertDescription>
+      <Alert className="mt-8 mb-4 bg-amber-50 border border-amber-300 text-amber-800 shadow-md">
+        <AlertTriangle className="h-5 w-5 inline-block mr-2 text-amber-500" />
+        <AlertDescription className="text-sm font-medium">{t('disclaimer')}</AlertDescription>
       </Alert>
     </div>
   );
