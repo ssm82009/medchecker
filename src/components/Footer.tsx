@@ -3,44 +3,88 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Mail } from 'lucide-react';
+import Advertisement from './Advertisement';
+
+const SecondaryAdvertisement: React.FC = () => {
+  const [htmlContent, setHtmlContent] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const fetchAdvertisement = async () => {
+      try {
+        const { data, error } = await fetch('/api/secondary-ad').then(res => res.json());
+        
+        if (error) {
+          console.error('Error fetching secondary advertisement:', error);
+          return;
+        }
+        
+        if (data && data.html) {
+          setHtmlContent(data.html);
+        }
+      } catch (error) {
+        console.error('Error in secondary advertisement component:', error);
+      }
+    };
+    
+    // Mock data for demonstration purposes
+    setHtmlContent('<div class="bg-yellow-100 p-4 text-center text-yellow-800">هذا إعلان ثانوي للعرض</div>');
+    
+    // Uncomment to fetch from API when ready
+    // fetchAdvertisement();
+  }, []);
+
+  if (!htmlContent) return null;
+  
+  return (
+    <div 
+      className="w-full overflow-hidden border-t" 
+      dangerouslySetInnerHTML={{ __html: htmlContent }} 
+    />
+  );
+};
 
 const Footer: React.FC = () => {
   const { t, dir } = useTranslation();
   
   return (
-    <footer className="bg-white border-t mt-auto py-6 px-6" dir={dir}>
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          {/* Login Link (right in RTL, left in LTR) */}
-          <div className="order-3 md:order-1 mt-4 md:mt-0">
-            <Link 
-              to="/login" 
-              className="text-xs text-gray-500 hover:text-primary transition-colors"
-            >
-              {t('login')}
-            </Link>
-          </div>
-          
-          {/* Copyright (center) */}
-          <div className="order-1 md:order-2 mb-4 md:mb-0">
-            <p className="text-gray-500 text-sm">
-              &copy; {new Date().getFullYear()} {t('footerCopyright')}
-            </p>
-          </div>
-          
-          {/* Contact Us (left in RTL, right in LTR) */}
-          <div className="order-2 md:order-3 mb-4 md:mb-0">
-            <Link 
-              to="/contact" 
-              className="flex items-center gap-2 text-primary hover:underline transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              <span>{t('contactUs')}</span>
-            </Link>
+    <>
+      {/* Secondary Advertisement Area */}
+      <SecondaryAdvertisement />
+      
+      <footer className="bg-white border-t mt-auto py-6 px-6" dir={dir}>
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            {/* Login Link (right in RTL, left in LTR) */}
+            <div className="order-3 md:order-1 mt-4 md:mt-0">
+              <Link 
+                to="/login" 
+                className="text-xs text-gray-500 hover:text-primary transition-colors"
+              >
+                {t('login')}
+              </Link>
+            </div>
+            
+            {/* Copyright (center) */}
+            <div className="order-1 md:order-2 mb-4 md:mb-0">
+              <p className="text-gray-500 text-sm">
+                &copy; {new Date().getFullYear()} {t('footerCopyright')}
+              </p>
+            </div>
+            
+            {/* Contact Us (left in RTL, right in LTR) */}
+            <div className="order-2 md:order-3 mb-4 md:mb-0">
+              <Link 
+                to="/contact" 
+                className="flex items-center gap-2 text-primary hover:underline transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                <span>{t('contactUs')}</span>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 };
 
