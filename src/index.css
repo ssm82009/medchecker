@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -243,7 +242,7 @@ html[dir="rtl"] footer .flex.items-center.gap-4 {
   margin-right: auto;
 }
 
-html[dir="rtl"] .flex.flex-col.md\\:flex-row.justify-between.items-center {
+html[dir="rtl"] .flex.flex-col.md\:flex-row.justify-between.items-center {
   flex-direction: row-reverse;
 }
 
@@ -276,11 +275,30 @@ body {
   color: var(--primary-color, #1A1F2C);
 }
 
-.container-light {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
+/* Make sure check interactions button is visible in RTL mode */
+html[dir="rtl"] button[type="submit"],
+html[dir="rtl"] [type="submit"] {
+  display: block !important;
+  width: 100% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix positioning in RTL layout */
+html[dir="rtl"] .rtl-btn-fix {
+  text-align: center;
+  right: auto;
+  left: auto;
+  margin: 0 auto;
+}
+
+/* Fix check interactions button in RTL */
+html[dir="rtl"] [type="submit"],
+html[dir="rtl"] button[type="submit"] {
+  display: block !important;
+  width: 100% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Card styles */

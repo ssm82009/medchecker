@@ -54,41 +54,77 @@ const Navbar: React.FC = () => {
   
   return (
     <nav 
-      className={`navbar flex justify-between items-center px-6 py-4 mb-6 shadow-sm rounded-lg mx-4 mt-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
+      className="navbar flex items-center px-6 py-4 mb-6 shadow-sm rounded-lg mx-4 mt-4"
       dir={dir}
       style={{ 
         backgroundColor: settings.navbar_color,
-        fontFamily: settings.font_family 
+        fontFamily: settings.font_family,
+        justifyContent: dir === 'rtl' ? 'space-between' : 'space-between'
       }}
     >
-      <div className="navbar-brand text-xl font-bold flex items-center gap-2" style={{ color: settings.primary_color }}>
-        <LogoIcon iconName={settings.logo_icon} />
-        <Link to="/">{settings.logo_text}</Link>
-      </div>
-      
-      <div className={`flex items-center gap-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
-        {user && (
-          <>
-            {user.role === 'admin' && (
-              <Button variant="ghost" asChild className="hover:bg-primary/10">
-                <Link to="/dashboard">{t('dashboard')}</Link>
-              </Button>
-            )}
-            <Button variant="ghost" onClick={logout} className="hover:bg-primary/10">
-              {t('logout')}
+      {dir === 'rtl' ? (
+        <>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={handleLanguageChange} 
+              className="flex items-center gap-2 border-primary/20 hover:bg-primary/10"
+            >
+              <Globe className="h-4 w-4" />
+              <span>{language === 'en' ? 'العربية' : 'English'}</span>
             </Button>
-          </>
-        )}
-        
-        <Button 
-          variant="outline" 
-          onClick={handleLanguageChange} 
-          className={`flex items-center gap-2 border-primary/20 hover:bg-primary/10 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
-        >
-          <Globe className="h-4 w-4" />
-          <span>{language === 'en' ? 'العربية' : 'English'}</span>
-        </Button>
-      </div>
+            
+            {user && (
+              <>
+                <Button variant="ghost" onClick={logout} className="hover:bg-primary/10">
+                  {t('logout')}
+                </Button>
+                {user.role === 'admin' && (
+                  <Button variant="ghost" asChild className="hover:bg-primary/10">
+                    <Link to="/dashboard">{t('dashboard')}</Link>
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+          
+          <div className="navbar-brand text-xl font-bold flex items-center gap-2" style={{ color: settings.primary_color }}>
+            <LogoIcon iconName={settings.logo_icon} />
+            <Link to="/">{settings.logo_text}</Link>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="navbar-brand text-xl font-bold flex items-center gap-2" style={{ color: settings.primary_color }}>
+            <LogoIcon iconName={settings.logo_icon} />
+            <Link to="/">{settings.logo_text}</Link>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {user && (
+              <>
+                {user.role === 'admin' && (
+                  <Button variant="ghost" asChild className="hover:bg-primary/10">
+                    <Link to="/dashboard">{t('dashboard')}</Link>
+                  </Button>
+                )}
+                <Button variant="ghost" onClick={logout} className="hover:bg-primary/10">
+                  {t('logout')}
+                </Button>
+              </>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={handleLanguageChange} 
+              className="flex items-center gap-2 border-primary/20 hover:bg-primary/10"
+            >
+              <Globe className="h-4 w-4" />
+              <span>{language === 'en' ? 'العربية' : 'English'}</span>
+            </Button>
+          </div>
+        </>
+      )}
     </nav>
   );
 };
