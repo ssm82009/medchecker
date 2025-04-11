@@ -18,7 +18,7 @@ const Index: React.FC = () => {
   }, [dir]);
 
   return (
-    <div className="min-h-screen bg-transparent flex items-start justify-center p-0 m-0 w-full" dir={dir}>
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-0 m-0 w-full" dir={dir}>
       <MedicationInteractionChecker />
     </div>
   );

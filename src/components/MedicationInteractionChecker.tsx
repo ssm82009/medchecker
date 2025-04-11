@@ -89,7 +89,7 @@ const MOCK_INTERACTIONS = {
     hasInteractions: true,
     interactions: [
       'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهض��ي',
-      'قد يكون له تأثير على مرضى السكري'
+      'قد يكو�� له تأثير على مرضى السكري'
     ],
     alternatives: [
       'استشر الطبيب حول الجرعة المناسبة',
@@ -346,14 +346,14 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   return (
-    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-2 bg-transparent`} dir={dir}>
+    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} bg-transparent flex flex-col items-center justify-center`} dir={dir}>
       <Advertisement />
       
+      <h1 className="text-2xl sm:text-3xl font-bold text-center my-6 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">
+        {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
+      </h1>
+      
       <div className="w-full bg-transparent">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">
-          {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
-        </h1>
-        
         <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
             <CardTitle className="flex items-center text-gray-700">
