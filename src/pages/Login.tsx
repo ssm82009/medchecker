@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
+    // If user is already logged in, redirect to dashboard
     if (user) {
       navigate('/dashboard');
     }
@@ -23,12 +24,16 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     const success = await login(email, password);
+    
     if (success) {
       toast({
         title: t('loginSuccess'),
         description: t('welcomeBack'),
       });
+      
+      // Important: Navigate only after successful login
       navigate('/dashboard');
     } else {
       toast({
