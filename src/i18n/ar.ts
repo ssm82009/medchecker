@@ -47,5 +47,8 @@ export const ar = {
   
   // Footer translations
   footerCopyright: 'جميع الحقوق محفوظة',
-  contactUs: 'اتصل بنا'
+  contactUs: 'اتصل بنا',
+  
+  // Error messages
+  error: "خطأ"
 };

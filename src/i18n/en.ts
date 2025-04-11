@@ -47,5 +47,8 @@ export const en = {
   
   // Footer translations
   footerCopyright: 'All Rights Reserved',
-  contactUs: 'Contact Us'
+  contactUs: 'Contact Us',
+  
+  // Error messages
+  error: "Error"
 };
