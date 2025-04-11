@@ -19,7 +19,7 @@ const Index: React.FC = () => {
 
   return (
     <div 
-      className={`min-h-screen bg-transparent flex items-center justify-center p-0 m-0 w-full content-wrapper ${isChanging ? 'language-changing' : 'fade-content-in'}`} 
+      className={`min-h-screen bg-transparent flex items-center justify-center p-0 m-0 w-full content-wrapper mb-10 ${isChanging ? 'language-changing' : 'fade-content-in'}`} 
       dir={dir}
     >
       <MedicationInteractionChecker />
