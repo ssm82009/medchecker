@@ -109,9 +109,16 @@ const AppearanceSettingsComponent = () => {
   
   const applyTheme = async (theme: string) => {
     if (await updateTheme(theme)) {
+      // Fix TS error by using string literal instead of template literal
+      const themeKey = theme === 'light' ? 'themeLight' :
+                      theme === 'dark' ? 'themeDark' :
+                      theme === 'purple' ? 'themePurple' :
+                      theme === 'blue' ? 'themeBlue' :
+                      theme === 'green' ? 'themeGreen' : 'themeLight';
+      
       toast({
         title: t("applyTheme"),
-        description: `تم تطبيق النمط ${t(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`) as string}`
+        description: `تم تطبيق النمط ${t(themeKey)}`
       });
     }
   };
@@ -216,7 +223,10 @@ const AppearanceSettingsComponent = () => {
                     ${themeName === 'green' ? 'bg-green-200' : ''}
                   `}></div>
                   <div className="text-center text-sm">
-                    {t(`theme${themeName.charAt(0).toUpperCase() + themeName.slice(1)}`) as string}
+                    {t(themeName === 'light' ? 'themeLight' : 
+                       themeName === 'dark' ? 'themeDark' :
+                       themeName === 'purple' ? 'themePurple' :
+                       themeName === 'blue' ? 'themeBlue' : 'themeGreen')}
                   </div>
                   {currentTheme === themeName && (
                     <div className="absolute top-1 right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center">

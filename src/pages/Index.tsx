@@ -13,30 +13,17 @@ const Index: React.FC = () => {
     fetchSettings();
   }, [fetchSettings]);
 
-  // تطبيق إعدادات المظهر على الصفحة
-  useEffect(() => {
-    if (settings) {
-      document.body.style.backgroundColor = settings.background_color;
-      document.body.style.color = settings.text_color;
-      document.body.style.fontFamily = settings.font_family;
-      
-      if (settings.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [settings]);
-
   return (
     <div 
-      className="min-h-screen" 
+      className="min-h-screen py-6 px-4" 
       dir={dir}
       style={{ 
-        backgroundColor: settings?.background_color 
+        backgroundColor: settings?.background_color,
+        color: settings?.text_color,
+        fontFamily: settings?.font_family
       }}
     >
-      <main className="container mx-auto py-8">
+      <main className="container mx-auto">
         <MedicationInteractionChecker />
       </main>
     </div>
