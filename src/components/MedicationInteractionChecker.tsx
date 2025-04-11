@@ -346,11 +346,11 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   return (
-    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-8 bg-transparent`} dir={dir}>
+    <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} py-2 bg-transparent`} dir={dir}>
       <Advertisement />
       
       <div className="w-full bg-transparent">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
         
