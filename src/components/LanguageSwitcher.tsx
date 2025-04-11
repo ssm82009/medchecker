@@ -11,17 +11,32 @@ const LanguageSwitcher: React.FC = () => {
   const { toast } = useToast();
   
   const handleLanguageChange = () => {
-    toggleLanguage();
+    // Add a smooth transition class to the body before changing language
+    document.body.classList.add('language-changing');
     
-    // Show notification for language change
-    toast({
-      title: language === 'en' ? 'تم تغيير اللغة إلى العربية' : 'Language changed to English',
-      description: language === 'en' ? 'تم تطبيق التغييرات بنجاح' : 'Changes applied successfully',
-      duration: 3000,
-    });
-    
-    // Force immediate update on all relevant content
-    updatePageContent(language === 'en' ? 'ar' : 'en');
+    // Short delay before actually changing the language to allow transition to start
+    setTimeout(() => {
+      toggleLanguage();
+      
+      // Show notification for language change
+      toast({
+        title: language === 'en' ? 'تم تغيير اللغة إلى العربية' : 'Language changed to English',
+        description: language === 'en' ? 'تم تطبيق التغييرات بنجاح' : 'Changes applied successfully',
+        duration: 3000,
+      });
+      
+      // Apply transition end class
+      document.body.classList.remove('language-changing');
+      document.body.classList.add('language-changed');
+      
+      // Force immediate update on all relevant content
+      updatePageContent(language === 'en' ? 'ar' : 'en');
+      
+      // Remove the transition class after animation completes
+      setTimeout(() => {
+        document.body.classList.remove('language-changed');
+      }, 500);
+    }, 50);
   };
   
   // Helper function to update content without page reload

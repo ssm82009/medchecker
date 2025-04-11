@@ -4,7 +4,7 @@ import MedicationInteractionChecker from '@/components/MedicationInteractionChec
 import { useTranslation } from '@/hooks/useTranslation';
 
 const Index: React.FC = () => {
-  const { dir } = useTranslation();
+  const { dir, language, isChanging } = useTranslation();
   
   // Apply RTL direction to the whole document if needed
   useEffect(() => {
@@ -18,7 +18,10 @@ const Index: React.FC = () => {
   }, [dir]);
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center p-0 m-0 w-full" dir={dir}>
+    <div 
+      className={`min-h-screen bg-transparent flex items-center justify-center p-0 m-0 w-full content-wrapper ${isChanging ? 'language-changing' : 'fade-content-in'}`} 
+      dir={dir}
+    >
       <MedicationInteractionChecker />
     </div>
   );
