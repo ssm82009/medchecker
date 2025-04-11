@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Mail } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const SecondaryAdvertisement: React.FC = () => {
   const [htmlContent, setHtmlContent] = React.useState<string>('');
@@ -46,6 +47,7 @@ const SecondaryAdvertisement: React.FC = () => {
 
 const Footer: React.FC = () => {
   const { t, dir } = useTranslation();
+  const isMobile = useIsMobile();
   
   return (
     <>
@@ -68,7 +70,7 @@ const Footer: React.FC = () => {
             {/* Copyright (center) */}
             <div className="order-1 sm:order-2 w-full sm:w-auto text-center mb-2 sm:mb-0">
               <p className="text-gray-800 text-sm">
-                &copy; {new Date().getFullYear()} دواء آمن - {t('footerCopyright')}
+                {isMobile ? "© جميع الحقوق محفوظة لـ تطبيق دواء آمن" : `&copy; ${new Date().getFullYear()} دواء آمن - ${t('footerCopyright')}`}
               </p>
             </div>
             
