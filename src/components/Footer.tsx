@@ -38,7 +38,7 @@ const SecondaryAdvertisement: React.FC = () => {
   
   return (
     <div 
-      className="w-full overflow-hidden border-t" 
+      className="mb-6 w-full overflow-hidden" 
       dangerouslySetInnerHTML={{ __html: htmlContent }} 
     />
   );
