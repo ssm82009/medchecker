@@ -101,7 +101,7 @@ const AppearanceSettingsComponent = () => {
       }
       
       toast({
-        title: t('resetTheme'),
+        title: t("resetTheme"),
         description: "تم إعادة تعيين الإعدادات إلى القيم الأصلية"
       });
     }
@@ -110,8 +110,8 @@ const AppearanceSettingsComponent = () => {
   const applyTheme = async (theme: string) => {
     if (await updateTheme(theme)) {
       toast({
-        title: t('applyTheme'),
-        description: `تم تطبيق النمط ${t('theme' + theme.charAt(0).toUpperCase() + theme.slice(1))}`
+        title: t("applyTheme"),
+        description: `تم تطبيق النمط ${t(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`) as string}`
       });
     }
   };
@@ -150,13 +150,13 @@ const AppearanceSettingsComponent = () => {
       }
       
       toast({
-        title: t('appearanceUpdated'),
+        title: t("appearanceUpdated"),
         description: "تم تحديث إعدادات المظهر بنجاح",
       });
     } catch (error) {
       console.error('Error saving appearance settings:', error);
       toast({
-        title: t('error'),
+        title: t("error"),
         description: "حدث خطأ أثناء حفظ إعدادات المظهر",
         variant: "destructive",
       });
@@ -169,7 +169,7 @@ const AppearanceSettingsComponent = () => {
     return (
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>{t('appearanceSettings')}</CardTitle>
+          <CardTitle>{t("appearanceSettings")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-40">
@@ -185,15 +185,15 @@ const AppearanceSettingsComponent = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5" />
-          {t('appearanceSettings')}
+          {t("appearanceSettings")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs defaultValue="theme">
           <TabsList className="grid grid-cols-3 mb-6">
-            <TabsTrigger value="theme">{t('theme')}</TabsTrigger>
-            <TabsTrigger value="colors">{t('primaryColor')}</TabsTrigger>
-            <TabsTrigger value="logo">{t('logoSettings')}</TabsTrigger>
+            <TabsTrigger value="theme">{t("theme")}</TabsTrigger>
+            <TabsTrigger value="colors">{t("primaryColor")}</TabsTrigger>
+            <TabsTrigger value="logo">{t("logoSettings")}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="theme" className="space-y-4">
@@ -216,7 +216,7 @@ const AppearanceSettingsComponent = () => {
                     ${themeName === 'green' ? 'bg-green-200' : ''}
                   `}></div>
                   <div className="text-center text-sm">
-                    {t('theme' + themeName.charAt(0).toUpperCase() + themeName.slice(1))}
+                    {t(`theme${themeName.charAt(0).toUpperCase() + themeName.slice(1)}`) as string}
                   </div>
                   {currentTheme === themeName && (
                     <div className="absolute top-1 right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
@@ -229,7 +229,7 @@ const AppearanceSettingsComponent = () => {
             
             <div className="font-family mt-6">
               <label className="block text-sm font-medium mb-2">
-                {t('fontFamily')}
+                {t("fontFamily")}
               </label>
               <Select 
                 value={editedSettings.font_family} 
@@ -257,7 +257,7 @@ const AppearanceSettingsComponent = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('primaryColor')}
+                  {t("primaryColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -276,7 +276,7 @@ const AppearanceSettingsComponent = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('secondaryColor')}
+                  {t("secondaryColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -295,7 +295,7 @@ const AppearanceSettingsComponent = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('backgroundColor')}
+                  {t("backgroundColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -314,7 +314,7 @@ const AppearanceSettingsComponent = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('textColor')}
+                  {t("textColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -333,7 +333,7 @@ const AppearanceSettingsComponent = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('navbarColor')}
+                  {t("navbarColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -352,7 +352,7 @@ const AppearanceSettingsComponent = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('footerColor')}
+                  {t("footerColor")}
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -374,7 +374,7 @@ const AppearanceSettingsComponent = () => {
           <TabsContent value="logo" className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                {t('logoText')}
+                {t("logoText")}
               </label>
               <Input
                 type="text"
@@ -385,7 +385,7 @@ const AppearanceSettingsComponent = () => {
             
             <div>
               <label className="block text-sm font-medium mb-2">
-                {t('logoIcon')}
+                {t("logoIcon")}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {logoIcons.map((icon) => (
@@ -413,7 +413,7 @@ const AppearanceSettingsComponent = () => {
             className="gap-2"
           >
             <Undo2 className="h-4 w-4" />
-            {t('resetTheme')}
+            {t("resetTheme")}
           </Button>
           
           <Button
@@ -422,7 +422,7 @@ const AppearanceSettingsComponent = () => {
             className="gap-2"
           >
             <Eye className="h-4 w-4" />
-            {previewMode ? t('resetTheme') : t('previewTheme')}
+            {previewMode ? t("resetTheme") : t("previewTheme")}
           </Button>
           
           <Button 
@@ -433,12 +433,12 @@ const AppearanceSettingsComponent = () => {
             {isSaving ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                {t('loading')}
+                {t("loading")}
               </span>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {t('saveAppearance')}
+                {t("saveAppearance")}
               </>
             )}
           </Button>

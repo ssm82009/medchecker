@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
   
   return (
     <nav 
-      className="navbar flex justify-between items-center px-6 py-4 mb-6 shadow-sm rounded-lg mx-4 mt-4" 
+      className={`navbar flex justify-between items-center px-6 py-4 mb-6 shadow-sm rounded-lg mx-4 mt-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
       dir={dir}
       style={{ 
         backgroundColor: settings.navbar_color,
@@ -66,7 +66,7 @@ const Navbar: React.FC = () => {
         <Link to="/">{settings.logo_text}</Link>
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className={`flex items-center gap-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
         {user && (
           <>
             {user.role === 'admin' && (
@@ -83,7 +83,7 @@ const Navbar: React.FC = () => {
         <Button 
           variant="outline" 
           onClick={handleLanguageChange} 
-          className="flex items-center gap-2 border-primary/20 hover:bg-primary/10"
+          className={`flex items-center gap-2 border-primary/20 hover:bg-primary/10 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
         >
           <Globe className="h-4 w-4" />
           <span>{language === 'en' ? 'العربية' : 'English'}</span>

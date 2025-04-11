@@ -178,16 +178,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 /* Language transition styles */
 .language-transition {
   transition: all 0.3s ease-in-out;
@@ -204,7 +194,7 @@
   letter-spacing: 0;
 }
 
-.rtl button svg {
+.rtl button svg:first-child {
   margin-left: 0.5rem;
   margin-right: 0;
 }
@@ -219,6 +209,11 @@
   margin-left: 0.5rem !important;
 }
 
+.rtl .ml-2 {
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+}
+
 .rtl input[type="text"],
 .rtl input[type="email"],
 .rtl input[type="password"],
@@ -228,6 +223,28 @@
 
 .rtl .form-label {
   text-align: right;
+}
+
+/* Fix RTL specific issues with navbar and footer */
+html[dir="rtl"] .navbar .flex.justify-between, 
+html[dir="rtl"] footer .flex.justify-between {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .navbar .navbar-brand,
+html[dir="rtl"] footer .navbar-brand {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+html[dir="rtl"] .navbar .flex.items-center.gap-4,
+html[dir="rtl"] footer .flex.items-center.gap-4 {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+html[dir="rtl"] .flex.flex-col.md\\:flex-row.justify-between.items-center {
+  flex-direction: row-reverse;
 }
 
 /* LTR (English) language styles */
@@ -314,16 +331,32 @@ html[dir="rtl"] .mr-auto {
   margin-left: auto;
 }
 
-html[dir="rtl"] .flex.justify-between {
-  flex-direction: row-reverse;
-}
-
 html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 1;
 }
 
 html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 1;
+}
+
+/* Fix button text alignment in RTL */
+html[dir="rtl"] button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Fix RTL specific issues with buttons */
+html[dir="rtl"] .gap-2 {
+  gap: 0.5rem !important;
+}
+
+/* Fix check interactions button in RTL */
+html[dir="rtl"] [type="submit"],
+html[dir="rtl"] button[type="submit"] {
+  display: block !important;
+  width: 100% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Footer RTL specific styles */

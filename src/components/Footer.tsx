@@ -67,9 +67,9 @@ const Footer: React.FC = () => {
         }}
       >
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            {/* Login Link (right in RTL, left in LTR) */}
-            <div className="order-3 md:order-1 mt-4 md:mt-0">
+          <div className={`flex flex-col md:flex-row justify-between items-center ${dir === 'rtl' ? 'md:flex-row-reverse' : ''}`}>
+            {/* Login Link */}
+            <div className={`mt-4 md:mt-0 ${dir === 'rtl' ? 'md:mr-auto' : 'md:ml-auto'}`}>
               <Link 
                 to="/login" 
                 className="text-xs hover:text-primary transition-colors"
@@ -80,17 +80,17 @@ const Footer: React.FC = () => {
             </div>
             
             {/* Copyright (center) */}
-            <div className="order-1 md:order-2 mb-4 md:mb-0">
+            <div className="mb-4 md:mb-0">
               <p className="text-sm" style={{ color: settings.text_color }}>
                 &copy; {new Date().getFullYear()} {t('footerCopyright')}
               </p>
             </div>
             
-            {/* Contact Us (left in RTL, right in LTR) */}
-            <div className="order-2 md:order-3 mb-4 md:mb-0">
+            {/* Contact Us */}
+            <div className={`mb-4 md:mb-0 ${dir === 'rtl' ? 'md:ml-auto' : 'md:mr-auto'}`}>
               <Link 
                 to="/contact" 
-                className="flex items-center gap-2 hover:underline transition-colors"
+                className={`flex items-center gap-2 hover:underline transition-colors ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
                 style={{ color: settings.primary_color }}
               >
                 <Mail className="h-4 w-4" />

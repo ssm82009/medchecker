@@ -56,37 +56,27 @@ export const useAppearance = () => {
         setCurrentTheme((themeData.value as any).theme);
       }
       
-      // الآن نحاول الحصول على إعدادات المظهر المطابقة للنمط الحالي
+      // الآن نحاول الحصول على إعدادات المظهر من الوظيفة المخصصة
       const { data, error } = await supabase
         .rpc('get_current_appearance_settings');
       
       if (error) {
         console.error('Error fetching appearance settings:', error);
         
-        // في حالة الخطأ، نحصل على الإعدادات الافتراضية
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('appearance_settings')
-          .select('*')
-          .eq('id', 1)
-          .single();
-        
-        if (fallbackError) {
-          console.error('Error fetching fallback appearance settings:', fallbackError);
-          return;
-        }
-        
-        if (fallbackData) {
-          setSettings(fallbackData as AppearanceSettings);
-        }
-        
+        // في حالة الخطأ، نستخدم الإعدادات الافتراضية
+        setSettings(defaultSettings);
         return;
       }
       
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data) && data.length > 0) {
         setSettings(data[0] as AppearanceSettings);
+      } else {
+        // استخدام الإعدادات الافتراضية إذا لم تكن هناك بيانات
+        setSettings(defaultSettings);
       }
     } catch (error) {
       console.error('Error in useAppearance hook:', error);
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }

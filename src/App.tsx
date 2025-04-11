@@ -75,24 +75,50 @@ const FontLoader = () => {
 
 const AppWrapper = () => {
   const { dir, language } = useTranslation();
-  const { settings } = useAppearance();
+  const { settings, loading: loadingAppearance, fetchSettings } = useAppearance();
   
+  // تأكد من تحميل إعدادات المظهر عند بدء التطبيق
   useEffect(() => {
-    // تطبيق اتجاه على عنصر html عند تحميل التطبيق
+    fetchSettings();
+  }, [fetchSettings]);
+  
+  // تطبيق إعدادات اللغة واتجاه النص
+  useEffect(() => {
     document.documentElement.dir = dir;
     document.documentElement.lang = language;
-    document.body.className = language === 'ar' ? 'rtl' : 'ltr';
     
-    // تطبيق متغيرات CSS الخاصة بالمظهر
-    if (settings) {
+    if (language === 'ar') {
+      document.body.classList.add('rtl');
+      document.body.classList.remove('ltr');
+    } else {
+      document.body.classList.add('ltr');
+      document.body.classList.remove('rtl');
+    }
+  }, [dir, language]);
+  
+  // تطبيق إعدادات المظهر
+  useEffect(() => {
+    if (!loadingAppearance && settings) {
       document.documentElement.style.setProperty('--primary', settings.primary_color);
       document.documentElement.style.setProperty('--secondary', settings.secondary_color);
       document.documentElement.style.setProperty('--background', settings.background_color);
+      document.documentElement.style.setProperty('--navbar-color', settings.navbar_color);
+      document.documentElement.style.setProperty('--footer-color', settings.footer_color);
+      document.documentElement.style.setProperty('--text-color', settings.text_color);
+      document.documentElement.style.setProperty('--font-family', settings.font_family);
+      
       document.body.style.backgroundColor = settings.background_color;
       document.body.style.color = settings.text_color;
       document.body.style.fontFamily = settings.font_family;
+      
+      // تطبيق الوضع الداكن إذا كان مفعلاً
+      if (settings.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
-  }, [dir, language, settings]);
+  }, [settings, loadingAppearance]);
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -103,7 +129,11 @@ const AppWrapper = () => {
         <BrowserRouter>
           <div 
             className="min-h-screen flex flex-col"
-            style={{ backgroundColor: settings?.background_color || '#F8F9FA' }}
+            style={{ 
+              backgroundColor: settings?.background_color || '#F8F9FA',
+              color: settings?.text_color || '#1A1F2C',
+              fontFamily: settings?.font_family || 'Tajawal, sans-serif'
+            }}
           >
             <Navbar />
             <div className="container mx-auto px-4 flex-grow">
