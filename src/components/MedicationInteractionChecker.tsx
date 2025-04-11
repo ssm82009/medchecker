@@ -350,17 +350,17 @@ const MedicationInteractionChecker: React.FC = () => {
       <Advertisement />
       
       <div className="w-full bg-transparent">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
         
         <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
-            <CardTitle className="flex items-center text-primary">
+            <CardTitle className="flex items-center text-gray-700">
               <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
               {t('appTitle')}
             </CardTitle>
-            <CardDescription>{t('enterMedication')}</CardDescription>
+            <CardDescription className="text-gray-500">{t('enterMedication')}</CardDescription>
           </CardHeader>
           <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
             <div className="space-y-4">
@@ -371,7 +371,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       value={med.name} 
                       onChange={(e) => updateMedication(med.id, e.target.value)} 
                       placeholder={`${t('medication')} ${index + 1}`}
-                      className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
+                      className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700"
                       dir={dir}
                     />
                   </div>
@@ -391,7 +391,7 @@ const MedicationInteractionChecker: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={addMedication} 
-                className="w-full group hover:bg-primary/5 hover:text-primary transition-colors"
+                className="w-full group hover:bg-primary/5 hover:text-primary transition-colors text-gray-600"
               >
                 <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
                 {t('addMedication')}
@@ -405,7 +405,7 @@ const MedicationInteractionChecker: React.FC = () => {
                 
                 <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid`}>
                   <div className="space-y-1">
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-gray-600">
                       <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                       {t('age')}
                     </div>
@@ -414,13 +414,13 @@ const MedicationInteractionChecker: React.FC = () => {
                       onChange={(e) => handlePatientInfo('age', e.target.value)} 
                       placeholder={t('enterAge')}
                       type="number"
-                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs text-gray-700"
                       dir={dir}
                     />
                   </div>
                   
                   <div className="space-y-1">
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-gray-600">
                       <Weight className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                       {t('weight')}
                     </div>
@@ -429,7 +429,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       onChange={(e) => handlePatientInfo('weight', e.target.value)} 
                       placeholder={t('selectWeight')}
                       type="number"
-                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs text-gray-700"
                       dir={dir}
                     />
                   </div>
@@ -437,7 +437,7 @@ const MedicationInteractionChecker: React.FC = () => {
                 
                 <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid mt-2`}>
                   <div className="space-y-1">
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-gray-600">
                       <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                       {t('allergies')}
                     </div>
@@ -445,13 +445,13 @@ const MedicationInteractionChecker: React.FC = () => {
                       value={patientInfo.allergies} 
                       onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
                       placeholder={t('enterAllergies')}
-                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs text-gray-700"
                       dir={dir}
                     />
                   </div>
                   
                   <div className="space-y-1">
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-gray-600">
                       <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                       {t('healthCondition')}
                     </div>
@@ -459,7 +459,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       value={patientInfo.healthCondition}
                       onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
                       placeholder={t('enterHealthCondition')}
-                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs"
+                      className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm placeholder:text-gray-300 placeholder:text-xs text-gray-700"
                       dir={dir}
                     />
                   </div>
