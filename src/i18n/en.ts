@@ -1,4 +1,3 @@
-
 export const en = {
   appTitle: "Medication Interactions Checker",
   medication: "Medication",
@@ -32,5 +31,9 @@ export const en = {
   loginFailed: "Login failed",
   logoSettings: "Logo Settings",
   logoText: "Logo Text",
-  saveLogo: "Save Logo"
+  saveLogo: "Save Logo",
+  
+  // Footer translations
+  footerCopyright: 'All Rights Reserved',
+  contactUs: 'Contact Us'
 };

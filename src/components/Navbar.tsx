@@ -32,7 +32,7 @@ const Navbar: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-4">
-        {user ? (
+        {user && (
           <>
             {user.role === 'admin' && (
               <Button variant="ghost" asChild className="hover:bg-primary/10">
@@ -43,10 +43,6 @@ const Navbar: React.FC = () => {
               {t('logout')}
             </Button>
           </>
-        ) : (
-          <Button variant="ghost" asChild className="hover:bg-primary/10">
-            <Link to="/login">{t('login')}</Link>
-          </Button>
         )}
         
         <Button 

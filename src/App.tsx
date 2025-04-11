@@ -12,6 +12,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -62,9 +63,9 @@ const AppWrapper = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen">
+          <div className="min-h-screen flex flex-col">
             <Navbar />
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 flex-grow">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={
@@ -80,6 +81,7 @@ const AppWrapper = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
+            <Footer />
           </div>
         </BrowserRouter>
       </TooltipProvider>

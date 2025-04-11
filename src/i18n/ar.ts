@@ -1,4 +1,3 @@
-
 export const ar = {
   appTitle: "فاحص تعارضات الأدوية",
   medication: "الدواء",
@@ -32,5 +31,9 @@ export const ar = {
   loginFailed: "فشل تسجيل الدخول",
   logoSettings: "إعدادات الشعار",
   logoText: "نص الشعار",
-  saveLogo: "حفظ الشعار"
+  saveLogo: "حفظ الشعار",
+  
+  // Footer translations
+  footerCopyright: 'جميع الحقوق محفوظة',
+  contactUs: 'اتصل بنا'
 };
