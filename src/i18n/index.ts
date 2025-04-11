@@ -93,4 +93,27 @@ export interface Translations {
   saveAppearance: string;
   appearanceUpdated: string;
   applyTheme: string;
+  
+  // Add the missing translation keys
+  footerCopyright: string;
+  contactUs: string;
+  enterMedication: string;
+  patientInfo: string;
+  age: string;
+  enterAge: string;
+  weight: string;
+  selectWeight: string;
+  allergies: string;
+  enterAllergies: string;
+  enterHealthCondition: string;
+  saveSettings: string;
+  aiSettings: string;
+  apiKey: string;
+  model: string;
+  advertisement: string;
+  saveAd: string;
+  adminPanel: string;
+  loginSuccess: string;
+  loginFailed: string;
+  invalidCredentials: string;
 }

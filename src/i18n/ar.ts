@@ -82,5 +82,28 @@ export const ar: Translations = {
   resetTheme: "إعادة تعيين",
   saveAppearance: "حفظ التغييرات",
   appearanceUpdated: "تم تحديث المظهر",
-  applyTheme: "تطبيق النمط"
+  applyTheme: "تطبيق النمط",
+
+  // Adding the missing translation keys
+  footerCopyright: "دواء آمن. جميع الحقوق محفوظة.",
+  contactUs: "اتصل بنا",
+  enterMedication: "أدخل الأدوية الخاصة بك للتحقق من التفاعلات المحتملة",
+  patientInfo: "معلومات المريض",
+  age: "العمر",
+  enterAge: "أدخل العمر",
+  weight: "الوزن",
+  selectWeight: "اختر الوزن (كجم)",
+  allergies: "الحساسية",
+  enterAllergies: "أدخل الحساسية",
+  enterHealthCondition: "أدخل الحالة الصحية",
+  saveSettings: "حفظ الإعدادات",
+  aiSettings: "إعدادات الذكاء الاصطناعي",
+  apiKey: "مفتاح API",
+  model: "النموذج",
+  advertisement: "الإعلان",
+  saveAd: "حفظ الإعلان",
+  adminPanel: "لوحة الإدارة",
+  loginSuccess: "تم تسجيل الدخول بنجاح",
+  loginFailed: "فشل تسجيل الدخول",
+  invalidCredentials: "بريد إلكتروني أو كلمة مرور غير صالحة"
 };

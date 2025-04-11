@@ -82,5 +82,28 @@ export const en: Translations = {
   resetTheme: "Reset",
   saveAppearance: "Save Changes",
   appearanceUpdated: "Appearance Updated",
-  applyTheme: "Apply Theme"
+  applyTheme: "Apply Theme",
+
+  // Adding the missing translation keys
+  footerCopyright: "Safe Medication. All rights reserved.",
+  contactUs: "Contact Us",
+  enterMedication: "Enter your medications to check for potential interactions",
+  patientInfo: "Patient Information",
+  age: "Age",
+  enterAge: "Enter age",
+  weight: "Weight",
+  selectWeight: "Select weight (kg)",
+  allergies: "Allergies",
+  enterAllergies: "Enter allergies",
+  enterHealthCondition: "Enter health condition",
+  saveSettings: "Save Settings",
+  aiSettings: "AI Settings",
+  apiKey: "API Key",
+  model: "Model",
+  advertisement: "Advertisement",
+  saveAd: "Save Ad",
+  adminPanel: "Admin Panel",
+  loginSuccess: "Login Successful",
+  loginFailed: "Login Failed",
+  invalidCredentials: "Invalid email or password"
 };
