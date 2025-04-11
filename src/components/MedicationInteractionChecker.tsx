@@ -21,7 +21,7 @@ interface InteractionResult {
 }
 
 const MedicationInteractionChecker: React.FC = () => {
-  const { t, dir } = useTranslation();
+  const { t, dir, language } = useTranslation();
   const [medications, setMedications] = useState<Medication[]>([
     { id: '1', name: '' },
     { id: '2', name: '' }
@@ -54,7 +54,19 @@ const MedicationInteractionChecker: React.FC = () => {
     
     try {
       const medicationNames = validMedications.map(med => med.name);
-      const prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${healthCondition ? `. The patient has the following health conditions: ${healthCondition}` : ''}. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives for each problematic medication"] }. If there are no interactions, return { "hasInteractions": false }.`;
+      
+      // منطق مختلف حسب اللغة المحددة
+      let prompt = "";
+      if (language === 'ar') {
+        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${healthCondition ? `. المريض لديه الحالات الصحية التالية: ${healthCondition}` : ''}. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة لكل دواء مشكل باللغة العربية"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+      } else {
+        prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${healthCondition ? `. The patient has the following health conditions: ${healthCondition}` : ''}. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives for each problematic medication"] }. If there are no interactions, return { "hasInteractions": false }.`;
+      }
+      
+      // تعيين لغة النظام بناءً على لغة الواجهة
+      let systemMessage = language === 'ar' 
+        ? 'أنت مساعد صحي مفيد متخصص في تفاعلات الأدوية. يرجى تقديم الإجابات باللغة العربية.'
+        : 'You are a helpful healthcare assistant specializing in medication interactions.';
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -65,7 +77,7 @@ const MedicationInteractionChecker: React.FC = () => {
         body: JSON.stringify({
           model: apiSettings.model,
           messages: [
-            { role: 'system', content: 'You are a helpful healthcare assistant specializing in medication interactions.' },
+            { role: 'system', content: systemMessage },
             { role: 'user', content: prompt }
           ],
           temperature: 0.7
