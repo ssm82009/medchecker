@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -351,7 +350,7 @@ const MedicationInteractionChecker: React.FC = () => {
       <Advertisement />
       
       <div className="w-full bg-transparent">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-primary">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-400 bg-clip-text text-transparent">
           {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
         </h1>
         
