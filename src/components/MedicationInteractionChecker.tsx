@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Heart, Pill, User, Weight, ActivitySquare } from 'lucide-react';
+import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
 interface Medication {
   id: string;
@@ -27,9 +28,152 @@ interface InteractionResult {
   alternatives?: string[];
 }
 
+// Mock dataset for interactions (for demonstration)
+const MOCK_INTERACTIONS = {
+  'أسبرين+باراسيتامول': {
+    hasInteractions: true,
+    interactions: [
+      'قد يزيد من خطر النزيف عند تناول الأسبرين مع الباراسيتامول لفترات طويلة',
+      'يمكن أن يقلل الأسبرين من فعالية الباراسيتامول'
+    ],
+    alternatives: [
+      'يمكن استخدام الإيبوبروفين بدلاً من الأسبرين',
+      'استشر الطبيب قبل الجمع بين هذه الأدوية'
+    ]
+  },
+  'أموكسيسيلين+أوميبرازول': {
+    hasInteractions: true,
+    interactions: [
+      'قد يقلل أوميبرازول من امتصاص أموكسيسيلين',
+      'ينصح بترك فاصل زمني بين تناول الدوائين'
+    ],
+    alternatives: [
+      'يمكن استخدام رانيتيدين بدلاً من أوميبرازول',
+      'تناول أموكسيسيلين قبل ساعتين على الأقل من أوميبرازول'
+    ]
+  },
+  'وارفارين+إيبوبروفين': {
+    hasInteractions: true,
+    interactions: [
+      'زيادة خطر النزيف الشديد عند الجمع بين وارفارين وإيبوبروفين',
+      'تأثير خطير على تخثر الدم'
+    ],
+    alternatives: [
+      'استخدم الباراسيتامول بدلاً من الإيبوبروفين مع وارفارين',
+      'استشر الطبيب قبل استخدام أي مسكن مع وارفارين'
+    ]
+  },
+  'فيفادول+بنادول': {
+    hasInteractions: true,
+    interactions: [
+      'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
+      'زيادة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
+    ],
+    alternatives: [
+      'استخدم أحد الدوائين فقط وليس كليهما',
+      'يمكن استخدام الإيبوبروفين كبديل لأحد الدوائين'
+    ]
+  },
+  'روفيناك+كاتافاست': {
+    hasInteractions: true,
+    interactions: [
+      'كلا الدوائين ينتميان إلى مضادات الالتهاب غير الستيرويدية مما يزيد من الآثار الجانبية',
+      'زيادة خطر مشاكل المعدة والنزيف الهضمي',
+      'قد يؤثر سلبًا على وظائف الكلى خاصة لمرضى السكري'
+    ],
+    alternatives: [
+      'استخدم أحد الدوائين فقط وليس كليهما',
+      'يمكن استخدام الباراسيتامول كبديل أكثر أمانًا للألم'
+    ]
+  },
+  'روفيناك+بنادول': {
+    hasInteractions: true,
+    interactions: [
+      'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهضمي',
+      'قد يكون له تأثير على مرضى السكري'
+    ],
+    alternatives: [
+      'استشر الطبيب حول الجرعة المناسبة',
+      'يمكن استخدام مسكنات بديلة تحت إشراف طبي'
+    ]
+  }
+};
+
+// English version of mock interactions
+const MOCK_INTERACTIONS_EN = {
+  'aspirin+paracetamol': {
+    hasInteractions: true,
+    interactions: [
+      'May increase the risk of bleeding when taking aspirin with paracetamol for extended periods',
+      'Aspirin can reduce the effectiveness of paracetamol'
+    ],
+    alternatives: [
+      'Ibuprofen can be used instead of aspirin',
+      'Consult your doctor before combining these medications'
+    ]
+  },
+  'amoxicillin+omeprazole': {
+    hasInteractions: true,
+    interactions: [
+      'Omeprazole may reduce the absorption of amoxicillin',
+      'It is recommended to leave a time gap between taking the two medications'
+    ],
+    alternatives: [
+      'Ranitidine can be used instead of omeprazole',
+      'Take amoxicillin at least two hours before omeprazole'
+    ]
+  },
+  'warfarin+ibuprofen': {
+    hasInteractions: true,
+    interactions: [
+      'Increased risk of severe bleeding when combining warfarin and ibuprofen',
+      'Serious effect on blood clotting'
+    ],
+    alternatives: [
+      'Use paracetamol instead of ibuprofen with warfarin',
+      'Consult your doctor before using any pain reliever with warfarin'
+    ]
+  },
+  'fevadol+panadol': {
+    hasInteractions: true,
+    interactions: [
+      'Both medications contain paracetamol which may lead to overdose',
+      'Increased risk of liver damage when taking high doses of paracetamol'
+    ],
+    alternatives: [
+      'Use only one of the medications, not both',
+      'Ibuprofen can be used as an alternative to one of the medications'
+    ]
+  },
+  'roufinac+catafast': {
+    hasInteractions: true,
+    interactions: [
+      'Both drugs belong to NSAIDs which increases side effects',
+      'Increased risk of stomach problems and gastrointestinal bleeding',
+      'May negatively affect kidney function especially for diabetic patients'
+    ],
+    alternatives: [
+      'Use only one of the medications, not both',
+      'Paracetamol can be used as a safer alternative for pain'
+    ]
+  },
+  'roufinac+panadol': {
+    hasInteractions: true,
+    interactions: [
+      'May increase the risk of gastrointestinal side effects',
+      'May have an effect on diabetic patients'
+    ],
+    alternatives: [
+      'Consult your doctor about the appropriate dosage',
+      'Alternative pain relievers can be used under medical supervision'
+    ]
+  }
+};
+
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [medications, setMedications] = useState<Medication[]>([
     { id: '1', name: '' },
     { id: '2', name: '' }
@@ -45,6 +189,7 @@ const MedicationInteractionChecker: React.FC = () => {
   const [result, setResult] = useState<InteractionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
+  const [apiKeyError, setApiKeyError] = useState<boolean>(false);
   
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
@@ -64,16 +209,71 @@ const MedicationInteractionChecker: React.FC = () => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
   };
 
+  // Check for interactions using either API or fallback to mock data
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
     
     setLoading(true);
     setResult(null);
+    setApiKeyError(false);
     
     try {
-      const medicationNames = validMedications.map(med => med.name);
+      const medicationNames = validMedications.map(med => med.name.toLowerCase());
       
+      // Check if OpenAI API key is available in localStorage
+      const apiKey = localStorage.getItem('apiKey');
+      if (!apiKey) {
+        // If no API key is available, use mock data
+        setApiKeyError(true);
+        // Create medication pair keys for lookup
+        const medPairs = [];
+        for (let i = 0; i < medicationNames.length; i++) {
+          for (let j = i + 1; j < medicationNames.length; j++) {
+            medPairs.push(`${medicationNames[i]}+${medicationNames[j]}`);
+            medPairs.push(`${medicationNames[j]}+${medicationNames[i]}`);
+          }
+        }
+        
+        // Check for interactions in mock data
+        let foundInteraction = false;
+        let interactionData: InteractionResult = { hasInteractions: false };
+        
+        const mockData = language === 'ar' ? MOCK_INTERACTIONS : MOCK_INTERACTIONS_EN;
+        
+        for (const pair of medPairs) {
+          if (mockData[pair]) {
+            foundInteraction = true;
+            interactionData = mockData[pair];
+            break;
+          }
+        }
+        
+        // If no exact match found, check for partial matches
+        if (!foundInteraction) {
+          for (const pair of medPairs) {
+            for (const mockPair in mockData) {
+              if (mockPair.includes(medicationNames[0]) || mockPair.includes(medicationNames[1])) {
+                foundInteraction = true;
+                interactionData = {
+                  hasInteractions: false
+                };
+                break;
+              }
+            }
+            if (foundInteraction) break;
+          }
+        }
+        
+        setTimeout(() => {
+          setResult(interactionData);
+          setLoading(false);
+        }, 1000);
+        
+        return;
+      }
+      
+      // If API key exists, proceed with OpenAI API call
       const patientContext = [
         patientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${patientInfo.age}` : '',
         patientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${patientInfo.weight} kg` : '',
@@ -95,7 +295,7 @@ const MedicationInteractionChecker: React.FC = () => {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('apiKey') || ''}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -133,15 +333,26 @@ const MedicationInteractionChecker: React.FC = () => {
       setResult(parsedResult);
     } catch (error) {
       console.error('Error checking interactions:', error);
-      setResult({
-        hasInteractions: false
+      setApiKeyError(true);
+      toast({
+        title: t('error'),
+        description: language === 'ar' 
+          ? 'حدث خطأ أثناء التحقق من التفاعلات. استخدام بيانات تجريبية بدلاً من ذلك.' 
+          : 'Error checking interactions. Using mock data instead.',
+        variant: "destructive"
       });
+      
+      // Fallback to mock data
+      setTimeout(() => {
+        setResult({
+          hasInteractions: false
+        });
+        setLoading(false);
+      }, 1000);
     } finally {
       setLoading(false);
     }
   };
-
-  const weightOptions = Array.from({ length: 150 }, (_, i) => (i + 1).toString());
 
   return (
     <div className={`w-full ${isMobile ? 'max-w-full px-[0.5%]' : 'max-w-4xl'} mx-auto p-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
@@ -261,6 +472,14 @@ const MedicationInteractionChecker: React.FC = () => {
           </div>
         </CardContent>
         <CardFooter>
+          {apiKeyError && (
+            <div className="w-full mb-3 p-2 bg-yellow-50 text-yellow-800 rounded-md flex items-center text-xs">
+              <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
+              {language === 'ar' 
+                ? 'لم يتم العثور على مفتاح API. يتم استخدام بيانات تجريبية للتوضيح.'
+                : 'No API key found. Using demo data for illustration.'}
+            </div>
+          )}
           <Button 
             onClick={checkInteractions} 
             disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
@@ -287,6 +506,14 @@ const MedicationInteractionChecker: React.FC = () => {
                 </>
               )}
             </CardTitle>
+            {apiKeyError && (
+              <div className="mt-2 p-2 bg-yellow-50/50 text-yellow-700 rounded-md text-xs flex items-center">
+                <AlertTriangle className="h-3 w-3 mr-1 text-yellow-500" />
+                {language === 'ar' 
+                  ? 'ملاحظة: النتائج أدناه تستند إلى بيانات تجريبية للتوضيح فقط.'
+                  : 'Note: Results below are based on demo data for illustration only.'}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="pt-6">
             {!result.hasInteractions ? (
