@@ -1,85 +1,87 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 200 33% 98%;
-    --foreground: 222 47% 10%;
+    --background: 220 33% 98%;
+    --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 10%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 10%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 201 96% 32%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 217 91% 60%;
+    --secondary: 250 91% 60%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 224 71% 45%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 250 95% 76%;
+    --accent-foreground: 240 5.9% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 201 96% 32%;
+    --border: 226 26% 90%;
+    --input: 226 26% 90%;
+    --ring: 221 83% 53%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 224 71% 45%;
+    --sidebar-primary: 250 95% 60%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 201 96% 32%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 201 96% 32%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 250 91% 60%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 250 46% 50%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 221 83% 53%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224 71% 45%;
+    --sidebar-primary: 250 95% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 224 71% 45%;
+    --sidebar-ring: 250 95% 60%;
   }
 }
 
@@ -90,6 +92,8 @@
 
   body {
     @apply bg-background text-foreground font-tajawal;
+    background-image: linear-gradient(to right bottom, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.1));
+    background-attachment: fixed;
   }
   
   html[dir="rtl"] body {
@@ -180,7 +184,7 @@ body {
 
 /* Improved UI colors and styles */
 .navbar {
-  background-image: linear-gradient(90deg, #6366f1, #ec4899, #f59e0b);
+  background-image: linear-gradient(90deg, #3B82F6, #6366F1, #8B5CF6);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -193,7 +197,7 @@ body {
 .container-light {
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
 }
@@ -202,14 +206,16 @@ body {
 .card {
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(99, 102, 241, 0.1);
 }
 
 .card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 /* Button hover effects */
@@ -221,10 +227,12 @@ button {
 input, select, textarea {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
 }
 
 /* Page transitions */
@@ -272,7 +280,7 @@ html[dir="rtl"] footer {
 
 /* Gradient cards and buttons */
 .bg-gradient-primary {
-  @apply bg-gradient-to-r from-blue-600 to-blue-800;
+  @apply bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600;
 }
 
 .bg-gradient-secondary {
@@ -284,11 +292,11 @@ html[dir="rtl"] footer {
 }
 
 .button-gradient-primary {
-  @apply bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white transition-all duration-300;
+  @apply bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:from-blue-700 hover:via-indigo-600 hover:to-purple-700 text-white transition-all duration-300;
 }
 
 .button-gradient-secondary {
-  @apply bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white transition-all duration-300;
+  @apply bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white transition-all duration-300;
 }
 
 /* Make sure check button is visible */
@@ -302,6 +310,12 @@ html[dir="rtl"] footer {
 .bg-gradient-animation {
   background-size: 200% 200%;
   animation: gradientAnimation 15s ease infinite;
+  background-image: linear-gradient(45deg, 
+    rgba(59, 130, 246, 0.1), 
+    rgba(99, 102, 241, 0.1), 
+    rgba(139, 92, 246, 0.1), 
+    rgba(99, 102, 241, 0.1), 
+    rgba(59, 130, 246, 0.1));
 }
 
 @keyframes gradientAnimation {
@@ -313,11 +327,11 @@ html[dir="rtl"] footer {
 /* Glassmorphism styles */
 .glass-card {
   background: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 /* Fixed content padding to accommodate fixed navbar */
@@ -366,5 +380,29 @@ html[dir="rtl"] footer {
 
 /* Check button with gradient */
 .check-button {
-  @apply bg-gradient-to-r from-orange-400 to-amber-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300;
+  @apply bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+/* Blue-Purple theme specific utilities */
+.text-blue-purple-gradient {
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-blue-purple {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.hover-border-blue-purple:hover {
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.shadow-blue-purple {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.hover-shadow-blue-purple:hover {
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
 }

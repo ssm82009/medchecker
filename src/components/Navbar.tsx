@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
   return (
     <div className="sticky top-0 z-50 w-full">
       <nav 
-        className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0" 
+        className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600" 
         dir={dir}
       >
         {/* Desktop Navigation */}
@@ -60,7 +60,7 @@ const Navbar: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={handleLanguageChange} 
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
             >
               <Globe className="h-4 w-4" />
               <span>{language === 'en' ? 'العربية' : 'English'}</span>
@@ -92,7 +92,7 @@ const Navbar: React.FC = () => {
       
       {/* Mobile Menu */}
       {isMobile && mobileMenuOpen && (
-        <div className="navbar px-4 py-3 shadow-lg" dir={dir}>
+        <div className="navbar px-4 py-3 shadow-lg bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600" dir={dir}>
           <div className="flex flex-col gap-3">
             {user && (
               <>
@@ -110,7 +110,7 @@ const Navbar: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={handleLanguageChange} 
-              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
+              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-none shadow-md transition-all duration-300 hover:shadow-lg"
             >
               <Globe className="h-4 w-4" />
               <span>{language === 'en' ? 'العربية' : 'English'}</span>
