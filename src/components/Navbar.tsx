@@ -5,7 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Globe } from 'lucide-react';
+import { Globe, Pill } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Navbar: React.FC = () => {
@@ -53,8 +53,11 @@ const Navbar: React.FC = () => {
       </div>
       
       {/* Logo now comes second in DOM order */}
-      <div className="navbar-brand text-xl font-bold text-white">
-        <Link to="/">{logoText}</Link>
+      <div className="navbar-brand text-xl font-bold text-white flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
+          <Pill className="h-6 w-6 text-white" />
+          <span>{logoText}</span>
+        </Link>
       </div>
     </nav>
   );
