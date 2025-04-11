@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, Heart, Pill, User, Weight, ActivitySquare } from 'lucide-react';
 import Advertisement from './Advertisement';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Medication {
   id: string;
@@ -27,6 +28,7 @@ interface InteractionResult {
 
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
+  const isMobile = useIsMobile();
   const [medications, setMedications] = useState<Medication[]>([
     { id: '1', name: '' },
     { id: '2', name: '' }
@@ -141,10 +143,10 @@ const MedicationInteractionChecker: React.FC = () => {
   const weightOptions = Array.from({ length: 150 }, (_, i) => (i + 1).toString());
 
   return (
-    <div className={`w-full max-w-4xl mx-auto p-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
+    <div className={`w-full ${isMobile ? 'max-w-full px-[0.5%]' : 'max-w-4xl'} mx-auto p-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`} dir={dir}>
       <Advertisement />
       
-      <Card className="shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50 mb-6">
+      <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-white to-slate-50 mb-6 ${isMobile ? 'w-[99%]' : 'w-full'}`}>
         <CardHeader className="bg-primary/5 rounded-t-lg">
           <CardTitle className="flex items-center text-primary">
             <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
@@ -187,7 +189,6 @@ const MedicationInteractionChecker: React.FC = () => {
               {t('addMedication')}
             </Button>
 
-            {/* Compact Patient Information Section with improved styling */}
             <div className="mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md px-3">
               <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
                 <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
@@ -270,7 +271,7 @@ const MedicationInteractionChecker: React.FC = () => {
       </Card>
       
       {result && (
-        <Card className="animate-fade-in shadow-lg transition-all duration-300">
+        <Card className={`animate-fade-in shadow-lg transition-all duration-300 ${isMobile ? 'w-[99%]' : 'w-full'}`}>
           <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
             <CardTitle className="flex items-center">
               {result.hasInteractions ? (
