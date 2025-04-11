@@ -70,7 +70,7 @@ const AppWrapper = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/30 via-purple-500/30 to-orange-400/30">
+          <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
             <Navbar />
             <div className="container mx-auto px-4 flex-grow pt-8"> {/* Reduced padding at the top */}
               <Routes>

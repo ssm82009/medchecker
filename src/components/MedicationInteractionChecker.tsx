@@ -27,6 +27,7 @@ interface InteractionResult {
   hasInteractions: boolean;
   interactions?: string[];
   alternatives?: string[];
+  ageWarnings?: string[];
 }
 
 const MOCK_INTERACTIONS = {
@@ -37,8 +38,12 @@ const MOCK_INTERACTIONS = {
       'يمكن أن يقلل الأسبرين من فعالية الباراسيتامول'
     ],
     alternatives: [
-      'يمكن استخدام الإيبوبروفين بدلاً من الأسبرين',
+      'يمكن استخدام الإيبوبروفين (الاسم التجاري: بروفين، أدفيل) بدلاً من الأسبرين',
       'استشر الطبيب قبل الجمع بين هذه الأدوية'
+    ],
+    ageWarnings: [
+      'الأسبرين غير مناسب للأطفال تحت سن 12 سنة بسبب خطر متلازمة راي',
+      'باراسيتامول: يجب تعديل الجرعة حسب العمر والوزن'
     ]
   },
   'أموكسيسيلين+أوميبرازول': {
@@ -48,8 +53,12 @@ const MOCK_INTERACTIONS = {
       'ينصح بترك فاصل زمني بين تناول الدوائين'
     ],
     alternatives: [
-      'يمكن استخدام رانيتيدين بدلاً من أوميبرازول',
-      'تناول أموكسيسيلين قبل ساعتين على الأقل من أوميبرازول'
+      'يمكن استخدام رانيتيدين (الاسم التجاري: زانتاك) بدلاً من أوميبرازول (الاسم التجاري: بريلوسيك)',
+      'تناول أموكسيسيلين (الاسم التجاري: موكسيبين، أموكسيل) قبل ساعتين على الأقل من أوميبرازول'
+    ],
+    ageWarnings: [
+      'أموكسيسيلين: يجب تعديل الجرعة للأطفال حسب الوزن والعمر',
+      'أوميبرازول: غير موصى به عادة للأطفال أقل من سنة واحدة'
     ]
   },
   'وارفارين+إيبوبروفين': {
@@ -59,8 +68,12 @@ const MOCK_INTERACTIONS = {
       'تأثير خطير على تخثر الدم'
     ],
     alternatives: [
-      'استخدم الباراسيتامول بدلاً من الإيبوبروفين مع وارفارين',
-      'استشر الطبيب قبل استخدام أي مسكن مع وارفارين'
+      'استخدم الباراسيتامول (الاسم التجاري: بنادول، تايلينول) بدلاً من الإيبوبروفين مع وارفارين',
+      'استشر الطبيب قبل استخدام أي مسكن مع وارفارين (الاسم التجاري: كومادين)'
+    ],
+    ageWarnings: [
+      'وارفارين: يتطلب مراقبة دقيقة لتخثر الدم وغير مناسب للأطفال إلا تحت إشراف طبي صارم',
+      'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
   'فيفادول+بنادول': {
@@ -70,8 +83,12 @@ const MOCK_INTERACTIONS = {
       'زيادة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
     ],
     alternatives: [
-      'استخدم أحد الدوائين فقط وليس كليهما',
-      'يمكن استخدام الإيبوبروفين كبديل لأحد الدوائين'
+      'استخدم أحد الدوائين فقط وليس كليهما (فيفادول أو بنادول)',
+      'يمكن استخدام الإيبوبروفين (الاسم التجاري: بروفين، أدفيل) كبديل لأحد الدوائين'
+    ],
+    ageWarnings: [
+      'باراسيتامول: يجب تعديل الجرعة للأطفال حسب العمر والوزن',
+      'تجنب استخدام جرعات عالية من الباراسيتامول للأطفال'
     ]
   },
   'روفيناك+كاتافاست': {
@@ -82,19 +99,27 @@ const MOCK_INTERACTIONS = {
       'قد يؤثر سلبًا على وظائف الكلى خاصة لمرضى السكري'
     ],
     alternatives: [
-      'استخدم أحد الدوائين فقط وليس كليهما',
-      'يمكن استخدام الباراسيتامول كبديل أكثر أمانًا للألم'
+      'استخدم أحد الدوائين فقط وليس كليهما (روفيناك أو كاتافاست)',
+      'يمكن استخدام الباراسيتامول (الاسم التجاري: بنادول، تايلينول) كبديل أكثر أمانًا ل��ألم'
+    ],
+    ageWarnings: [
+      'مضادات الالتهاب غير الستيرويدية غير موصى بها عادة للأطفال أقل من 12 سنة إلا بوصفة طبية',
+      'لا ينصح باستخدام روفيناك للأطفال تحت سن 14 سنة'
     ]
   },
   'روفيناك+بنادول': {
     hasInteractions: true,
     interactions: [
-      'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهض��ي',
-      'قد يكو�� له تأثير على مرضى السكري'
+      'قد يزيد من خطر حدوث آثار جانبية على الجهاز الهضمي',
+      'قد يكون له تأثير على مرضى السكري'
     ],
     alternatives: [
       'استشر الطبيب حول الجرعة المناسبة',
-      'يمكن استخدام مسكنات بديلة تحت إشراف طبي'
+      'يمكن استخدام مسكنات بديلة مثل الاسيتامينوفين فقط (الاسم التجاري: تايلينول) تحت إشراف طبي'
+    ],
+    ageWarnings: [
+      'روفيناك (الاسم التجاري: فولتارين): غير مناسب للأطفال تحت سن 14 سنة',
+      'بنادول: يجب تعديل الجرعة للأطفال حسب العمر والوزن'
     ]
   }
 };
@@ -107,8 +132,12 @@ const MOCK_INTERACTIONS_EN = {
       'Aspirin can reduce the effectiveness of paracetamol'
     ],
     alternatives: [
-      'Ibuprofen can be used instead of aspirin',
+      'Ibuprofen (Brand names: Advil, Motrin) can be used instead of aspirin',
       'Consult your doctor before combining these medications'
+    ],
+    ageWarnings: [
+      'Aspirin is not suitable for children under 12 years due to the risk of Reye\'s syndrome',
+      'Paracetamol: Dosage should be adjusted according to age and weight'
     ]
   },
   'amoxicillin+omeprazole': {
@@ -118,8 +147,12 @@ const MOCK_INTERACTIONS_EN = {
       'It is recommended to leave a time gap between taking the two medications'
     ],
     alternatives: [
-      'Ranitidine can be used instead of omeprazole',
-      'Take amoxicillin at least two hours before omeprazole'
+      'Ranitidine (Brand name: Zantac) can be used instead of omeprazole (Brand name: Prilosec)',
+      'Take amoxicillin (Brand names: Amoxil, Moxatag) at least two hours before omeprazole'
+    ],
+    ageWarnings: [
+      'Amoxicillin: Dosage should be adjusted for children based on weight and age',
+      'Omeprazole: Not usually recommended for children under one year'
     ]
   },
   'warfarin+ibuprofen': {
@@ -129,8 +162,12 @@ const MOCK_INTERACTIONS_EN = {
       'Serious effect on blood clotting'
     ],
     alternatives: [
-      'Use paracetamol instead of ibuprofen with warfarin',
-      'Consult your doctor before using any pain reliever with warfarin'
+      'Use paracetamol (Brand names: Tylenol, Panadol) instead of ibuprofen with warfarin',
+      'Consult your doctor before using any pain reliever with warfarin (Brand name: Coumadin)'
+    ],
+    ageWarnings: [
+      'Warfarin: Requires careful monitoring of blood clotting and not suitable for children except under strict medical supervision',
+      'Ibuprofen: Not suitable for children under 6 months'
     ]
   },
   'fevadol+panadol': {
@@ -140,8 +177,12 @@ const MOCK_INTERACTIONS_EN = {
       'Increased risk of liver damage when taking high doses of paracetamol'
     ],
     alternatives: [
-      'Use only one of the medications, not both',
-      'Ibuprofen can be used as an alternative to one of the medications'
+      'Use only one of the medications, not both (Fevadol or Panadol)',
+      'Ibuprofen (Brand names: Advil, Motrin) can be used as an alternative to one of the medications'
+    ],
+    ageWarnings: [
+      'Paracetamol: Dosage should be adjusted for children based on age and weight',
+      'Avoid high doses of paracetamol for children'
     ]
   },
   'roufinac+catafast': {
@@ -152,8 +193,12 @@ const MOCK_INTERACTIONS_EN = {
       'May negatively affect kidney function especially for diabetic patients'
     ],
     alternatives: [
-      'Use only one of the medications, not both',
-      'Paracetamol can be used as a safer alternative for pain'
+      'Use only one of the medications, not both (Roufinac or Catafast)',
+      'Paracetamol (Brand names: Tylenol, Panadol) can be used as a safer alternative for pain'
+    ],
+    ageWarnings: [
+      'NSAIDs are not usually recommended for children under 12 years unless prescribed',
+      'Roufinac not recommended for children under 14 years'
     ]
   },
   'roufinac+panadol': {
@@ -164,7 +209,11 @@ const MOCK_INTERACTIONS_EN = {
     ],
     alternatives: [
       'Consult your doctor about the appropriate dosage',
-      'Alternative pain relievers can be used under medical supervision'
+      'Alternative pain relievers such as acetaminophen only (Brand name: Tylenol) can be used under medical supervision'
+    ],
+    ageWarnings: [
+      'Roufinac (Brand name: Voltaren): Not suitable for children under 14 years',
+      'Panadol: Dosage should be adjusted for children based on age and weight'
     ]
   }
 };
@@ -259,6 +308,22 @@ const MedicationInteractionChecker: React.FC = () => {
           }
         }
         
+        if (patientInfo.age && interactionData.ageWarnings) {
+          const age = parseInt(patientInfo.age);
+          const relevantAgeWarnings = interactionData.ageWarnings.filter(warning => {
+            if ((warning.includes('أطفال') || warning.includes('children')) && age < 18) {
+              if (warning.includes('12') && age < 12) return true;
+              if (warning.includes('14') && age < 14) return true;
+              if (warning.includes('6 أشهر') || warning.includes('6 months')) && age < 1) return true;
+              if (warning.includes('سنة واحدة') || warning.includes('one year')) && age < 1) return true;
+              return true;
+            }
+            return warning.toLowerCase().includes('all ages') || !warning.includes('year');
+          });
+          
+          interactionData.ageWarnings = relevantAgeWarnings;
+        }
+        
         setTimeout(() => {
           setResult(interactionData);
           setLoading(false);
@@ -276,14 +341,14 @@ const MedicationInteractionChecker: React.FC = () => {
       
       let prompt = "";
       if (language === 'ar') {
-        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة لكل دواء مشكل باللغة العربية"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}. قم بتقييم مناسبة الأدوية للعمر المقدم إن وجد. أضف الأسماء التجارية للأدوية البديلة المقترحة. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
       } else {
-        prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives for each problematic medication"] }. If there are no interactions, return { "hasInteractions": false }.`;
+        prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}. Evaluate the age-appropriateness of the medications if age is provided. Include brand names for suggested alternatives. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
       }
       
       let systemMessage = language === 'ar' 
-        ? 'أنت مساعد صحي مفيد متخصص في تفاعلات الأدوية. يرجى تقديم الإجابات باللغة العربية.'
-        : 'You are a helpful healthcare assistant specializing in medication interactions.';
+        ? 'أنت مساعد صحي مفيد متخصص في تفاعلات الأدوية. يرجى تقديم الإجابات باللغة العربية وتضمين الأسماء التجارية للأدوية البديلة وتحذيرات متعلقة بالعمر.'
+        : 'You are a helpful healthcare assistant specializing in medication interactions. Include brand names for alternatives and age-related warnings.';
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -525,6 +590,19 @@ const MedicationInteractionChecker: React.FC = () => {
                       ))}
                     </ul>
                   </div>
+                  
+                  {result.ageWarnings && result.ageWarnings.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2 text-orange-600">
+                        {language === 'ar' ? 'تحذيرات متعلقة بالعمر:' : 'Age-related warnings:'}
+                      </h3>
+                      <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
+                        {result.ageWarnings.map((warning, i) => (
+                          <li key={i} className="mb-2 text-sm text-orange-700">{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   
                   {result.alternatives && result.alternatives.length > 0 && (
                     <div>
