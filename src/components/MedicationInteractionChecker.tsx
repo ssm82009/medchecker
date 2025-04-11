@@ -163,7 +163,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     value={med.name} 
                     onChange={(e) => updateMedication(med.id, e.target.value)} 
                     placeholder={`${t('medication')} ${index + 1}`}
-                    className="border-primary/20 focus:border-primary/60"
+                    className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
                     dir={dir}
                   />
                 </div>
@@ -207,7 +207,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     onChange={(e) => handlePatientInfo('age', e.target.value)} 
                     placeholder={t('enterAge')}
                     type="number"
-                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm"
                     dir={dir}
                   />
                 </div>
@@ -221,7 +221,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     value={patientInfo.weight}
                     onValueChange={(value) => handlePatientInfo('weight', value)}
                   >
-                    <SelectTrigger className="border-secondary/20 focus:border-secondary/60 h-8 text-sm" dir={dir}>
+                    <SelectTrigger className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm" dir={dir}>
                       <SelectValue placeholder={t('selectWeight')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto" dir={dir}>
@@ -245,7 +245,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     value={patientInfo.allergies} 
                     onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
                     placeholder={t('enterAllergies')}
-                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm"
                     dir={dir}
                   />
                 </div>
@@ -259,7 +259,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     value={patientInfo.healthCondition}
                     onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
                     placeholder={t('enterHealthCondition')}
-                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    className="border border-gray-200 focus:border-secondary/60 focus:ring-1 focus:ring-secondary/20 h-8 text-sm"
                     dir={dir}
                   />
                 </div>
