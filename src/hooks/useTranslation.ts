@@ -38,13 +38,19 @@ export const useTranslation = () => {
         document.body.classList.remove('rtl');
       }
       
-      // Force application rerender by updating the DOM
-      document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        if (key && translations[language][key as TranslationKey]) {
-          element.textContent = translations[language][key as TranslationKey];
-        }
-      });
+      // Force immediate application rerender by updating all elements with data-i18n attributes
+      const updateElements = () => {
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+          const key = element.getAttribute('data-i18n');
+          if (key && translations[language][key as TranslationKey]) {
+            element.textContent = translations[language][key as TranslationKey];
+          }
+        });
+      };
+      
+      // Update elements immediately and after a short delay for any dynamic content
+      updateElements();
+      setTimeout(updateElements, 50);
       
       // Remove transition class after animation completes
       const timer = setTimeout(() => {

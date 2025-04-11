@@ -71,3 +71,8 @@
 [data-i18n] {
   transition: opacity 0.2s ease-in-out;
 }
+
+/* Fix for content during language transition */
+body {
+  transition: opacity 0.1s;
+}
