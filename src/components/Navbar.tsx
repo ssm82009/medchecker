@@ -34,10 +34,13 @@ const Navbar: React.FC = () => {
   
   return (
     <div className="sticky top-0 z-50 w-full">
-      <nav className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" dir={dir}>
-        {/* Desktop Navigation - Now on the left side in LTR or right side in RTL */}
+      <nav 
+        className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-md mx-0 mt-0" 
+        dir={dir}
+      >
+        {/* Desktop Navigation */}
         {!isMobile && (
-          <div className="flex items-center gap-3 order-first rtl:order-last">
+          <div className={`flex items-center gap-3 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
             {user && (
               <>
                 {user.role === 'admin' && (
@@ -62,8 +65,8 @@ const Navbar: React.FC = () => {
           </div>
         )}
         
-        {/* Logo - Now on the right side in LTR or left side in RTL */}
-        <div className="navbar-brand text-xl font-bold text-white flex items-center gap-2 order-last rtl:order-first">
+        {/* Logo */}
+        <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
           <Link to="/" className="flex items-center gap-2">
             <Pill className="h-6 w-6 text-white" />
             <span>{logoText}</span>
