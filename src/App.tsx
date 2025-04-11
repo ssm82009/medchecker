@@ -51,10 +51,17 @@ const AppWrapper = () => {
   const { dir, language } = useTranslation();
   
   useEffect(() => {
-    // Apply direction to html element on app load
+    // تطبيق الاتجاه RTL على عنصر html عند تحميل التطبيق
     document.documentElement.dir = dir;
     document.documentElement.lang = language;
     document.body.className = language === 'ar' ? 'rtl' : 'ltr';
+
+    // تطبيق الاتجاه على عنصر html
+    if (language === 'ar') {
+      document.querySelector('html')?.setAttribute('dir', 'rtl');
+    } else {
+      document.querySelector('html')?.setAttribute('dir', 'ltr');
+    }
   }, [dir, language]);
   
   return (

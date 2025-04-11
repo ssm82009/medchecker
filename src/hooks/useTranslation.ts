@@ -4,7 +4,7 @@ import { useLocalStorage } from './useLocalStorage';
 import { Language, translations, TranslationKey } from '../i18n';
 
 export const useTranslation = () => {
-  const [language, setLanguage] = useLocalStorage<Language>('language', 'en');
+  const [language, setLanguage] = useLocalStorage<Language>('language', 'ar'); // جعل العربية هي اللغة الافتراضية
   const [isChanging, setIsChanging] = useState(false);
 
   const t = useCallback((key: TranslationKey): string => {
@@ -63,6 +63,24 @@ export const useTranslation = () => {
       return () => clearTimeout(timer);
     }
   }, [language, dir, isChanging]);
+
+  // تطبيق الاتجاه RTL مباشرة عند تحميل التطبيق
+  useEffect(() => {
+    // تطبيق اتجاه RTL على عنصر html
+    document.documentElement.dir = dir;
+    document.documentElement.lang = language;
+    
+    // تطبيق الصفوف المناسبة
+    if (language === 'ar') {
+      document.body.classList.add('rtl');
+      document.body.classList.remove('ltr');
+      document.querySelector('html')?.setAttribute('dir', 'rtl');
+    } else {
+      document.body.classList.add('ltr');
+      document.body.classList.remove('rtl');
+      document.querySelector('html')?.setAttribute('dir', 'ltr');
+    }
+  }, []);
 
   return { t, language, toggleLanguage, dir, isChanging };
 };

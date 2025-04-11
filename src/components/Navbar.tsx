@@ -26,12 +26,14 @@ const Navbar: React.FC = () => {
   };
   
   return (
-    <nav className="navbar flex justify-between items-center px-6 py-4 mb-6 bg-white shadow-sm rounded-lg mx-4 mt-4" dir={dir}>
+    <nav className="navbar flex items-center px-6 py-4 mb-6 bg-white shadow-sm rounded-lg mx-4 mt-4" dir={dir}>
+      {/* نزيل justify-between ليتم عرض العناصر بشكل مناسب في RTL */}
+      
       <div className="navbar-brand text-xl font-bold text-primary">
         <Link to="/">{logoText}</Link>
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className={`flex items-center gap-4 ${language === 'ar' ? 'mr-auto' : 'ml-auto'}`}>
         {user && (
           <>
             {user.role === 'admin' && (
