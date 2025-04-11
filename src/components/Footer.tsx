@@ -68,7 +68,7 @@ const Footer: React.FC = () => {
             </div>
             
             {/* Copyright (center) */}
-            <div className="order-1 sm:order-2 w-full sm:w-auto text-center mb-2 sm:mb-0">
+            <div className="order-1 sm:order-2 w-full text-center mb-2 sm:mb-0">
               <p className="text-gray-800 text-sm">
                 {isMobile ? "© جميع الحقوق محفوظة لـ تطبيق دواء آمن" : `&copy; ${new Date().getFullYear()} دواء آمن - ${t('footerCopyright')}`}
               </p>
