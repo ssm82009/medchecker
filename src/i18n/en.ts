@@ -38,12 +38,12 @@ export const en = {
   
   // Patient information translations
   age: "Age",
-  enterAge: "Enter patient age",
+  enterAge: "Enter age",
   weight: "Weight (kg)",
   selectWeight: "Select weight",
-  allergies: "Allergies (Optional)",
-  enterAllergies: "List any allergies separated by commas",
-  patientInfo: "Patient Information",
+  allergies: "Allergies",
+  enterAllergies: "Enter allergies",
+  patientInfo: "Patient Info",
   
   // Footer translations
   footerCopyright: 'All Rights Reserved',

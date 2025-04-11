@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X, Heart, Pill, User, Weight, ActivitySquare } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Advertisement from './Advertisement';
 
 interface Medication {
@@ -43,7 +43,6 @@ const MedicationInteractionChecker: React.FC = () => {
   
   const [result, setResult] = useState<InteractionResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('medications');
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
@@ -156,78 +155,71 @@ const MedicationInteractionChecker: React.FC = () => {
           <CardDescription>{t('enterMedication')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="medications" className="text-sm">
-                <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-                {t('medication')}
-              </TabsTrigger>
-              <TabsTrigger value="patientInfo" className="text-sm">
-                <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-                {t('patientInfo')}
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="medications" className="space-y-4 mt-0">
-              {medications.map((med, index) => (
-                <div key={med.id} className={`flex items-center gap-2 group transition duration-200 ${activeTab === 'medications' ? 'animate-in fade-in' : ''}`}>
-                  <div className="flex-1 transition-all duration-200">
-                    <Input 
-                      value={med.name} 
-                      onChange={(e) => updateMedication(med.id, e.target.value)} 
-                      placeholder={`${t('medication')} ${index + 1}`}
-                      className="border-primary/20 focus:border-primary/60"
-                    />
-                  </div>
-                  {medications.length > 2 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => removeMedication(med.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+          <div className="space-y-4">
+            {medications.map((med, index) => (
+              <div key={med.id} className="flex items-center gap-2 group transition duration-200 animate-in fade-in">
+                <div className="flex-1 transition-all duration-200">
+                  <Input 
+                    value={med.name} 
+                    onChange={(e) => updateMedication(med.id, e.target.value)} 
+                    placeholder={`${t('medication')} ${index + 1}`}
+                    className="border-primary/20 focus:border-primary/60"
+                  />
                 </div>
-              ))}
-              
-              <Button 
-                variant="outline" 
-                onClick={addMedication} 
-                className="w-full group hover:bg-primary/5 hover:text-primary transition-colors"
-              >
-                <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
-                {t('addMedication')}
-              </Button>
-            </TabsContent>
+                {medications.length > 2 && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => removeMedication(med.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
             
-            <TabsContent value="patientInfo" className="space-y-4 mt-0 animate-in fade-in">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center">
-                    <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-gray-500`} />
+            <Button 
+              variant="outline" 
+              onClick={addMedication} 
+              className="w-full group hover:bg-primary/5 hover:text-primary transition-colors"
+            >
+              <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
+              {t('addMedication')}
+            </Button>
+
+            {/* Compact Patient Information Section */}
+            <div className="mt-4 pt-4 pb-2 border-t border-gray-100">
+              <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
+                <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
+                {t('patientInfo')}
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                     {t('age')}
-                  </label>
+                  </div>
                   <Input 
                     value={patientInfo.age} 
                     onChange={(e) => handlePatientInfo('age', e.target.value)} 
                     placeholder={t('enterAge')}
                     type="number"
-                    className="border-secondary/20 focus:border-secondary/60"
+                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center">
-                    <Weight className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-gray-500`} />
+                <div className="space-y-1">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Weight className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
                     {t('weight')}
-                  </label>
+                  </div>
                   <Select 
                     value={patientInfo.weight}
                     onValueChange={(value) => handlePatientInfo('weight', value)}
                   >
-                    <SelectTrigger className="border-secondary/20 focus:border-secondary/60">
+                    <SelectTrigger className="border-secondary/20 focus:border-secondary/60 h-8 text-sm">
                       <SelectValue placeholder={t('selectWeight')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -241,33 +233,35 @@ const MedicationInteractionChecker: React.FC = () => {
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center">
-                  <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-gray-500`} />
-                  {t('allergies')}
-                </label>
-                <Input 
-                  value={patientInfo.allergies} 
-                  onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
-                  placeholder={t('enterAllergies')}
-                  className="border-secondary/20 focus:border-secondary/60"
-                />
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                    {t('allergies')}
+                  </div>
+                  <Input 
+                    value={patientInfo.allergies} 
+                    onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
+                    placeholder={t('enterAllergies')}
+                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+                    {t('healthCondition')}
+                  </div>
+                  <Input 
+                    value={patientInfo.healthCondition}
+                    onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
+                    placeholder={t('enterHealthCondition')}
+                    className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                  />
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center">
-                  <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-gray-500`} />
-                  {t('healthCondition')}
-                </label>
-                <Textarea 
-                  value={patientInfo.healthCondition}
-                  onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
-                  placeholder={t('enterHealthCondition')}
-                  className="w-full border-secondary/20 focus:border-secondary/60"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <Button 

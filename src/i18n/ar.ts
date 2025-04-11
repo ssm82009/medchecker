@@ -3,15 +3,15 @@ export const ar = {
   appTitle: "فاحص تعارضات الأدوية",
   medication: "الدواء",
   addMedication: "إضافة دواء",
-  healthCondition: "الحالة الصحية الحالية (اختياري)",
+  healthCondition: "الحالة الصحية",
   checkInteractions: "فحص التعارضات",
   results: "النتائج",
-  loading: "جاري فحص التعارضات...",
+  loading: "جاري الفحص...",
   noInteractions: "لم يتم العثور على تعارضات. يمكن تناول هذه الأدوية معًا بأمان.",
   interactionsFound: "تم العثور على تعارضات محتملة:",
   alternativeSuggestion: "البدائل المقترحة:",
   enterMedication: "أدخل اسم الدواء",
-  enterHealthCondition: "أدخل أي حالات صحية حالية",
+  enterHealthCondition: "أدخل الحالة الصحية",
   language: "اللغة",
   dashboard: "لوحة التحكم",
   adminPanel: "لوحة الإدارة",
@@ -36,13 +36,13 @@ export const ar = {
   logoText: "نص الشعار",
   saveLogo: "حفظ الشعار",
   
-  // New translations
+  // Patient information translations
   age: "العمر",
-  enterAge: "أدخل عمر المريض",
+  enterAge: "أدخل العمر",
   weight: "الوزن (كجم)",
-  selectWeight: "اختر وزن المريض",
-  allergies: "الحساسية (اختياري)",
-  enterAllergies: "قم بإدراج أي حساسية مفصولة بفواصل",
+  selectWeight: "اختر الوزن",
+  allergies: "الحساسية",
+  enterAllergies: "أدخل الحساسية",
   patientInfo: "معلومات المريض",
   
   // Footer translations
