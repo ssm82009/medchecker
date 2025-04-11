@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -314,8 +315,8 @@ const MedicationInteractionChecker: React.FC = () => {
             if ((warning.includes('أطفال') || warning.includes('children')) && age < 18) {
               if (warning.includes('12') && age < 12) return true;
               if (warning.includes('14') && age < 14) return true;
-              if (warning.includes('6 أشهر') || warning.includes('6 months')) && age < 1) return true;
-              if (warning.includes('سنة واحدة') || warning.includes('one year')) && age < 1) return true;
+              if ((warning.includes('6 أشهر') || warning.includes('6 months')) && age < 1) return true;
+              if ((warning.includes('سنة واحدة') || warning.includes('one year')) && age < 1) return true;
               return true;
             }
             return warning.toLowerCase().includes('all ages') || !warning.includes('year');
@@ -620,9 +621,7 @@ const MedicationInteractionChecker: React.FC = () => {
               <Alert className="mt-6 bg-blue-50 border-blue-100">
                 <Info className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} text-blue-500`} />
                 <AlertDescription className="text-sm text-blue-700">
-                  {language === 'ar' 
-                    ? 'هذا التطبيق تم صناعته باستخدام الذكاء الاصطناعي للأغراض التعليمية ولابد من استشارة الطبيب أو الصيدلي قبل استخدام الدواء'
-                    : 'This application was created using artificial intelligence for educational purposes. Always consult a doctor or pharmacist before using any medication.'}
+                  {t('disclaimer')}
                 </AlertDescription>
               </Alert>
             </CardContent>
