@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -273,7 +272,6 @@ const MedicationInteractionChecker: React.FC = () => {
         duration: 2000,
       });
       
-      // Reset the copied state after 2 seconds
       setTimeout(() => setCopied(false), 2000);
     });
   };
@@ -282,7 +280,6 @@ const MedicationInteractionChecker: React.FC = () => {
     const printContent = document.createElement('div');
     printContent.innerHTML = resultRef.current?.innerHTML || '';
     
-    // Add some basic styling for the print
     printContent.style.fontFamily = 'Arial, sans-serif';
     printContent.style.padding = '20px';
     printContent.style.direction = dir;
@@ -300,7 +297,6 @@ const MedicationInteractionChecker: React.FC = () => {
       windowPrint.document.close();
       windowPrint.focus();
       
-      // Add a slight delay before printing
       setTimeout(() => {
         windowPrint.print();
         windowPrint.close();
@@ -469,7 +465,6 @@ const MedicationInteractionChecker: React.FC = () => {
         {language === 'ar' ? 'آداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
-      {/* إضافة التنبيه الذي يخلي المسؤولية بشكل بارز */}
       <Alert className="mb-6 bg-amber-50 border border-amber-300 text-amber-800 shadow-md animate-fade-in">
         <AlertTriangle className="h-5 w-5 inline-block mr-2 text-amber-500" />
         <AlertDescription className="text-sm font-medium">{t('disclaimer')}</AlertDescription>
@@ -694,12 +689,16 @@ const MedicationInteractionChecker: React.FC = () => {
                   )}
                 </div>
               )}
+              
+              <Alert className="mt-6 bg-amber-50 border border-amber-300 text-amber-800 shadow-sm">
+                <AlertTriangle className="h-4 w-4 inline-block mr-2 text-amber-500" />
+                <AlertDescription className="text-xs">{t('disclaimer')}</AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
         )}
       </div>
       
-      {/* إضافة التنبيه الذي يخلي المسؤولية مرة أخرى في نهاية الصفحة للتأكيد */}
       <Alert className="mt-8 mb-4 bg-amber-50 border border-amber-300 text-amber-800 shadow-md">
         <AlertTriangle className="h-5 w-5 inline-block mr-2 text-amber-500" />
         <AlertDescription className="text-sm font-medium">{t('disclaimer')}</AlertDescription>
