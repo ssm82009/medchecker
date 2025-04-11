@@ -9,6 +9,7 @@ import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle } fro
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface Medication {
   id: string;
@@ -190,6 +191,7 @@ const MedicationInteractionChecker: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
+  const [aiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
@@ -221,8 +223,8 @@ const MedicationInteractionChecker: React.FC = () => {
     try {
       const medicationNames = validMedications.map(med => med.name.toLowerCase());
       
-      // Check if OpenAI API key is available in localStorage
-      const apiKey = localStorage.getItem('apiKey');
+      // Check if OpenAI API key is available in aiSettings
+      const apiKey = aiSettings.apiKey;
       if (!apiKey) {
         // If no API key is available, use mock data
         setApiKeyError(true);
@@ -299,7 +301,7 @@ const MedicationInteractionChecker: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: localStorage.getItem('model') || 'gpt-3.5-turbo',
+          model: aiSettings.model || 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemMessage },
             { role: 'user', content: prompt }
