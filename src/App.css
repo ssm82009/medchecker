@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,21 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* إضافة أنماط الانتقال للغة */
+.language-transition {
+  transition: all 0.3s ease-in-out;
+  opacity: 0.95;
+}
+
+/* أنماط خاصة باللغة العربية */
+.rtl * {
+  letter-spacing: 0;
+  text-align: right;
+}
+
+/* أنماط خاصة باللغة الإنجليزية */
+.ltr * {
+  text-align: left;
 }
