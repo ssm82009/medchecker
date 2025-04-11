@@ -9,13 +9,16 @@ const Index: React.FC = () => {
   // Apply RTL direction to the whole document if needed
   useEffect(() => {
     document.documentElement.dir = dir;
+    document.documentElement.setAttribute('lang', dir === 'rtl' ? 'ar' : 'en');
+    
     return () => {
       document.documentElement.dir = 'ltr';
+      document.documentElement.setAttribute('lang', 'en');
     };
   }, [dir]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={dir}>
       <main className="container mx-auto py-8">
         <MedicationInteractionChecker />
       </main>

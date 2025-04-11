@@ -164,6 +164,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     onChange={(e) => updateMedication(med.id, e.target.value)} 
                     placeholder={`${t('medication')} ${index + 1}`}
                     className="border-primary/20 focus:border-primary/60"
+                    dir={dir}
                   />
                 </div>
                 {medications.length > 2 && (
@@ -188,8 +189,8 @@ const MedicationInteractionChecker: React.FC = () => {
               {t('addMedication')}
             </Button>
 
-            {/* Compact Patient Information Section */}
-            <div className="mt-4 pt-4 pb-2 border-t border-gray-100">
+            {/* Compact Patient Information Section with improved styling */}
+            <div className="mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md px-3">
               <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">
                 <User className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-4 w-4 text-primary/70`} />
                 {t('patientInfo')}
@@ -207,6 +208,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     placeholder={t('enterAge')}
                     type="number"
                     className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    dir={dir}
                   />
                 </div>
                 
@@ -219,10 +221,10 @@ const MedicationInteractionChecker: React.FC = () => {
                     value={patientInfo.weight}
                     onValueChange={(value) => handlePatientInfo('weight', value)}
                   >
-                    <SelectTrigger className="border-secondary/20 focus:border-secondary/60 h-8 text-sm">
+                    <SelectTrigger className="border-secondary/20 focus:border-secondary/60 h-8 text-sm" dir={dir}>
                       <SelectValue placeholder={t('selectWeight')} />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                    <SelectContent className="max-h-[200px] overflow-y-auto" dir={dir}>
                       {weightOptions.map((weight) => (
                         <SelectItem key={weight} value={weight}>
                           {weight} kg
@@ -244,6 +246,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     onChange={(e) => handlePatientInfo('allergies', e.target.value)} 
                     placeholder={t('enterAllergies')}
                     className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    dir={dir}
                   />
                 </div>
                 
@@ -257,6 +260,7 @@ const MedicationInteractionChecker: React.FC = () => {
                     onChange={(e) => handlePatientInfo('healthCondition', e.target.value)}
                     placeholder={t('enterHealthCondition')}
                     className="border-secondary/20 focus:border-secondary/60 h-8 text-sm"
+                    dir={dir}
                   />
                 </div>
               </div>

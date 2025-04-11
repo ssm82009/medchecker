@@ -37,11 +37,11 @@ export const en = {
   saveLogo: "Save Logo",
   
   // Patient information translations
-  age: "Age",
+  age: "Age (Optional)",
   enterAge: "Enter age",
-  weight: "Weight (kg)",
+  weight: "Weight (kg) (Optional)",
   selectWeight: "Select weight",
-  allergies: "Allergies",
+  allergies: "Allergies (Optional)",
   enterAllergies: "Enter allergies",
   patientInfo: "Patient Info",
   
