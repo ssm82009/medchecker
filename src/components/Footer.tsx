@@ -56,12 +56,12 @@ const Footer: React.FC = () => {
       
       <footer className="bg-white border-t mt-auto py-8 sm:py-10 px-4 sm:px-8" dir={dir}>
         <div className="container mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:gap-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:gap-10">
             {/* Login Link (right in RTL, left in LTR) */}
-            <div className="order-3 sm:order-1 w-full sm:w-auto text-center sm:text-start">
+            <div className="order-3 sm:order-1 w-full sm:w-auto text-center sm:text-start mb-5 sm:mb-0">
               <Link 
                 to="/login" 
-                className="text-sm text-gray-700 hover:text-primary transition-colors py-3 px-5 rounded-md hover:bg-gray-100 inline-block min-w-28"
+                className="text-sm text-gray-700 hover:text-primary transition-colors py-4 px-8 rounded-md hover:bg-gray-100 inline-block min-w-40"
               >
                 {t('login')}
               </Link>
@@ -80,7 +80,7 @@ const Footer: React.FC = () => {
                 href="https://t.me/icodexteam" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="inline-flex items-center justify-center sm:justify-start gap-3 text-gray-700 hover:text-primary transition-colors py-3 px-5 rounded-md hover:bg-gray-100 min-w-28"
+                className="inline-flex items-center justify-center sm:justify-start gap-3 text-gray-700 hover:text-primary transition-colors py-4 px-8 rounded-md hover:bg-gray-100 min-w-40"
               >
                 <Mail className="h-4 w-4" />
                 <span className="text-sm">{t('contactUs')}</span>
