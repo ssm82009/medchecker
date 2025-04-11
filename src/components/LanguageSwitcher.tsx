@@ -12,7 +12,7 @@ const LanguageSwitcher: React.FC = () => {
   const handleLanguageChange = () => {
     toggleLanguage();
     
-    // إظهار إشعار بدلاً من إعادة تحميل الصفحة
+    // Show notification for language change
     toast({
       title: language === 'en' ? 'تم تغيير اللغة إلى العربية' : 'Language changed to English',
       description: language === 'en' ? 'تم تطبيق التغييرات بنجاح' : 'Changes applied successfully',

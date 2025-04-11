@@ -38,6 +38,14 @@ export const useTranslation = () => {
         document.body.classList.remove('rtl');
       }
       
+      // Force application rerender by updating the DOM
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (key && translations[language][key as TranslationKey]) {
+          element.textContent = translations[language][key as TranslationKey];
+        }
+      });
+      
       // Remove transition class after animation completes
       const timer = setTimeout(() => {
         document.body.classList.remove('language-transition');

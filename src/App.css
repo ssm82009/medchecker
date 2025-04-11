@@ -42,19 +42,32 @@
   color: #888;
 }
 
-/* إضافة أنماط الانتقال للغة */
+/* Language transition styles */
 .language-transition {
   transition: all 0.3s ease-in-out;
   opacity: 0.95;
 }
 
-/* أنماط خاصة باللغة العربية */
+/* RTL (Arabic) language styles */
+.rtl {
+  direction: rtl;
+}
+
 .rtl * {
   letter-spacing: 0;
   text-align: right;
 }
 
-/* أنماط خاصة باللغة الإنجليزية */
+/* LTR (English) language styles */
+.ltr {
+  direction: ltr;
+}
+
 .ltr * {
   text-align: left;
+}
+
+/* Force re-render for language change */
+[data-i18n] {
+  transition: opacity 0.2s ease-in-out;
 }
