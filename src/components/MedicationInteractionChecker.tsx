@@ -83,7 +83,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
-  'فيفادول+بنادول': {
+  'ف��فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -346,6 +346,14 @@ const MedicationInteractionChecker: React.FC = () => {
     fetchAISettings();
   }, []);
 
+  useEffect(() => {
+    if (result && resultRef.current) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [result]);
+
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
@@ -530,7 +538,7 @@ const MedicationInteractionChecker: React.FC = () => {
     <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} bg-transparent flex flex-col items-center justify-center`} dir={dir}>
       <Advertisement />
       
-      <h1 className="text-2xl sm:text-3xl font-bold text-center my-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center my-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
         {language === 'ar' ? 'أداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
@@ -668,7 +676,7 @@ const MedicationInteractionChecker: React.FC = () => {
         </Card>
         
         {result && (
-          <Card className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0">
+          <Card id="result-card" className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-4" ref={resultRef}>
             <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
               <CardTitle className="flex items-center">
                 {result.hasInteractions ? (
