@@ -43,7 +43,7 @@ export const ar = {
   selectWeight: "أدخل الوزن",
   allergies: "الحساسية",
   enterAllergies: "أدخل الحساسية",
-  patientInfo: " معلومات المريض(جميعها اختيارية)",
+  patientInfo: "معلومات المريض(جميعها اختيارية)",
   
   // Footer translations
   footerCopyright: 'جميع الحقوق محفوظة',
