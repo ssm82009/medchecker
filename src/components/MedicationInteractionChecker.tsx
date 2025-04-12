@@ -83,7 +83,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
-  'ف���فادول+بنادول': {
+  '�����فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -467,9 +467,9 @@ const MedicationInteractionChecker: React.FC = () => {
       
       let prompt = "";
       if (language === 'ar') {
-        prompt = `حلّل التفاعلات بين الأدوية التالية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}, مع توضيح أي تشابه أو تكرار في المواد الفعالة قد يؤدي إلى جرعة زائدة، تحقق من أن كل مدخل هو دواء أو مادة دوائية فعلية، تجاهل أي محتوى ساخر أو غير طبي، وقدّم النتائج بلغة واضحة تتضمن مستوى الخطورة، بدائل آمنة إن وُجدت، الأسماء التجارية لكل دواء، وروابط أو مراجع طبية موثوقة مثل Mayo Clinic أو WebMD لدعم المعلومات. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+        prompt = `حلّل التفاعلات بين الأدوية التالية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}, مع توضيح أي تشابه أو تكرار في المواد الفعالة قد يؤدي إلى جرعة زائدة، تأكد بدقة من أن كل عنصر مدخل هو دواء معروف أو مادة دوائية حقيقية فقط، تجاهل أو ارفض معالجة أي محتوى ساخر أو غذائي أو غير طبي مثل "برجر" أو "سلطة" أو أسماء ليست ضمن الأدوية المعترف بها، ثم قدم النتائج بلغة واضحة تتضمن مستوى الخطورة، بدائل آمنة إن وُجدت، الأسماء التجارية لكل دواء، وروابط أو مراجع طبية موثوقة مثل Mayo Clinic أو WebMD لدعم المعلومات. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
       } else {
-        prompt = `Analyze the interactions between the following drugs: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}, identify any overlapping or similar active ingredients that could cause overdose, ensure all inputs are valid drugs or pharmaceutical substances, ignore any humorous or non-medical content, and return a clear summary including risk level, safer alternatives if available, commercial brand names of the drugs, and trustworthy medical references such as Mayo Clinic or WebMD to support the information. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
+        prompt = `Analyze the interactions between the following drugs: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}, highlight any overlapping or repeated active ingredients that may risk overdose, strictly ensure that each input is a recognized drug or pharmaceutical substance only, reject or ignore any humorous, non-medical, or food-related terms such as "burger" or "salad", and then return a clear summary including risk level, safer alternatives if applicable, brand names, and trusted medical references such as Mayo Clinic or WebMD. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
       }
       
       let systemMessage = language === 'ar' 
