@@ -1,0 +1,37 @@
+
+{
+  "name": "دواء آمن",
+  "short_name": "دواء آمن",
+  "description": "تطبيق للتحقق من تفاعلات الأدوية",
+  "icons": [
+    {
+      "src": "/lovable-uploads/3d2cd062-f87e-4cfe-88b0-86eb3059089c.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/29abcb36-507a-440e-b78a-ab8c08b596f7.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/3177a7d1-0b87-48fd-8c05-8398e232e7e1.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/824e3d1f-eb0a-4fbd-b507-771e74f9d4f3.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6941E1",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "prefer_related_applications": false
+}
