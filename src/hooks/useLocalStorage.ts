@@ -38,7 +38,8 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
             return;
           }
           
-          if (data?.value) {
+          if (data?.value && typeof data.value === 'object') {
+            // Ensure we're setting the correct type
             setStoredValue(data.value as T);
             // Update localStorage with the database value
             window.localStorage.setItem(key, JSON.stringify(data.value));

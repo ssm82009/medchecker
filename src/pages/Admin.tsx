@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,12 @@ import {
   TabsTrigger
 } from "@/components/ui/tabs";
 
+// Define interface for AI settings
+interface AISettingsType {
+  apiKey: string;
+  model: string;
+}
+
 // Settings component for AI configuration
 const AISettings = () => {
   const { t } = useTranslation();
@@ -48,9 +55,10 @@ const AISettings = () => {
           return;
         }
         
-        if (data?.value) {
-          setApiKey(data.value.apiKey || '');
-          setModel(data.value.model || 'gpt-4o-mini');
+        if (data?.value && typeof data.value === 'object') {
+          const settings = data.value as AISettingsType;
+          setApiKey(settings.apiKey || '');
+          setModel(settings.model || 'gpt-4o-mini');
         }
       } catch (error) {
         console.error('Error in fetching AI settings:', error);

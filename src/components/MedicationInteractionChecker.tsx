@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -11,6 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define interface for AI settings
+interface AISettingsType {
+  apiKey: string;
+  model: string;
+}
 
 interface Medication {
   id: string;
@@ -239,7 +246,7 @@ const MedicationInteractionChecker: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
-  const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
+  const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const resultRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   
@@ -320,8 +327,9 @@ const MedicationInteractionChecker: React.FC = () => {
         }
         
         if (data?.value && typeof data.value === 'object') {
-          localStorage.setItem('aiSettings', JSON.stringify(data.value));
-          setApiSettings(data.value as { apiKey: string; model: string });
+          const settings = data.value as AISettingsType;
+          localStorage.setItem('aiSettings', JSON.stringify(settings));
+          setApiSettings(settings);
         }
       } catch (error) {
         console.error('Error fetching AI settings:', error);
@@ -352,9 +360,10 @@ const MedicationInteractionChecker: React.FC = () => {
             .eq('type', 'ai_settings')
             .maybeSingle();
           
-          if (!error && data?.value) {
-            apiKey = data.value.apiKey;
-            setApiSettings(data.value as { apiKey: string; model: string });
+          if (!error && data?.value && typeof data.value === 'object') {
+            const settings = data.value as AISettingsType;
+            apiKey = settings.apiKey;
+            setApiSettings(settings);
           }
         } catch (dbError) {
           console.error('Error fetching API key from database:', dbError);
@@ -448,7 +457,7 @@ const MedicationInteractionChecker: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: aiSettings.model || 'gpt-4o-mini',
+          model: apiSettings.model || 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemMessage },
             { role: 'user', content: prompt }
