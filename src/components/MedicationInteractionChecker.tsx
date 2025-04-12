@@ -530,11 +530,11 @@ const MedicationInteractionChecker: React.FC = () => {
     <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} bg-transparent flex flex-col items-center justify-center`} dir={dir}>
       <Advertisement />
       
-      <h1 className="text-2xl sm:text-3xl font-bold text-center my-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center my-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
         {language === 'ar' ? 'أداة سريعة للتحقق من التفاعلات الدوائية' : 'Quick Medication Interaction Checker'}
       </h1>
       
-      <div className="w-full bg-transparent mt-8">
+      <div className="w-full bg-transparent mt-4">
         <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
           <CardHeader className="bg-primary/5 rounded-t-lg">
             <CardTitle className="flex items-center text-gray-700">
