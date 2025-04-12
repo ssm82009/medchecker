@@ -30,21 +30,66 @@ import {
 const AISettings = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
-    setApiKey(apiSettings.apiKey || '');
-    setModel(apiSettings.model || 'gpt-4o-mini');
-  }, [apiSettings]);
+    const fetchAISettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'ai_settings')
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching AI settings:', error);
+          return;
+        }
+        
+        if (data?.value) {
+          setApiKey(data.value.apiKey || '');
+          setModel(data.value.model || 'gpt-4o-mini');
+        }
+      } catch (error) {
+        console.error('Error in fetching AI settings:', error);
+      }
+    };
+    
+    fetchAISettings();
+  }, []);
   
-  const saveApiSettings = () => {
-    setApiSettings({ apiKey, model });
-    toast({
-      title: t('saveSettings'),
-      description: "تم حفظ إعدادات مزود الذكاء الاصطناعي في التخزين المحلي",
-    });
+  const saveApiSettings = async () => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert(
+          { type: 'ai_settings', value: { apiKey, model } },
+          { onConflict: 'type' }
+        );
+      
+      if (error) throw error;
+      
+      // Also save to local storage for immediate access in components
+      localStorage.setItem('aiSettings', JSON.stringify({ apiKey, model }));
+      
+      toast({
+        title: t('saveSettings'),
+        description: "تم حفظ إعدادات مزود الذكاء الاصطناعي بنجاح",
+      });
+    } catch (error) {
+      console.error('Error saving AI settings:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ إعدادات الذكاء الاصطناعي",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -82,9 +127,19 @@ const AISettings = () => {
           onClick={saveApiSettings} 
           className="w-full"
           variant="default"
+          disabled={loading}
         >
-          <Save className="mr-2 h-4 w-4" />
-          {t('saveSettings')}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              {t('loading')}
+            </span>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              {t('saveSettings')}
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

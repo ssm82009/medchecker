@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Medication {
   id: string;
@@ -81,7 +81,7 @@ const MOCK_INTERACTIONS = {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
-      'زي��دة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
+      'ز����دة خطر تضرر الكبد عند تناول جرعات عالية من الباراسيتامول'
     ],
     alternatives: [
       'استخدم أحد الدوائين فقط وليس كليهما (فيفادول أو بنادول)',
@@ -239,7 +239,7 @@ const MedicationInteractionChecker: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
-  const [aiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
+  const [apiSettings, setApiSettings] = useLocalStorage<{ apiKey: string; model: string }>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const resultRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   
@@ -305,6 +305,32 @@ const MedicationInteractionChecker: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchAISettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'ai_settings')
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching AI settings:', error);
+          return;
+        }
+        
+        if (data?.value && typeof data.value === 'object') {
+          localStorage.setItem('aiSettings', JSON.stringify(data.value));
+          setApiSettings(data.value as { apiKey: string; model: string });
+        }
+      } catch (error) {
+        console.error('Error fetching AI settings:', error);
+      }
+    };
+    
+    fetchAISettings();
+  }, []);
+
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
@@ -316,7 +342,25 @@ const MedicationInteractionChecker: React.FC = () => {
     try {
       const medicationNames = validMedications.map(med => med.name.toLowerCase());
       
-      const apiKey = aiSettings.apiKey;
+      let apiKey = apiSettings.apiKey;
+      
+      if (!apiKey) {
+        try {
+          const { data, error } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('type', 'ai_settings')
+            .maybeSingle();
+          
+          if (!error && data?.value) {
+            apiKey = data.value.apiKey;
+            setApiSettings(data.value as { apiKey: string; model: string });
+          }
+        } catch (dbError) {
+          console.error('Error fetching API key from database:', dbError);
+        }
+      }
+      
       if (!apiKey) {
         setApiKeyError(true);
         const medPairs = [];
