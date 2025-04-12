@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -16,6 +15,7 @@ const LanguageSwitcher: React.FC = () => {
     
     // Short delay before actually changing the language to allow transition to start
     setTimeout(() => {
+      // Change the language in localStorage
       toggleLanguage();
       
       // Show notification for language change
@@ -29,20 +29,15 @@ const LanguageSwitcher: React.FC = () => {
       document.body.classList.remove('language-changing');
       document.body.classList.add('language-changed');
       
-      // Force immediate update on all relevant content
-      updatePageContent(language === 'en' ? 'ar' : 'en');
-      
-      // Remove the transition class after animation completes
+      // Force page reload - adding a clearer implementation
       setTimeout(() => {
-        document.body.classList.remove('language-changed');
-        
-        // Refresh the page after the animation completes
-        window.location.reload();
-      }, 500);
+        // Ensure we reload the page after language change
+        window.location.href = window.location.pathname; // Force a clean reload of the current page
+      }, 300);
     }, 50);
   };
   
-  // Helper function to update content without page reload
+  // Helper function to update content without page reload - keeping for backup
   const updatePageContent = (newLanguage: 'en' | 'ar') => {
     // Apply data-i18n attributes to elements that need translation
     const applyDataI18nAttributes = () => {
