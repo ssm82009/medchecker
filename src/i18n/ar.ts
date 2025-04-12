@@ -3,7 +3,7 @@ export const ar = {
   appTitle: "فاحص تعارضات الأدوية",
   medication: "الدواء",
   addMedication: "إضافة دواء",
-  healthCondition: "الحالة الصحية (اختياري)",
+  healthCondition: "الحالة الصحية",
   checkInteractions: "فحص التعارضات",
   results: "النتائج",
   loading: "جاري الفحص...",
@@ -37,13 +37,13 @@ export const ar = {
   saveLogo: "حفظ الشعار",
   
   // Patient information translations
-  age: "العمر (اختياري)",
+  age: "العمر",
   enterAge: "أدخل العمر",
-  weight: "الوزن (كجم) (اختياري)",
+  weight: "الوزن (كجم) ",
   selectWeight: "أدخل الوزن",
-  allergies: "الحساسية (اختياري)",
+  allergies: "الحساسية",
   enterAllergies: "أدخل الحساسية",
-  patientInfo: "معلومات المريض",
+  patientInfo: " معلومات المريض(جميعها اختيارية)",
   
   // Footer translations
   footerCopyright: 'جميع الحقوق محفوظة',
