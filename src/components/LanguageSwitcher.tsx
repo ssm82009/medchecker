@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Globe } from 'lucide-react';
+import { Globe, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { translations, TranslationKey } from '@/i18n';
 
@@ -35,6 +35,9 @@ const LanguageSwitcher: React.FC = () => {
       // Remove the transition class after animation completes
       setTimeout(() => {
         document.body.classList.remove('language-changed');
+        
+        // Refresh the page after the animation completes
+        window.location.reload();
       }, 500);
     }, 50);
   };
@@ -75,6 +78,7 @@ const LanguageSwitcher: React.FC = () => {
       size="sm"
     >
       <Globe className="h-3 w-3" />
+      <RefreshCw className="h-3 w-3" />
       <span>{language === 'en' ? 'العربية' : 'English'}</span>
     </Button>
   );

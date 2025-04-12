@@ -1,48 +1,36 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/hooks/useAuth';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocalStorage, AISettingsType, safelyParseAISettings } from '@/hooks/useLocalStorage';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { Json } from '@/integrations/supabase/types';
-import { 
-  Cog, 
-  Palette, 
-  MessageSquare, 
-  Save,
-  Settings,
-  LogOut,
-  Key
-} from 'lucide-react';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
 
-// Define interface for AI settings
-interface AISettingsType {
-  apiKey: string;
-  model: string;
-}
-
-// Settings component for AI configuration
-const AISettings = () => {
-  const { t } = useTranslation();
+const Admin: React.FC = () => {
+  const { t, dir } = useTranslation();
   const { toast } = useToast();
+  const [aiSettings, setAiSettings] = useLocalStorage<AISettingsType>('aiSettings', { 
+    apiKey: '', 
+    model: 'gpt-4o-mini' 
+  });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
-  const [loading, setLoading] = useState(false);
+  const [adHTML, setAdHTML] = useState('');
+  const [secondaryAdHTML, setSecondaryAdHTML] = useState('');
+  const [logoText, setLogoText] = useLocalStorage<string>('logoText', 'دواء آمن');
+  const [logoTextInput, setLogoTextInput] = useState('');
   
   useEffect(() => {
-    const fetchAISettings = async () => {
+    // الحصول على إعدادات الذكاء الاصطناعي عند تحميل الصفحة
+    const fetchSettings = async () => {
       try {
         const { data, error } = await supabase
           .from('settings')
@@ -55,413 +43,275 @@ const AISettings = () => {
           return;
         }
         
-        if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-          // Safety check for object type and expected properties
-          const jsonValue = data.value as Record<string, Json>;
+        if (data?.value) {
+          // التحقق من أن البيانات مناسبة لنوع AISettingsType
+          const value = data.value;
           
-          if ('apiKey' in jsonValue && 'model' in jsonValue) {
-            setApiKey(String(jsonValue.apiKey || ''));
-            setModel(String(jsonValue.model || 'gpt-4o-mini'));
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            // استخدام وظيفة التحويل الآمن
+            const parsedSettings = safelyParseAISettings(value as Record<string, Json>);
+            
+            setApiKey(parsedSettings.apiKey || '');
+            setModel(parsedSettings.model || 'gpt-4o-mini');
           }
+        } else {
+          // استخدام القيم من localStorage إذا لم تكن متوفرة في قاعدة البيانات
+          setApiKey(aiSettings.apiKey || '');
+          setModel(aiSettings.model || 'gpt-4o-mini');
         }
       } catch (error) {
-        console.error('Error in fetching AI settings:', error);
+        console.error('Error in fetchSettings:', error);
       }
     };
     
-    fetchAISettings();
-  }, []);
-  
-  const saveApiSettings = async () => {
-    setLoading(true);
-    
-    try {
-      // Create a properly typed object
-      const settingsToSave: AISettingsType = {
-        apiKey,
-        model
-      };
-      
-      const { error } = await supabase
-        .from('settings')
-        .upsert(
-          { type: 'ai_settings', value: settingsToSave },
-          { onConflict: 'type' }
-        );
-      
-      if (error) throw error;
-      
-      // Also save to local storage for immediate access in components
-      localStorage.setItem('aiSettings', JSON.stringify(settingsToSave));
-      
-      toast({
-        title: t('saveSettings'),
-        description: "تم حفظ إعدادات مزود الذكاء الاصطناعي بنجاح",
-      });
-    } catch (error) {
-      console.error('Error saving AI settings:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في حفظ إعدادات الذكاء الاصطناعي",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>{t('aiSettings')}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            {t('apiKey')}
-          </label>
-          <Input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-..."
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            {t('model')}
-          </label>
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
-              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button 
-          onClick={saveApiSettings} 
-          className="w-full"
-          variant="default"
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-              {t('loading')}
-            </span>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              {t('saveSettings')}
-            </>
-          )}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Logo settings component
-const LogoSettings = () => {
-  const { toast } = useToast();
-  const [logoText, setLogoText] = useLocalStorage<string>('logoText', 'دواء آمن');
-  const [newLogoText, setNewLogoText] = useState('');
-  
-  useEffect(() => {
-    setNewLogoText(logoText);
-  }, [logoText]);
-  
-  const saveLogoText = () => {
-    setLogoText(newLogoText);
-    toast({
-      title: "تم حفظ نص الشعار",
-      description: "تم تحديث نص الشعار بنجاح",
-    });
-  };
-  
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>إعدادات الشعار</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            نص الشعار
-          </label>
-          <Input
-            type="text"
-            value={newLogoText}
-            onChange={(e) => setNewLogoText(e.target.value)}
-            placeholder="نص الشعار الذي سيظهر في النافبار"
-          />
-        </div>
-        <Button onClick={saveLogoText} className="w-full" variant="default">
-          <Save className="mr-2 h-4 w-4" />
-          حفظ نص الشعار
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Primary Advertisement settings component
-const AdvertisementSettings = () => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [adHtml, setAdHtml] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  
-  useEffect(() => {
-    const fetchAdvertisement = async () => {
+    // الحصول على إعدادات الإعلانات
+    const fetchAdSettings = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: adData, error: adError } = await supabase
           .from('settings')
           .select('value')
           .eq('type', 'advertisement')
           .maybeSingle();
-        
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching advertisement:', error);
-          return;
+          
+        if (adError && adError.code !== 'PGRST116') {
+          console.error('Error fetching advertisement:', adError);
+        } else if (adData?.value) {
+          setAdHTML(typeof adData.value === 'string' ? adData.value : '');
         }
         
-        if (data?.value && typeof data.value === 'object' && 'html' in data.value) {
-          setAdHtml((data.value as any).html as string);
-        }
-      } catch (error) {
-        console.error('Error in admin component:', error);
-      }
-    };
-    
-    fetchAdvertisement();
-  }, []);
-  
-  const saveAdvertisement = async () => {
-    setIsSaving(true);
-    
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert(
-          { type: 'advertisement', value: { html: adHtml } } as any,
-          { onConflict: 'type' }
-        );
-      
-      if (error) throw error;
-      
-      toast({
-        title: "تم حفظ الإعلان",
-        description: "تم تحديث HTML الإعلان بنجاح",
-      });
-    } catch (error) {
-      console.error('Error saving advertisement:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في حفظ HTML الإعلان",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>{t('advertisement')}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Textarea
-          value={adHtml}
-          onChange={(e) => setAdHtml(e.target.value)}
-          placeholder="<div>Your ad HTML here</div>"
-          className="min-h-[200px]"
-        />
-        <Button onClick={saveAdvertisement} className="w-full" disabled={isSaving}>
-          {isSaving ? (
-            <span className="flex items-center gap-2">
-              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-              {t('loading')}
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Save className="h-4 w-4" />
-              {t('saveAd')}
-            </span>
-          )}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Secondary Advertisement settings component
-const SecondaryAdvertisementSettings = () => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [adHtml, setAdHtml] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  
-  useEffect(() => {
-    const fetchAdvertisement = async () => {
-      try {
-        const { data, error } = await supabase
+        const { data: secondaryAdData, error: secondaryAdError } = await supabase
           .from('settings')
           .select('value')
           .eq('type', 'secondary_advertisement')
           .maybeSingle();
-        
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching secondary advertisement:', error);
-          return;
-        }
-        
-        if (data?.value && typeof data.value === 'object' && 'html' in data.value) {
-          setAdHtml((data.value as any).html as string);
+          
+        if (secondaryAdError && secondaryAdError.code !== 'PGRST116') {
+          console.error('Error fetching secondary advertisement:', secondaryAdError);
+        } else if (secondaryAdData?.value) {
+          setSecondaryAdHTML(typeof secondaryAdData.value === 'string' ? secondaryAdData.value : '');
         }
       } catch (error) {
-        console.error('Error in admin component:', error);
+        console.error('Error in fetchAdSettings:', error);
       }
     };
     
-    fetchAdvertisement();
+    // تعيين قيمة logoTextInput
+    setLogoTextInput(logoText);
+    
+    fetchSettings();
+    fetchAdSettings();
   }, []);
   
-  const saveAdvertisement = async () => {
-    setIsSaving(true);
+  const saveAISettings = async () => {
+    // تعيين القيم الحالية
+    const newSettings: AISettingsType = {
+      apiKey,
+      model
+    };
     
+    try {
+      // تحديث في localStorage
+      setAiSettings(newSettings);
+      
+      // تحديث في قاعدة البيانات
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          type: 'ai_settings',
+          value: newSettings as unknown as Json
+        }, {
+          onConflict: 'type'
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: t('saveSuccess'),
+        description: t('settingsSaved'),
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error saving AI settings:', error);
+      toast({
+        title: t('error'),
+        description: String(error),
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  };
+  
+  const saveAd = async () => {
     try {
       const { error } = await supabase
         .from('settings')
-        .upsert(
-          { type: 'secondary_advertisement', value: { html: adHtml } } as any,
-          { onConflict: 'type' }
-        );
+        .upsert({
+          type: 'advertisement',
+          value: adHTML as unknown as Json
+        }, {
+          onConflict: 'type'
+        });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "تم حفظ الإعلان الثانوي",
-        description: "تم تحديث HTML الإعلان الثانوي بنجاح",
+        title: t('saveSuccess'),
+        description: t('adSaved'),
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error saving advertisement:', error);
+      toast({
+        title: t('error'),
+        description: String(error),
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  };
+  
+  const saveSecondaryAd = async () => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          type: 'secondary_advertisement',
+          value: secondaryAdHTML as unknown as Json
+        }, {
+          onConflict: 'type'
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: t('saveSuccess'),
+        description: t('secondaryAdSaved'),
+        duration: 3000,
       });
     } catch (error) {
       console.error('Error saving secondary advertisement:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في حفظ HTML الإعلان الثانوي",
-        variant: "destructive",
+        title: t('error'),
+        description: String(error),
+        variant: 'destructive',
+        duration: 5000,
       });
-    } finally {
-      setIsSaving(false);
     }
   };
   
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>الإعلان الثانوي</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Textarea
-          value={adHtml}
-          onChange={(e) => setAdHtml(e.target.value)}
-          placeholder="<div>Your secondary ad HTML here</div>"
-          className="min-h-[200px]"
-        />
-        <Button onClick={saveAdvertisement} className="w-full" disabled={isSaving}>
-          {isSaving ? (
-            <span className="flex items-center gap-2">
-              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-              {t('loading')}
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Save className="h-4 w-4" />
-              حفظ الإعلان الثانوي
-            </span>
-          )}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Main Admin component
-const Admin: React.FC = () => {
-  const { t, dir } = useTranslation();
-  const navigate = useNavigate();
-  const { user, logout, isAdmin } = useAuth();
-  
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    // Check admin permissions
-    if (!isAdmin()) {
-      console.log("Not admin, redirecting...");
-      logout();
-      navigate('/login');
-    }
-  }, [user, navigate, logout, isAdmin]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const saveLogo = () => {
+    setLogoText(logoTextInput);
+    toast({
+      title: t('saveSuccess'),
+      description: t('logoSaved'),
+      duration: 3000,
+    });
   };
-
+  
   return (
-    <div className="min-h-screen p-6 bg-gray-50" dir={dir}>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">{t('adminPanel')}</h1>
-        <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-          <LogOut className="h-4 w-4" />
-          {t('logout')}
-        </Button>
-      </div>
+    <div className="space-y-6" dir={dir}>
+      <h1 className="text-3xl font-bold">{t('adminPanel')}</h1>
       
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="mb-6 grid w-full grid-cols-3">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            عام
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            المظهر
-          </TabsTrigger>
-          <TabsTrigger value="api" className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            واجهات API
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="general" className="space-y-6">
-          <LogoSettings />
-          <AdvertisementSettings />
-          <SecondaryAdvertisementSettings />
-        </TabsContent>
-        
-        <TabsContent value="appearance" className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>إعدادات المظهر</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">سيتم تطوير إعدادات المظهر قريباً.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="api" className="space-y-6">
-          <AISettings />
-        </TabsContent>
-      </Tabs>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('aiSettings')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="apiKey">{t('apiKey')}</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="model">{t('model')}</Label>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
+                  <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                  <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                  <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button onClick={saveAISettings}>{t('saveSettings')}</Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('logoSettings')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="logoText">{t('logoText')}</Label>
+              <Input
+                id="logoText"
+                type="text"
+                value={logoTextInput}
+                onChange={(e) => setLogoTextInput(e.target.value)}
+                placeholder="دواء آمن"
+              />
+            </div>
+            
+            <Button onClick={saveLogo}>{t('saveLogo')}</Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('advertisement')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Textarea
+              value={adHTML}
+              onChange={(e) => setAdHTML(e.target.value)}
+              placeholder="<div>Your ad HTML here</div>"
+              className="min-h-[200px] font-mono"
+            />
+            
+            <Button onClick={saveAd}>{t('saveAd')}</Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('secondaryAdvertisement')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Textarea
+              value={secondaryAdHTML}
+              onChange={(e) => setSecondaryAdHTML(e.target.value)}
+              placeholder="<div>Your secondary ad HTML here</div>"
+              className="min-h-[200px] font-mono"
+            />
+            
+            <Button onClick={saveSecondaryAd}>{t('saveSecondaryAd')}</Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

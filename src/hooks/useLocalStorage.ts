@@ -3,6 +3,32 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
+// تعريف نوع إعدادات الذكاء الاصطناعي
+export interface AISettingsType {
+  apiKey: string;
+  model: string;
+}
+
+// التحقق من أن القيمة تطابق نوع إعدادات الذكاء الاصطناعي
+export const isAISettingsType = (value: any): value is AISettingsType => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'apiKey' in value &&
+    'model' in value &&
+    typeof value.apiKey === 'string' &&
+    typeof value.model === 'string'
+  );
+};
+
+// تحويل القيمة إلى نوع إعدادات الذكاء الاصطناعي بشكل آمن
+export const safelyParseAISettings = (value: Record<string, Json>): AISettingsType => {
+  return {
+    apiKey: typeof value.apiKey === 'string' ? value.apiKey : '',
+    model: typeof value.model === 'string' ? value.model : 'gpt-4o-mini'
+  };
+};
+
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
@@ -45,16 +71,11 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
             
             // Create a proper object that matches type T
             // This ensures we have the right shape before setting it
-            if ('apiKey' in jsonValue && 'model' in jsonValue) {
-              const typedValue = {
-                apiKey: String(jsonValue.apiKey || ''),
-                model: String(jsonValue.model || 'gpt-4o-mini')
-              } as unknown as T;
-              
-              setStoredValue(typedValue);
-              // Update localStorage with the database value
-              window.localStorage.setItem(key, JSON.stringify(typedValue));
-            }
+            const typedValue = safelyParseAISettings(jsonValue) as unknown as T;
+            
+            setStoredValue(typedValue);
+            // Update localStorage with the database value
+            window.localStorage.setItem(key, JSON.stringify(typedValue));
           }
         } catch (error) {
           console.error('Error fetching from database:', error);
