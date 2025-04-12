@@ -83,7 +83,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
-  'ف��فادول+بنادول': {
+  'ف���فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -349,7 +349,10 @@ const MedicationInteractionChecker: React.FC = () => {
   useEffect(() => {
     if (result && resultRef.current) {
       setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        resultRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center'
+        });
       }, 300);
     }
   }, [result]);
@@ -464,7 +467,7 @@ const MedicationInteractionChecker: React.FC = () => {
       
       let prompt = "";
       if (language === 'ar') {
-        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}. قم بتقييم مناسبة الأدوية للعمر المقدم إن وجد. أضف الأسماء التجارية للأدوية البديلة المقترحة. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+        prompt = `تحقق من التفاعلات المحتملة بين هذه الأدوية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}. قم بتقييم مناسبة الأدوية للعمر المقدم إن وجد. أضف الأسماء التجارية للأدوية البديلة المقترحة. الرجاء الرد بتنسيق JSON بالهيكل الت��لي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
       } else {
         prompt = `Check for potential interactions between these medications: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}. Evaluate the age-appropriateness of the medications if age is provided. Include brand names for suggested alternatives. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
       }
@@ -676,7 +679,7 @@ const MedicationInteractionChecker: React.FC = () => {
         </Card>
         
         {result && (
-          <Card id="result-card" className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-4" ref={resultRef}>
+          <Card id="result-card" className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16" ref={resultRef}>
             <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
               <CardTitle className="flex items-center">
                 {result.hasInteractions ? (
