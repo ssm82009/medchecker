@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 import { 
   Cog, 
   Palette, 
@@ -55,10 +55,14 @@ const AISettings = () => {
           return;
         }
         
-        if (data?.value && typeof data.value === 'object') {
-          const settings = data.value as AISettingsType;
-          setApiKey(settings.apiKey || '');
-          setModel(settings.model || 'gpt-4o-mini');
+        if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+          // Safety check for object type and expected properties
+          const jsonValue = data.value as Record<string, Json>;
+          
+          if ('apiKey' in jsonValue && 'model' in jsonValue) {
+            setApiKey(String(jsonValue.apiKey || ''));
+            setModel(String(jsonValue.model || 'gpt-4o-mini'));
+          }
         }
       } catch (error) {
         console.error('Error in fetching AI settings:', error);
@@ -72,17 +76,23 @@ const AISettings = () => {
     setLoading(true);
     
     try {
+      // Create a properly typed object
+      const settingsToSave: AISettingsType = {
+        apiKey,
+        model
+      };
+      
       const { error } = await supabase
         .from('settings')
         .upsert(
-          { type: 'ai_settings', value: { apiKey, model } },
+          { type: 'ai_settings', value: settingsToSave },
           { onConflict: 'type' }
         );
       
       if (error) throw error;
       
       // Also save to local storage for immediate access in components
-      localStorage.setItem('aiSettings', JSON.stringify({ apiKey, model }));
+      localStorage.setItem('aiSettings', JSON.stringify(settingsToSave));
       
       toast({
         title: t('saveSettings'),

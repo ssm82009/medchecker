@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -38,11 +39,22 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
             return;
           }
           
-          if (data?.value && typeof data.value === 'object') {
-            // Ensure we're setting the correct type
-            setStoredValue(data.value as T);
-            // Update localStorage with the database value
-            window.localStorage.setItem(key, JSON.stringify(data.value));
+          if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+            // Safe type cast with validation
+            const jsonValue = data.value as Record<string, Json>;
+            
+            // Create a proper object that matches type T
+            // This ensures we have the right shape before setting it
+            if ('apiKey' in jsonValue && 'model' in jsonValue) {
+              const typedValue = {
+                apiKey: String(jsonValue.apiKey || ''),
+                model: String(jsonValue.model || 'gpt-4o-mini')
+              } as unknown as T;
+              
+              setStoredValue(typedValue);
+              // Update localStorage with the database value
+              window.localStorage.setItem(key, JSON.stringify(typedValue));
+            }
           }
         } catch (error) {
           console.error('Error fetching from database:', error);

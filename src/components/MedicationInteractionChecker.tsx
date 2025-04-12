@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -12,8 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
-// Define interface for AI settings
 interface AISettingsType {
   apiKey: string;
   model: string;
@@ -326,10 +325,18 @@ const MedicationInteractionChecker: React.FC = () => {
           return;
         }
         
-        if (data?.value && typeof data.value === 'object') {
-          const settings = data.value as AISettingsType;
-          localStorage.setItem('aiSettings', JSON.stringify(settings));
-          setApiSettings(settings);
+        if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+          const jsonValue = data.value as Record<string, Json>;
+          
+          if ('apiKey' in jsonValue && 'model' in jsonValue) {
+            const settings: AISettingsType = {
+              apiKey: String(jsonValue.apiKey || ''),
+              model: String(jsonValue.model || 'gpt-4o-mini')
+            };
+            
+            localStorage.setItem('aiSettings', JSON.stringify(settings));
+            setApiSettings(settings);
+          }
         }
       } catch (error) {
         console.error('Error fetching AI settings:', error);
@@ -360,10 +367,18 @@ const MedicationInteractionChecker: React.FC = () => {
             .eq('type', 'ai_settings')
             .maybeSingle();
           
-          if (!error && data?.value && typeof data.value === 'object') {
-            const settings = data.value as AISettingsType;
-            apiKey = settings.apiKey;
-            setApiSettings(settings);
+          if (!error && data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+            const jsonValue = data.value as Record<string, Json>;
+            
+            if ('apiKey' in jsonValue && 'model' in jsonValue) {
+              const settings: AISettingsType = {
+                apiKey: String(jsonValue.apiKey || ''),
+                model: String(jsonValue.model || 'gpt-4o-mini')
+              };
+              
+              apiKey = settings.apiKey;
+              setApiSettings(settings);
+            }
           }
         } catch (dbError) {
           console.error('Error fetching API key from database:', dbError);
