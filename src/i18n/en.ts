@@ -57,5 +57,12 @@ export const en = {
   
   // New keys for the result section
   ageWarnings: "Age-related warnings:",
-  alternatives: "Suggested alternatives:"
+  alternatives: "Suggested alternatives:",
+  
+  // Admin panel toast messages
+  saveSuccess: "Success",
+  settingsSaved: "Settings saved successfully",
+  adSaved: "Advertisement saved successfully",
+  secondaryAdSaved: "Secondary advertisement saved successfully",
+  logoSaved: "Logo saved successfully"
 };

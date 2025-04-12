@@ -57,5 +57,12 @@ export const ar = {
   
   // New keys for the result section
   ageWarnings: "تحذيرات متعلقة بالعمر:",
-  alternatives: "البدائل المقترحة:"
+  alternatives: "البدائل المقترحة:",
+  
+  // Admin panel toast messages
+  saveSuccess: "تم بنجاح",
+  settingsSaved: "تم حفظ الإعدادات بنجاح",
+  adSaved: "تم حفظ الإعلان بنجاح",
+  secondaryAdSaved: "تم حفظ الإعلان الثانوي بنجاح",
+  logoSaved: "تم حفظ الشعار بنجاح"
 };
