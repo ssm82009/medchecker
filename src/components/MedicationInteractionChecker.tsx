@@ -50,26 +50,21 @@ const MedicationInteractionChecker: React.FC = () => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
   };
 
-  // Handle detected medications from image
   const handleMedicationsDetected = (medicationText: string) => {
     if (!medicationText) return;
     
-    // Split text by commas
     const detectedMedications = medicationText.split(/[,،]/).map(med => med.trim()).filter(Boolean);
     
     if (detectedMedications.length === 0) return;
     
-    // Create new medication items
     const newMeds = detectedMedications.map(name => ({
       id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name
     }));
     
-    // Determine how many empty inputs we have
     const emptyInputs = medications.filter(med => !med.name.trim());
     
     if (emptyInputs.length >= newMeds.length) {
-      // We have enough empty inputs, just fill them
       const filledMeds = [...medications];
       let filledCount = 0;
       
@@ -82,7 +77,6 @@ const MedicationInteractionChecker: React.FC = () => {
       
       setMedications(filledMeds);
     } else {
-      // Not enough empty inputs, replace empty ones and add the rest as new
       const nonEmptyMeds = medications.filter(med => med.name.trim());
       const updatedMeds = [
         ...nonEmptyMeds,
