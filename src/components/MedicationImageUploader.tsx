@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker } from 'tesseract.js';
+import { createWorker, createScheduler, Worker, WorkerOptions } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -110,7 +109,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   const optimizeTesseractSettings = async (worker: any) => {
     await worker.setParameters({
       tessedit_char_whitelist: isArabic 
-        ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
+        ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهو��ءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
         : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
       tessjs_create_pdf: '0',
       tessjs_create_hocr: '0',
@@ -168,14 +167,14 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(30);
           
           // Create worker with progress tracking
-          const worker = await createWorker({
-            logger: progress => {
-              if (progress.status === 'recognizing text') {
-                const newProgress = 30 + (progress.progress * 60);
+          const worker: Worker = await createWorker({
+            logger: (m) => {
+              if (m.status === 'recognizing text') {
+                const newProgress = 30 + (m.progress * 60);
                 updateProgress(Math.floor(newProgress));
               }
             }
-          });
+          } as WorkerOptions);
           
           updateProgress(35);
           
