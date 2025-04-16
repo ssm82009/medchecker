@@ -1,19 +1,32 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { User, Weight, ActivitySquare } from 'lucide-react';
 import { PatientInfo } from '@/types/medication';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ImageToTextScanner from './ImageToTextScanner';
 
 interface PatientInfoFormProps {
   patientInfo: PatientInfo;
   onUpdate: (field: keyof PatientInfo, value: string) => void;
+  onMedicationsDetected?: (medicationText: string) => void;
 }
 
-const PatientInfoForm: React.FC<PatientInfoFormProps> = ({ patientInfo, onUpdate }) => {
+const PatientInfoForm: React.FC<PatientInfoFormProps> = ({ 
+  patientInfo, 
+  onUpdate,
+  onMedicationsDetected 
+}) => {
   const { t, dir } = useTranslation();
   const isMobile = useIsMobile();
+  const [showScanner, setShowScanner] = useState<boolean>(false);
+
+  const handleTextDetected = (text: string) => {
+    if (onMedicationsDetected) {
+      onMedicationsDetected(text);
+    }
+  };
 
   return (
     <div className={`mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md ${isMobile ? 'px-2' : 'px-3'}`}>
@@ -83,6 +96,13 @@ const PatientInfoForm: React.FC<PatientInfoFormProps> = ({ patientInfo, onUpdate
           />
         </div>
       </div>
+
+      {onMedicationsDetected && (
+        <div className="mt-3 pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-600 mb-2">{t('scanMedicationsFromImage')}</p>
+          <ImageToTextScanner onTextDetected={handleTextDetected} />
+        </div>
+      )}
     </div>
   );
 };

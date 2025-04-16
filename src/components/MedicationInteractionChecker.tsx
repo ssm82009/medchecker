@@ -27,7 +27,6 @@ const MedicationInteractionChecker: React.FC = () => {
     healthCondition: ''
   });
   
-  const [showPatientInfo, setShowPatientInfo] = useState<boolean>(false);
   const resultRef = useRef<HTMLDivElement>(null);
   
   const { result, loading, apiKeyError, checkInteractions } = useInteractionChecker();
@@ -48,6 +47,49 @@ const MedicationInteractionChecker: React.FC = () => {
 
   const updateMedication = (id: string, name: string) => {
     setMedications(medications.map(med => med.id === id ? { ...med, name } : med));
+  };
+
+  // Handle detected medications from image
+  const handleMedicationsDetected = (medicationText: string) => {
+    if (!medicationText) return;
+    
+    // Split text by commas
+    const detectedMedications = medicationText.split(/[,،]/).map(med => med.trim()).filter(Boolean);
+    
+    if (detectedMedications.length === 0) return;
+    
+    // Create new medication items
+    const newMeds = detectedMedications.map(name => ({
+      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name
+    }));
+    
+    // Determine how many empty inputs we have
+    const emptyInputs = medications.filter(med => !med.name.trim());
+    
+    if (emptyInputs.length >= newMeds.length) {
+      // We have enough empty inputs, just fill them
+      const filledMeds = [...medications];
+      let filledCount = 0;
+      
+      for (let i = 0; i < filledMeds.length && filledCount < newMeds.length; i++) {
+        if (!filledMeds[i].name.trim()) {
+          filledMeds[i].name = newMeds[filledCount].name;
+          filledCount++;
+        }
+      }
+      
+      setMedications(filledMeds);
+    } else {
+      // Not enough empty inputs, replace empty ones and add the rest as new
+      const nonEmptyMeds = medications.filter(med => med.name.trim());
+      const updatedMeds = [
+        ...nonEmptyMeds,
+        ...newMeds
+      ];
+      
+      setMedications(updatedMeds);
+    }
   };
 
   useEffect(() => {
@@ -107,6 +149,7 @@ const MedicationInteractionChecker: React.FC = () => {
               <PatientInfoForm 
                 patientInfo={patientInfo}
                 onUpdate={handlePatientInfo}
+                onMedicationsDetected={handleMedicationsDetected}
               />
             </div>
           </CardContent>
