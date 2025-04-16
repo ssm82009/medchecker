@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker, PSM, Rectangle } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
@@ -23,15 +22,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   const extractMedicationsFromText = (text: string): string[] => {
     console.log("Raw OCR text:", text);
     
-    // تنظيف النص
     const cleanedText = text
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ') // إزالة الرموز الخاصة
-      .replace(/\s+/g, ' ') // استبدال المسافات المتعددة بمسافة واحدة
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
     
     console.log("Cleaned text:", cleanedText);
     
-    // تقسيم النص إلى أسطر وتنظيفه
     const lines = cleanedText
       .split(/[\n\r]/)
       .map(line => line.trim())
@@ -39,46 +36,32 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Lines:", lines);
     
-    // تحليل كل سطر للبحث عن أسماء الأدوية المحتملة
     const medicationLines = lines.filter(line => {
-      // تخطي الأسطر القصيرة جدًا
       if (line.length < 3) return false;
-      
-      // تخطي الأسطر التي تحتوي فقط على أرقام
       if (/^\d+(\.\d+)?$/.test(line)) return false;
-      
       return true;
     });
     
-    // استخراج أسماء الأدوية المحتملة من كل سطر
-    // البحث عن الأسطر التي تحتوي على نص بخط كبير (عادة أسماء الأدوية)
     const potentialMedications: string[] = [];
     
     for (let i = 0; i < medicationLines.length; i++) {
       const line = medicationLines[i];
       const words = line.split(/\s+/);
       
-      // بالنسبة للأسطر القصيرة بكلمة واحدة أو كلمتين، اعتبرها أسماء أدوية محتملة
       if (words.length <= 3 && line.length >= 4 && line.length <= 25) {
-        // استبعاد الأسطر التي تحتوي على كلمات شائعة مثل "مجم" أو "ملغ" أو "mg" فقط
         if (!/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(line)) {
           potentialMedications.push(line);
         }
-      } 
-      // بالنسبة للأسطر الطويلة، ابحث عن الكلمات الفردية التي قد تكون أسماء أدوية
-      else {
+      } else {
         for (const word of words) {
           if (
-            (word.length >= 4 && word.length <= 20) && // معظم أسماء الأدوية بين 4 و 20 حرفًا
-            !/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(word) && // استبعاد الأوزان
-            !/^\d+(\.\d+)?$/.test(word) // استبعاد الأرقام
+            (word.length >= 4 && word.length <= 20) &&
+            !/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(word) &&
+            !/^\d+(\.\d+)?$/.test(word)
           ) {
-            // إعطاء أولوية للكلمات التي تبدأ بحرف كبير في اللغة الإنجليزية
             if (!isArabic && /^[A-Z]/.test(word)) {
               potentialMedications.push(word);
-            }
-            // إعطاء أولوية للكلمات العربية التي تظهر في بداية السطر
-            else if (isArabic && words.indexOf(word) < 3) {
+            } else if (isArabic && words.indexOf(word) < 3) {
               potentialMedications.push(word);
             }
           }
@@ -88,33 +71,25 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Potential medications before filtering:", potentialMedications);
     
-    // تحسين: اكتشاف أسماء الأدوية بناءً على الخط الكبير
-    // هذا يعتمد على فرضية أن أسماء الأدوية عادة ما تظهر بخط كبير في العلبة
     const brandNamePattern = isArabic 
-      ? /^[أ-ي]{3,}$/  // نمط للبحث عن الكلمات العربية
-      : /^[A-Z][a-z]{2,}$|^[A-Z]+$/;  // نمط للبحث عن الكلمات الإنجليزية التي تبدأ بحرف كبير
+      ? /^[أ-ي]{3,}$/ 
+      : /^[A-Z][a-z]{2,}$|^[A-Z]+$/;
     
     const prioritizedMeds = potentialMedications.filter(med => 
       brandNamePattern.test(med) || med.length >= 5
     );
     
-    // دمج النتائج وإزالة التكرارات
     const allMeds = [...new Set([...prioritizedMeds, ...potentialMedications])];
     console.log("Final medications found:", allMeds);
     
-    // تقسيم الصورة إلى أقسام افتراضية لاكتشاف عدة علب
-    // بناءً على الافتراض أن كل قسم من النص يمثل علبة دواء مختلفة
     const result: string[] = [];
     
-    // إذا كان هناك أسطر كثيرة، افترض أن كل مجموعة من الأسطر المتتالية قد تنتمي لعلبة مختلفة
     if (allMeds.length > 1) {
-      // إضافة أسماء الأدوية المحتملة مع الحد الأقصى 5 أدوية
       return allMeds.slice(0, 5);
     } else if (allMeds.length === 1) {
       return allMeds;
     }
     
-    // فشل في العثور على أي أسماء أدوية، إرجاع الكلمات الطويلة من النص
     const longWords = cleanedText
       .split(/\s+/)
       .filter(word => word.length >= 4 && word.length <= 20)
@@ -127,39 +102,30 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // الحفاظ على النسبة الأصلية للصورة
     canvas.width = image.width;
     canvas.height = image.height;
     
     if (ctx) {
-      // رسم الصورة الأصلية
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       
-      // تطبيق معالجات تحسين الصورة لـ OCR
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // تحسين التباين وتحويل إلى أبيض وأسود بطريقة أفضل
       for (let i = 0; i < data.length; i += 4) {
-        // استخراج قيم RGB
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         
-        // تحويل إلى تدرج الرمادي مع مراعاة تأثير كل لون
         const gray = 0.3 * r + 0.59 * g + 0.11 * b;
         
-        // زيادة التباين وتوضيح الحواف
-        const threshold = 150; // عتبة التحويل للأبيض والأسود
+        const threshold = 150;
         const newValue = gray > threshold ? 255 : 0;
         
-        // تطبيق القيم الجديدة
-        data[i] = newValue;     // R
-        data[i + 1] = newValue; // G
-        data[i + 2] = newValue; // B
+        data[i] = newValue;
+        data[i + 1] = newValue;
+        data[i + 2] = newValue;
       }
       
-      // رسم الصورة المعالجة
       ctx.putImageData(imageData, 0, 0);
     }
     
@@ -172,16 +138,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     setError(null);
     
     try {
-      // تحميل الصورة في عنصر img للمعالجة المسبقة
       const image = new Image();
       const imageUrl = URL.createObjectURL(imageFile);
       
       image.onload = async () => {
         try {
-          // معالجة الصورة لتحسين دقة التعرف على النص
           const processedCanvas = preprocessImage(image);
           
-          // تحويل Canvas إلى Blob
           const processedImageBlob = await new Promise<Blob | null>((resolve) => {
             processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
           });
@@ -190,18 +153,15 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             throw new Error('Failed to process image');
           }
           
-          // تقسيم الصورة إلى قسمين (أعلى وأسفل) للتعرف على عدة علب دواء
           const fullWidth = processedCanvas.width;
           const fullHeight = processedCanvas.height;
           
-          // إنشاء عدة مناطق محتملة للتعرف على النص
-          const regions = [
-            { x: 0, y: 0, width: fullWidth, height: fullHeight },  // الصورة كاملة
-            { x: 0, y: 0, width: fullWidth, height: fullHeight / 2 },  // النصف العلوي
-            { x: 0, y: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },  // النصف السفلي
+          const regions: Rectangle[] = [
+            { left: 0, top: 0, width: fullWidth, height: fullHeight },
+            { left: 0, top: 0, width: fullWidth, height: fullHeight / 2 },
+            { left: 0, top: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },
           ];
           
-          // تهيئة Tesseract worker
           const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
           
           await worker.setParameters({
@@ -216,10 +176,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           let allText = '';
           
-          // التعرف على النص في كل منطقة
           for (let i = 0; i < regions.length; i++) {
             const region = regions[i];
-            setProgressPercent((i / regions.length) * 90);  // تقدم حتى 90%
+            setProgressPercent((i / regions.length) * 90);
             
             try {
               const result = await worker.recognize(processedImageBlob, {
@@ -229,13 +188,11 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
               allText += result.data.text + '\n';
             } catch (err) {
               console.error(`Error recognizing region ${i}:`, err);
-              // استمر في المحاولة للمناطق الأخرى حتى لو فشلت إحداها
             }
           }
           
           await worker.terminate();
           
-          // استخراج أسماء الأدوية من النص
           const medications = extractMedicationsFromText(allText);
           
           setProgressPercent(100);
@@ -298,7 +255,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'environment', // استخدام الكاميرا الخلفية إن أمكن
+          facingMode: 'environment', 
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         } 
@@ -310,28 +267,21 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       video.srcObject = stream;
       video.play();
       
-      // إنشاء عنصر الفيديو في الصفحة مؤقتاً للتقاط الصورة
       document.body.appendChild(video);
       
-      // انتظار للتأكد من أن الفيديو جاهز
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // تعيين أبعاد Canvas لتتناسب مع الفيديو
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      // رسم الإطار الحالي على Canvas
       canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // تحويل Canvas إلى ملف صورة
       canvas.toBlob(blob => {
         if (blob) {
-          // إنشاء ملف من البلوب
           const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
           processImageInSegments(file);
         }
         
-        // تنظيف الموارد
         const tracks = stream.getTracks();
         tracks.forEach(track => track.stop());
         document.body.removeChild(video);
