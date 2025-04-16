@@ -567,16 +567,18 @@ const MedicationInteractionChecker: React.FC = () => {
                       dir={dir}
                     />
                   </div>
-                  {medications.length > 2 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => removeMedication(med.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => removeMedication(med.id)}
+                    className={`${
+                      medications.length > 2 
+                        ? 'opacity-100' 
+                        : 'opacity-0 group-hover:opacity-100'
+                    } transition-opacity`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
               
