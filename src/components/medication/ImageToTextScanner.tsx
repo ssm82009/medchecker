@@ -120,7 +120,6 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     }
   };
 
-  // Set up message interval during scanning
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -134,9 +133,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     };
   }, [isScanning, language]);
 
-  // Function to scroll to medication input fields
   const scrollToMedicationInputs = () => {
-    // Find the parent element that contains the medication input rows
     const parentElement = document.querySelector('.group.transition.duration-200.animate-in.fade-in');
     
     if (parentElement) {
@@ -149,14 +146,11 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     }
   };
 
-  // Intelligent filter to extract medication names from OCR results
   const extractMedicationNames = (result: RecognizeResult): string[] => {
-    // If words data is not available, fallback to regular text extraction
     if (!result.data.words || result.data.words.length === 0) {
       return extractMedicationNamesFromText(result.data.text);
     }
     
-    // Common words that appear on medication boxes but are not medication names
     const blacklist = [
       'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
       'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
@@ -166,67 +160,49 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
 
     const blacklistRegex = new RegExp(blacklist.join('|'), 'i');
     
-    // Get image height to help with relative positioning
     const imageHeight = result.data.height || 1000;
     const topThird = imageHeight / 3;
     
-    // Filter words based on multiple criteria
     const potentialMedicationNames = result.data.words
       .filter(word => {
-        // Filter by position (typically in the top part of the box)
         const isInTopPart = word.bbox.y0 < topThird;
-        
-        // Filter by size (medication names are usually bigger)
         const wordHeight = word.bbox.y1 - word.bbox.y0;
-        const isLargeText = wordHeight > 20; // Adjust based on your images
-        
-        // Filter by content (avoid common non-medication text)
+        const isLargeText = wordHeight > 20;
         const doesNotContainBlacklist = !blacklistRegex.test(word.text.toLowerCase());
-        
-        // Medication names usually start with uppercase and have 3+ characters
         const matchesMedicationNamePattern = /^[A-Z][a-zA-Z0-9-]{2,}$/.test(word.text);
         
-        // Combine all filters with priority on position and content
         return isInTopPart && doesNotContainBlacklist && (isLargeText || matchesMedicationNamePattern);
       })
       .map(word => word.text.trim())
-      .filter(text => text.length > 2); // Ensure minimum length
+      .filter(text => text.length > 2);
     
-    // If we couldn't find any using our advanced filtering, try basic text extraction
     if (potentialMedicationNames.length === 0) {
       return extractMedicationNamesFromText(result.data.text);
     }
     
-    // Remove duplicates
     return [...new Set(potentialMedicationNames)];
   };
-  
-  // Fallback function to extract medication names from plain text
+
   const extractMedicationNamesFromText = (text: string): string[] => {
     if (!text) return [];
     
-    // Split into lines
     const lines = text.split('\n');
     
-    // Common words to filter out
     const blacklist = [
       'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
       'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
       'capsule', 'capsules', 'suspension', 'cream', 'gel', 'injection'
     ];
     
-    // Process each line
     let potentialMedications = lines
       .map(line => line.trim())
       .filter(line => 
-        // Keep lines that are likely to be medication names
         line.length > 2 && 
         line.length < 30 && 
         !blacklist.some(term => line.toLowerCase().includes(term)) &&
-        !/^\d+$/.test(line) // Exclude lines that are just numbers
+        !/^\d+$/.test(line)
       );
     
-    // Focus on the first few lines as they usually contain the medication name
     if (potentialMedications.length > 3) {
       potentialMedications = potentialMedications.slice(0, 3);
     }
@@ -255,18 +231,15 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         },
       });
       
-      // Use English language for better accuracy with medication names
       await worker.loadLanguage('eng');
       await worker.initialize('eng');
       
-      // Use SINGLE_BLOCK for better text extraction of medication labels
       await worker.setParameters({
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
       });
 
       const result = await worker.recognize(imageData);
       
-      // Use our intelligent filtering to extract medication names
       const medicationNames = extractMedicationNames(result);
       
       if (medicationNames.length > 0) {
@@ -279,7 +252,6 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
             : `Found ${medicationNames.length} potential medications`,
         });
         
-        // Scroll to medication inputs after text is detected
         scrollToMedicationInputs();
       } else {
         toast({
