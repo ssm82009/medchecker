@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { createWorker, PSM, Rectangle } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 interface MedicationImageUploaderProps {
   onTextExtracted: (medications: string[]) => void;
@@ -16,6 +18,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   const [progressPercent, setProgressPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   const isArabic = language === 'ar';
   
@@ -156,6 +159,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           const fullWidth = processedCanvas.width;
           const fullHeight = processedCanvas.height;
           
+          // Define regions for OCR processing
           const regions: Rectangle[] = [
             { left: 0, top: 0, width: fullWidth, height: fullHeight },
             { left: 0, top: 0, width: fullWidth, height: fullHeight / 2 },
@@ -163,7 +167,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           ];
           
           const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
-          
           await worker.setParameters({
             tessedit_char_whitelist: isArabic 
               ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
@@ -176,9 +179,17 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           let allText = '';
           
+          // Process each region with proper progress updates
           for (let i = 0; i < regions.length; i++) {
             const region = regions[i];
-            setProgressPercent((i / regions.length) * 90);
+            const progressStart = (i / regions.length) * 90;
+            const progressEnd = ((i + 1) / regions.length) * 90;
+            
+            // Update progress at the beginning of each region
+            setProgressPercent(progressStart);
+            
+            // Ensure the UI updates before continuing
+            await new Promise(resolve => setTimeout(resolve, 50));
             
             try {
               const result = await worker.recognize(processedImageBlob, {
@@ -186,6 +197,12 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
               });
               
               allText += result.data.text + '\n';
+              
+              // Update progress after each region is processed
+              setProgressPercent(progressEnd);
+              
+              // Ensure the UI updates before continuing
+              await new Promise(resolve => setTimeout(resolve, 50));
             } catch (err) {
               console.error(`Error recognizing region ${i}:`, err);
             }
@@ -197,18 +214,42 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           setProgressPercent(100);
           
+          // Ensure the UI updates before continuing
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           if (medications.length === 0) {
             setError(isArabic 
               ? 'لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.' 
               : 'No medication names detected in the image. Try capturing a clearer image.');
+            toast({
+              title: isArabic ? 'تنبيه' : 'Alert',
+              description: isArabic 
+                ? 'لم يتم التعرف على أي أدوية. حاول مرة أخرى بصورة أوضح.' 
+                : 'No medications detected. Try again with a clearer image.',
+              variant: "destructive",
+            });
           } else {
             onTextExtracted(medications);
+            toast({
+              title: isArabic ? 'تم بنجاح' : 'Success',
+              description: isArabic 
+                ? `تم التعرف على ${medications.length} دواء` 
+                : `Detected ${medications.length} medication(s)`,
+              variant: "default",
+            });
           }
         } catch (err) {
           console.error('OCR processing error:', err);
           setError(isArabic 
             ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
             : 'An error occurred while processing the image. Please try again.');
+          toast({
+            title: isArabic ? 'خطأ' : 'Error',
+            description: isArabic 
+              ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
+              : 'Error processing image. Please try again.',
+            variant: "destructive",
+          });
         } finally {
           setIsProcessing(false);
           URL.revokeObjectURL(imageUrl);
@@ -221,6 +262,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           : 'Failed to load the image. Please try again.');
         setIsProcessing(false);
         URL.revokeObjectURL(imageUrl);
+        toast({
+          title: isArabic ? 'خطأ' : 'Error',
+          description: isArabic 
+            ? 'فشل في تحميل الصورة. يرجى المحاولة مرة أخرى.' 
+            : 'Failed to load the image. Please try again.',
+          variant: "destructive",
+        });
       };
       
       image.src = imageUrl;
@@ -231,6 +279,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
         : 'An error occurred while processing the image. Please try again.');
       setIsProcessing(false);
+      toast({
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic 
+          ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
+          : 'An error occurred while processing the image. Please try again.',
+        variant: "destructive",
+      });
     }
   };
 
@@ -243,6 +298,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         setError(isArabic 
           ? 'يرجى اختيار ملف صورة صالح (JPG، PNG)' 
           : 'Please select a valid image file (JPG, PNG)');
+        toast({
+          title: isArabic ? 'خطأ' : 'Error',
+          description: isArabic 
+            ? 'يرجى اختيار ملف صورة صالح (JPG، PNG)' 
+            : 'Please select a valid image file (JPG, PNG)',
+          variant: "destructive",
+        });
       }
     }
   };
