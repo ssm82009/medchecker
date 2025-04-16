@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,17 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   const { toast } = useToast();
   
   const isArabic = language === 'ar';
+  
+  useEffect(() => {
+    if (isProcessing) {
+      const timer = setTimeout(() => {
+        if (progressPercent < 100) {
+          console.log("Progress update:", progressPercent);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [progressPercent, isProcessing]);
   
   const extractMedicationsFromText = (text: string): string[] => {
     console.log("Raw OCR text:", text);
@@ -135,6 +145,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     return canvas;
   };
 
+  const updateProgressWithDelay = (value: number) => {
+    setTimeout(() => {
+      setProgressPercent(value);
+      document.body.dataset.progress = String(value);
+    }, 10);
+  };
+
   const processImageInSegments = async (imageFile: File) => {
     setIsProcessing(true);
     setProgressPercent(0);
@@ -146,7 +163,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       
       image.onload = async () => {
         try {
+          updateProgressWithDelay(5);
           const processedCanvas = preprocessImage(image);
+          updateProgressWithDelay(10);
           
           const processedImageBlob = await new Promise<Blob | null>((resolve) => {
             processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
@@ -156,15 +175,18 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             throw new Error('Failed to process image');
           }
           
+          updateProgressWithDelay(15);
+          
           const fullWidth = processedCanvas.width;
           const fullHeight = processedCanvas.height;
           
-          // Define regions for OCR processing
           const regions: Rectangle[] = [
             { left: 0, top: 0, width: fullWidth, height: fullHeight },
             { left: 0, top: 0, width: fullWidth, height: fullHeight / 2 },
             { left: 0, top: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },
           ];
+          
+          updateProgressWithDelay(20);
           
           const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
           await worker.setParameters({
@@ -177,19 +199,16 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
           });
           
+          updateProgressWithDelay(30);
+          
           let allText = '';
           
-          // Process each region with proper progress updates
           for (let i = 0; i < regions.length; i++) {
             const region = regions[i];
-            const progressStart = (i / regions.length) * 90;
-            const progressEnd = ((i + 1) / regions.length) * 90;
+            const progressStart = 30 + ((i / regions.length) * 60);
+            const progressEnd = 30 + (((i + 1) / regions.length) * 60);
             
-            // Update progress at the beginning of each region
-            setProgressPercent(progressStart);
-            
-            // Ensure the UI updates before continuing
-            await new Promise(resolve => setTimeout(resolve, 50));
+            updateProgressWithDelay(Math.floor(progressStart));
             
             try {
               const result = await worker.recognize(processedImageBlob, {
@@ -198,11 +217,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
               
               allText += result.data.text + '\n';
               
-              // Update progress after each region is processed
-              setProgressPercent(progressEnd);
-              
-              // Ensure the UI updates before continuing
-              await new Promise(resolve => setTimeout(resolve, 50));
+              updateProgressWithDelay(Math.floor(progressEnd));
             } catch (err) {
               console.error(`Error recognizing region ${i}:`, err);
             }
@@ -212,10 +227,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           const medications = extractMedicationsFromText(allText);
           
-          setProgressPercent(100);
-          
-          // Ensure the UI updates before continuing
-          await new Promise(resolve => setTimeout(resolve, 100));
+          updateProgressWithDelay(95);
           
           if (medications.length === 0) {
             setError(isArabic 
@@ -238,6 +250,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
               variant: "default",
             });
           }
+          
+          updateProgressWithDelay(100);
+          
+          setTimeout(() => {
+            setIsProcessing(false);
+          }, 500);
+          
         } catch (err) {
           console.error('OCR processing error:', err);
           setError(isArabic 
@@ -250,8 +269,8 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
               : 'Error processing image. Please try again.',
             variant: "destructive",
           });
-        } finally {
           setIsProcessing(false);
+        } finally {
           URL.revokeObjectURL(imageUrl);
         }
       };
@@ -393,6 +412,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         <div className="space-y-2">
           <p className="text-sm text-gray-500 text-center">
             {isArabic ? 'جاري معالجة الصورة...' : 'Processing image...'}
+            {progressPercent > 0 && ` ${progressPercent}%`}
           </p>
           <Progress 
             value={progressPercent} 
