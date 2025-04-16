@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createWorker, PSM } from 'tesseract.js';
-import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import { Camera, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -20,6 +20,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const medicationRowsRef = useRef<HTMLDivElement>(null);
 
   const enhanceImage = (file: File, maxWidth = 800): Promise<Blob> => {
     return new Promise((resolve) => {
@@ -121,7 +122,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   };
 
   // Set up message interval during scanning
-  React.useEffect(() => {
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     
     if (isScanning) {
@@ -133,6 +134,21 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       if (interval) clearInterval(interval);
     };
   }, [isScanning, language]);
+
+  // Function to scroll to medication input fields
+  const scrollToMedicationInputs = () => {
+    // Find the parent element that contains the medication input rows
+    const parentElement = document.querySelector('.group.transition.duration-200.animate-in.fade-in');
+    
+    if (parentElement) {
+      setTimeout(() => {
+        parentElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 500);
+    }
+  };
 
   const recognizeText = async (imageData: string) => {
     setIsScanning(true);
@@ -155,14 +171,13 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         },
       });
       
-      // Use single language for faster processing
-      const langToUse = language === 'ar' ? 'ara' : 'eng';
-      await worker.loadLanguage(langToUse);
-      await worker.initialize(langToUse);
+      // Use English language for better accuracy with medication names
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
       
+      // Use SINGLE_BLOCK for better text extraction of medication labels
       await worker.setParameters({
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-        preserve_interword_spaces: '1',
       });
 
       const { data } = await worker.recognize(imageData);
@@ -183,6 +198,9 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
             ? `تم العثور على ${potentialMedications.length} أدوية محتملة` 
             : `Found ${potentialMedications.length} potential medications`,
         });
+        
+        // Scroll to medication inputs after text is detected
+        scrollToMedicationInputs();
       } else {
         toast({
           title: language === 'ar' ? 'تحذير' : 'Warning',
@@ -212,6 +230,13 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
 
   return (
     <div className={`mt-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+      <div className="text-sm text-orange-600 mb-3 flex items-center justify-center">
+        <ArrowDown className="h-3 w-3 mr-1" />
+        {language === 'ar' 
+          ? 'التقط صورة لعلبة الدواء بالأحرف الإنجليزية للحصول على أفضل النتائج' 
+          : 'Take a picture of the medication box with English text for best results'}
+      </div>
+      
       <div className="flex gap-2 mb-2">
         <Button
           type="button"
