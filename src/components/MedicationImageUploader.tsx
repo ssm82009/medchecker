@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, type Worker } from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -107,7 +106,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     return imageData;
   };
 
-  const optimizeTesseractSettings = async (worker: Worker) => {
+  const optimizeTesseractSettings = async (worker: any) => {
     await worker.setParameters({
       tessedit_char_whitelist: isArabic 
         ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
@@ -115,7 +114,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       tessjs_create_pdf: '0',
       tessjs_create_hocr: '0',
       tessjs_create_tsv: '0',
-      tessedit_pageseg_mode: '3', // Using '3' instead of 'PSM_AUTO' as it's the numeric value expected
+      tessedit_pageseg_mode: 3,
       tessjs_image_dpi: '70',
       tessjs_ocr_engine_mode: '2',
     });
@@ -165,25 +164,23 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           ctx.putImageData(processedData, 0, 0);
           
           updateProgress(25);
-          
           updateProgress(30);
           
-          // تحديث طريقة إنشاء Worker للتوافق مع الإصدار الجديد من المكتبة
           const worker = await createWorker({
             logger: progress => {
               if (progress.status === 'recognizing text') {
                 const newProgress = 30 + (progress.progress * 60);
                 updateProgress(Math.floor(newProgress));
               }
-            }
+            },
+            langPath: 'https://tessdata.projectnaptha.com/4.0.0',
           });
           
           updateProgress(35);
           
           const langStr = isArabic ? 'ara+eng' : 'eng+ara';
           
-          // في الإصدار الجديد، نحتاج إلى استخدام loadLanguage من خلال تمرير ملف اللغة
-          // 'ara+eng' أو 'eng+ara' مباشرة إلى دالة createWorker
+          await worker.load();
           await worker.loadLanguage(langStr);
           await worker.initialize(langStr);
           
