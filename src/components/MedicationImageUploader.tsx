@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
@@ -179,7 +178,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         },
       });
       
-      // زيادة دقة التعرف على النص
+      // Fix: Use the PSM enum from tesseract.js instead of a plain number
       await worker.setParameters({
         tessedit_char_whitelist: isArabic 
           ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
@@ -187,8 +186,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         tessjs_create_pdf: '0',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
-        // Fix TypeScript error by using number instead of string for PSM
-        tessedit_pageseg_mode: 6,
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
       });
       
       // التعرف على النص من الصورة المعالجة
@@ -323,7 +321,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           <Progress 
             value={progressPercent} 
             className="h-3 bg-gray-200" 
-            // تعديل لون شريط التقدم ليكون واضحًا بلون بنفسجي مميز
             style={{ 
               '--progress-background': '#E5DEFF',
               '--progress-foreground': '#8B5CF6'
