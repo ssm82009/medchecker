@@ -75,12 +75,12 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
           {result.hasInteractions ? (
             <>
               <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-red-500`} />
-              <span className="text-red-700">{t('results')}</span>
+              <span className="text-red-700">{t('interactionsFound')}</span>
             </>
           ) : (
             <>
               <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-green-500`} />
-              <span className="text-green-700">{t('results')}</span>
+              <span className="text-green-700">{t('noInteractionsFound')}</span>
             </>
           )}
         </CardTitle>

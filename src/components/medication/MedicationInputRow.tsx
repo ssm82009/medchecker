@@ -29,7 +29,7 @@ const MedicationInputRow: React.FC<MedicationInputRowProps> = ({
         <Input 
           value={medication.name} 
           onChange={(e) => onUpdate(medication.id, e.target.value)} 
-          placeholder={`${t('medication')} ${index + 1}`}
+          placeholder={`${t('medicationName')} ${index + 1}`}
           className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700"
           dir={dir}
         />

@@ -1,5 +1,5 @@
 
-export const ar = {
+const ar = {
   appTitle: 'فاحص تفاعلات الأدوية',
   enterMedication: 'أدخل أسماء الأدوية التي تريد التحقق من تفاعلاتها',
   addMedication: 'إضافة دواء آخر',
@@ -62,7 +62,13 @@ export const ar = {
   settingsSaved: "تم حفظ الإعدادات بنجاح",
   adSaved: "تم حفظ الإعلان بنجاح",
   secondaryAdSaved: "تم حفظ الإعلان الثانوي بنجاح",
-  logoSaved: "تم حفظ الشعار بنجاح"
+  logoSaved: "تم حفظ الشعار بنجاح",
+  
+  // Add missing translation keys
+  medication: 'دواء',
+  results: 'النتائج',
+  noInteractions: 'لم يتم العثور على تفاعلات بين هذه الأدوية',
+  warnings: 'تحذيرات'
 };
 
 export default ar;

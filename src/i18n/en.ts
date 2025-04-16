@@ -60,7 +60,13 @@ export const en = {
   settingsSaved: "Settings saved successfully",
   adSaved: "Advertisement saved successfully",
   secondaryAdSaved: "Secondary advertisement saved successfully",
-  logoSaved: "Logo saved successfully"
+  logoSaved: "Logo saved successfully",
+  
+  // Add missing translation keys
+  medication: 'Medication',
+  results: 'Results',
+  noInteractions: 'No interactions found between these medications',
+  warnings: 'Warnings'
 };
 
 export default en;

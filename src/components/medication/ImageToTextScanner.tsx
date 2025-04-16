@@ -76,7 +76,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       // Set recognition parameters for faster processing
       await worker.setParameters({
         tessedit_ocr_engine_mode: '2', // Use LSTM neural net mode
-        tessedit_pageseg_mode: '6', // Assume a single uniform block of text (using string instead of PSM enum)
+        tessedit_pageseg_mode: 6, // Assume a single uniform block of text (using number instead of string)
         preserve_interword_spaces: '1',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
