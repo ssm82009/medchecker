@@ -22,7 +22,7 @@ const PatientInfoForm: React.FC<PatientInfoFormProps> = ({ patientInfo, onUpdate
         {t('patientInfo')}
       </h3>
       
-      <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid`}>
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <div className="flex items-center text-xs text-gray-600">
             <User className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
@@ -54,7 +54,7 @@ const PatientInfoForm: React.FC<PatientInfoFormProps> = ({ patientInfo, onUpdate
         </div>
       </div>
       
-      <div className={`${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} grid mt-2`}>
+      <div className={`${isMobile ? 'grid-cols-1' : 'grid-cols-2'} grid mt-2 gap-3`}>
         <div className="space-y-1">
           <div className="flex items-center text-xs text-gray-600">
             <ActivitySquare className={`${dir === 'rtl' ? 'ml-1' : 'mr-1'} h-3 w-3`} />
