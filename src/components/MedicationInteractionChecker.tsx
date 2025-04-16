@@ -11,6 +11,7 @@ import MedicationInputRow from './medication/MedicationInputRow';
 import PatientInfoForm from './medication/PatientInfoForm';
 import InteractionResults from './medication/InteractionResults';
 import { useInteractionChecker } from '@/hooks/useInteractionChecker';
+import ImageToTextScanner from './medication/ImageToTextScanner';
 
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
@@ -126,6 +127,14 @@ const MedicationInteractionChecker: React.FC = () => {
           </CardHeader>
           <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
             <div className="space-y-4">
+              {/* نقوم بوضع قسم استخراج النص من الصورة هنا في الأعلى */}
+              <div className="mb-4 pt-1 pb-4 border-b border-gray-100">
+                <p className="text-sm font-medium mb-2 flex items-center text-gray-700">
+                  {t('scanMedicationsFromImage')}
+                </p>
+                <ImageToTextScanner onTextDetected={handleMedicationsDetected} />
+              </div>
+              
               {medications.map((med, index) => (
                 <MedicationInputRow
                   key={med.id}
@@ -149,7 +158,6 @@ const MedicationInteractionChecker: React.FC = () => {
               <PatientInfoForm 
                 patientInfo={patientInfo}
                 onUpdate={handlePatientInfo}
-                onMedicationsDetected={handleMedicationsDetected}
               />
             </div>
           </CardContent>

@@ -1,12 +1,11 @@
 
 import React, { useState, useRef } from 'react';
-import { createWorker, PSM, OEM } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 import { Camera, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface ImageToTextScannerProps {
   onTextDetected: (text: string) => void;
@@ -19,6 +18,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   const [progress, setProgress] = useState<number>(0);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -35,6 +35,12 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     reader.readAsDataURL(file);
   };
 
+  const openCamera = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  };
+
   const selectImage = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -47,6 +53,9 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     setIsScanning(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -125,7 +134,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           variant="outline"
           size="sm"
           className="text-xs flex-1 bg-gray-50 hover:bg-gray-100 border-dashed"
-          onClick={selectImage}
+          onClick={openCamera}
           disabled={isScanning}
         >
           <Camera className={`h-3 w-3 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
@@ -144,13 +153,23 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           {t("selectImage")}
         </Button>
         
+        {/* إدخال الكاميرا المخصص */}
+        <input 
+          type="file"
+          ref={cameraInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileChange}
+          capture="environment"
+        />
+        
+        {/* إدخال الصورة العادي */}
         <input 
           type="file"
           ref={fileInputRef}
           className="hidden"
           accept="image/*"
           onChange={handleFileChange}
-          capture={window.innerWidth < 768 ? "environment" : undefined}
         />
       </div>
       
