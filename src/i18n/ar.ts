@@ -1,4 +1,5 @@
-export default {
+
+export const ar = {
   appTitle: 'فاحص تفاعلات الأدوية',
   enterMedication: 'أدخل أسماء الأدوية التي تريد التحقق من تفاعلاتها',
   addMedication: 'إضافة دواء آخر',
@@ -28,4 +29,40 @@ export default {
   analyzingImage: 'جاري تحليل الصورة...',
   imageAnalysisComplete: 'تم تحليل الصورة بنجاح',
   selectedImage: 'صورة مختارة',
+  
+  // Additional translations for new features
+  language: "اللغة",
+  dashboard: "لوحة التحكم",
+  adminPanel: "لوحة الإدارة",
+  aiSettings: "إعدادات الذكاء الاصطناعي",
+  apiKey: "مفتاح API",
+  model: "النموذج",
+  saveSettings: "حفظ الإعدادات",
+  advertisement: "إعلان HTML",
+  secondaryAdvertisement: "إعلان HTML ثانوي",
+  saveAd: "حفظ الإعلان",
+  saveSecondaryAd: "حفظ الإعلان الثانوي",
+  login: "تسجيل الدخول",
+  email: "البريد الإلكتروني",
+  password: "كلمة المرور",
+  loginButton: "تسجيل الدخول",
+  invalidCredentials: "بريد إلكتروني أو كلمة مرور غير صالحة",
+  logout: "تسجيل الخروج",
+  loginSuccess: "تم تسجيل الدخول بنجاح",
+  welcomeBack: "مرحبًا بعودتك!",
+  loginFailed: "فشل تسجيل الدخول",
+  logoSettings: "إعدادات الشعار",
+  logoText: "نص الشعار",
+  saveLogo: "حفظ الشعار",
+  footerCopyright: 'جميع الحقوق محفوظة',
+  contactUs: 'اتصل بنا',
+  error: "خطأ",
+  disclaimer: "تم إنشاء هذه النتائج بمساعدة خوارزميات الذكاء الاصطناعي وهي لأغراض تعليمية فقط. استشر دائمًا الطبيب أو الصيدلي قبل استخدام أي دواء!",
+  saveSuccess: "نجاح",
+  settingsSaved: "تم حفظ الإعدادات بنجاح",
+  adSaved: "تم حفظ الإعلان بنجاح",
+  secondaryAdSaved: "تم حفظ الإعلان الثانوي بنجاح",
+  logoSaved: "تم حفظ الشعار بنجاح"
 };
+
+export default ar;

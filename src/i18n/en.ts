@@ -1,3 +1,4 @@
+
 export const en = {
   appTitle: 'Medication Interaction Checker',
   enterMedication: 'Enter medications to check for interactions',
@@ -14,11 +15,11 @@ export const en = {
   ageWarnings: 'Age-related Warnings',
   interactionDisclaimer: 'Disclaimer: This information is advisory only. Always consult your healthcare provider.',
   patientInfo: 'Patient Information',
-  age: 'Age',
+  age: 'Age (Optional)',
   enterAge: 'Enter age',
-  weight: 'Weight (kg)',
+  weight: 'Weight (kg) (Optional)',
   selectWeight: 'Enter weight',
-  allergies: 'Allergies',
+  allergies: 'Allergies (Optional)',
   enterAllergies: 'Enter medication allergies if any',
   healthCondition: 'Health Condition',
   enterHealthCondition: 'Enter health condition or chronic diseases',
@@ -51,34 +52,15 @@ export const en = {
   logoSettings: "Logo Settings",
   logoText: "Logo Text",
   saveLogo: "Save Logo",
-  
-  // Patient information translations
-  age: "Age (Optional)",
-  enterAge: "Enter age",
-  weight: "Weight (kg) (Optional)",
-  selectWeight: "Enter weight",
-  allergies: "Allergies (Optional)",
-  enterAllergies: "Enter allergies",
-  patientInfo: "Patient Info",
-  
-  // Footer translations
   footerCopyright: 'All Rights Reserved',
   contactUs: 'Contact Us',
-  
-  // Error messages
   error: "Error",
-  
-  // Disclaimer
   disclaimer: "These results were generated with the help of artificial intelligence algorithms and are specifically for educational purposes only. Always consult a doctor or pharmacist before using any medication!",
-  
-  // New keys for the result section
-  ageWarnings: "Age-related warnings:",
-  alternatives: "Suggested alternatives:",
-  
-  // Admin panel toast messages
   saveSuccess: "Success",
   settingsSaved: "Settings saved successfully",
   adSaved: "Advertisement saved successfully",
   secondaryAdSaved: "Secondary advertisement saved successfully",
   logoSaved: "Logo saved successfully"
 };
+
+export default en;

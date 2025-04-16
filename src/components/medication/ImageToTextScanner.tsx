@@ -76,7 +76,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       // Set recognition parameters for faster processing
       await worker.setParameters({
         tessedit_ocr_engine_mode: '2', // Use LSTM neural net mode
-        tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+        tessedit_pageseg_mode: '6', // Assume a single uniform block of text (using string instead of PSM enum)
         preserve_interword_spaces: '1',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
@@ -144,7 +144,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           disabled={isScanning}
         >
           <Camera className={`h-3 w-3 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
-          {t(language === 'ar' ? 'التقاط صورة' : 'Capture Image')}
+          {t("captureImage")}
         </Button>
         
         <Button
@@ -156,7 +156,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           disabled={isScanning}
         >
           <Image className={`h-3 w-3 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
-          {t(language === 'ar' ? 'اختيار صورة' : 'Select Image')}
+          {t("selectImage")}
         </Button>
         
         <input 
@@ -181,7 +181,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           </Button>
           <img 
             src={image} 
-            alt={t(language === 'ar' ? 'صورة مختارة' : 'Selected image')} 
+            alt={t("selectedImage")} 
             className="w-full h-auto max-h-40 object-contain bg-gray-100" 
           />
         </div>
@@ -190,7 +190,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       {isScanning && (
         <div className="mb-2">
           <div className="flex justify-between text-xs mb-1">
-            <span>{t(language === 'ar' ? 'جاري التحليل...' : 'Analyzing...')}</span>
+            <span>{t("analyzingImage")}</span>
             <span>{progress}%</span>
           </div>
           <Progress value={progress} className="h-2 bg-gray-100" />
@@ -199,7 +199,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       
       {progress === 100 && !isScanning && (
         <div className="text-xs text-green-600 mb-2">
-          {t(language === 'ar' ? 'تم التحليل بنجاح' : 'Analysis completed')}
+          {t("imageAnalysisComplete")}
         </div>
       )}
     </div>
