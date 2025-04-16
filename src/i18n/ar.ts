@@ -1,8 +1,8 @@
 
-import { en as originalAr } from './en';
+import { en } from './en';
 
 const ar = {
-  ...originalAr,
+  ...en,
   enterMedication: 'أدخل الأدوية التي تريد التحقق منها بكتابة أسمائها أو استخراجها عن طريق الصور',
   patientInfo: 'معلومات المريض (اختياري)',
 };
