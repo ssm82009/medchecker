@@ -71,10 +71,8 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         preserve_interword_spaces: '1',
       });
 
-      // Use OEM in recognize method instead
-      const { data } = await worker.recognize(imageData, {
-        oem: OEM.LSTM_ONLY
-      });
+      // Pass options directly without the oem property
+      const { data } = await worker.recognize(imageData);
       
       const detectedText = data.text.trim();
       
