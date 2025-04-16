@@ -1,5 +1,5 @@
-import * as React from "react"
 
+import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
@@ -58,7 +58,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-gray-300 transition-colors hover:bg-gray-100 data-[state=selected]:bg-gray-200",
+      "border-b border-gray-400 transition-colors hover:bg-gray-100 data-[state=selected]:bg-gray-200",
       className
     )}
     {...props}
