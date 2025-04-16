@@ -166,14 +166,11 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          const worker = await createWorker({
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                const newProgress = 30 + (m.progress * 60);
-                updateProgress(Math.floor(newProgress));
-              }
-            },
-            langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+          const worker = await createWorker(progress => {
+            if (progress.status === 'recognizing text') {
+              const newProgress = 30 + (progress.progress * 60);
+              updateProgress(Math.floor(newProgress));
+            }
           });
           
           updateProgress(35);
