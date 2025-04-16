@@ -158,14 +158,17 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     setError(null);
     
     try {
+      updateProgressWithDelay(5);
       const image = new Image();
       const imageUrl = URL.createObjectURL(imageFile);
       
       image.onload = async () => {
         try {
-          updateProgressWithDelay(5);
-          const processedCanvas = preprocessImage(image);
           updateProgressWithDelay(10);
+          const processedCanvas = preprocessImage(image);
+          updateProgressWithDelay(20);
+          
+          await new Promise(resolve => setTimeout(resolve, 50));
           
           const processedImageBlob = await new Promise<Blob | null>((resolve) => {
             processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
@@ -175,7 +178,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             throw new Error('Failed to process image');
           }
           
-          updateProgressWithDelay(15);
+          updateProgressWithDelay(25);
+          
+          await new Promise(resolve => setTimeout(resolve, 50));
           
           const fullWidth = processedCanvas.width;
           const fullHeight = processedCanvas.height;
@@ -186,9 +191,31 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             { left: 0, top: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },
           ];
           
-          updateProgressWithDelay(20);
+          updateProgressWithDelay(30);
+          
+          let workerLoadPromiseResolved = false;
+          
+          const workerLoadPromise = new Promise<void>((resolve) => {
+            setTimeout(() => {
+              if (!workerLoadPromiseResolved) {
+                updateProgressWithDelay(35);
+                resolve();
+                workerLoadPromiseResolved = true;
+              }
+            }, 1000);
+          });
           
           const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
+          
+          if (!workerLoadPromiseResolved) {
+            workerLoadPromiseResolved = true;
+            updateProgressWithDelay(40);
+          } else {
+            await workerLoadPromise;
+          }
+          
+          updateProgressWithDelay(45);
+          
           await worker.setParameters({
             tessedit_char_whitelist: isArabic 
               ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
@@ -199,31 +226,40 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
           });
           
-          updateProgressWithDelay(30);
+          updateProgressWithDelay(50);
           
           let allText = '';
           
           for (let i = 0; i < regions.length; i++) {
             const region = regions[i];
-            const progressStart = 30 + ((i / regions.length) * 60);
-            const progressEnd = 30 + (((i + 1) / regions.length) * 60);
+            const progressStart = 50 + ((i / regions.length) * 35);
+            const progressEnd = 50 + (((i + 1) / regions.length) * 35);
             
             updateProgressWithDelay(Math.floor(progressStart));
+            
+            await new Promise(resolve => setTimeout(resolve, 50));
             
             try {
               const result = await worker.recognize(processedImageBlob, {
                 rectangle: region
               });
               
+              const midProgress = (progressStart + progressEnd) / 2;
+              updateProgressWithDelay(Math.floor(midProgress));
+              
               allText += result.data.text + '\n';
               
               updateProgressWithDelay(Math.floor(progressEnd));
+              
+              await new Promise(resolve => setTimeout(resolve, 50));
             } catch (err) {
               console.error(`Error recognizing region ${i}:`, err);
             }
           }
           
           await worker.terminate();
+          
+          updateProgressWithDelay(90);
           
           const medications = extractMedicationsFromText(allText);
           
@@ -255,7 +291,8 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           setTimeout(() => {
             setIsProcessing(false);
-          }, 500);
+            setProgressPercent(0);
+          }, 1000);
           
         } catch (err) {
           console.error('OCR processing error:', err);
@@ -320,7 +357,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         toast({
           title: isArabic ? 'خطأ' : 'Error',
           description: isArabic 
-            ? 'يرجى اختيار ملف صورة صالح (JPG، PNG)' 
+            ? 'يرجى ��ختيار ملف صورة صالح (JPG، PNG)' 
             : 'Please select a valid image file (JPG, PNG)',
           variant: "destructive",
         });
