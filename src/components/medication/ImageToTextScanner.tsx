@@ -21,21 +21,31 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const resizeImage = (file: File, maxWidth = 800): Promise<Blob> => {
+  const enhanceImage = (file: File, maxWidth = 800): Promise<Blob> => {
     return new Promise((resolve) => {
-      const imgElement = new window.Image();
+      const img = new window.Image();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
       
-      imgElement.onload = () => {
-        const ratio = imgElement.width > maxWidth ? maxWidth / imgElement.width : 1;
-        canvas.width = imgElement.width * ratio;
-        canvas.height = imgElement.height * ratio;
-        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.8);
+      img.onload = () => {
+        const scale = Math.min(maxWidth / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // تحويل للصورة الرمادية grayscale
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+          const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = avg;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9);
       };
       
-      imgElement.src = URL.createObjectURL(file);
+      img.src = URL.createObjectURL(file);
     });
   };
 
@@ -68,8 +78,8 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     setIsScanning(true);
     
     try {
-      // Resize image before processing
-      const resizedBlob = await resizeImage(file);
+      // Process the image with enhancement
+      const enhancedBlob = await enhanceImage(file);
       const reader = new FileReader();
       
       reader.onload = (e) => {
@@ -78,7 +88,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         recognizeText(dataUrl);
       };
       
-      reader.readAsDataURL(resizedBlob);
+      reader.readAsDataURL(enhancedBlob);
     } catch (error) {
       console.error('Error processing image:', error);
       setIsScanning(false);
