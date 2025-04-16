@@ -6,9 +6,7 @@ const CACHE_NAME = 'dawaa-amen-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
-  '/src/App.tsx',
+  '/assets/',
   '/lovable-uploads/29abcb36-507a-440e-b78a-ab8c08b596f7.png',
   '/lovable-uploads/824e3d1f-eb0a-4fbd-b507-771e74f9d4f3.png',
   '/lovable-uploads/3177a7d1-0b87-48fd-8c05-8398e232e7e1.png',

@@ -1,0 +1,76 @@
+
+# تفعيل محرك إعادة الكتابة
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # إذا لم يكن الطلب ملفًا أو مجلدًا موجودًا
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # إعادة توجيه جميع الطلبات إلى index.html
+  RewriteRule ^(.*)$ index.html [QSA,L]
+</IfModule>
+
+# تعيين نوع MIME لملفات JavaScript وCSS
+<IfModule mod_mime.c>
+  AddType text/javascript js
+  AddType text/javascript mjs
+  AddType text/css css
+</IfModule>
+
+# تمكين ضغط GZIP
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml
+</IfModule>
+
+# تعيين Caching Headers
+<IfModule mod_expires.c>
+  ExpiresActive On
+  
+  # الصور والأيقونات وملفات الخط
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  
+  # JavaScript و CSS 
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType text/javascript "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  
+  # HTML (تجديدها بشكل متكرر)
+  ExpiresByType text/html "access plus 0 seconds"
+  
+  # الوسائط المتعددة
+  ExpiresByType audio/ogg "access plus 1 year"
+  ExpiresByType video/mp4 "access plus 1 year"
+  ExpiresByType video/ogg "access plus 1 year"
+  ExpiresByType video/webm "access plus 1 year"
+</IfModule>
+
+# منع الوصول إلى المجلدات الحساسة
+<IfModule mod_rewrite.c>
+  RewriteRule ^(.*/)?\.git/ - [F,L]
+  RewriteRule ^node_modules/ - [F,L]
+  RewriteRule ^src/ - [F,L]
+</IfModule>
+
+# تعيين الرؤوس الأمنية
+<IfModule mod_headers.c>
+  # منع الكشف عن إصدار PHP والمعلومات الحساسة الأخرى
+  Header unset X-Powered-By
+  
+  # حماية من clickjacking
+  Header set X-Frame-Options "SAMEORIGIN"
+  
+  # منع تغيير نوع MIME
+  Header set X-Content-Type-Options "nosniff"
+  
+  # تفعيل حماية XSS في المتصفحات الحديثة
+  Header set X-XSS-Protection "1; mode=block"
+</IfModule>
