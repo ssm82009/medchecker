@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
@@ -38,65 +39,88 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Lines:", lines);
     
-    // استخراج الكلمات المحتملة من كل سطر
-    const words = lines
-      .flatMap(line => line.split(/\s+/))
-      .map(word => word.trim())
-      .filter(word => word.length >= 3 && word.length <= 20); // معظم أسماء الأدوية بين 3 و 20 حرفاً
-    
-    console.log("Words:", words);
-    
-    // البحث عن الكلمات ذات الأحرف الكبيرة أو الكلمات التي تظهر بخط عريض 
-    // (نفترض أن الكلمات المهمة مثل أسماء الأدوية تكون بارزة في التصميم)
-    const potentialMedications = words.filter(word => {
-      // تخطي الأرقام فقط
-      if (/^\d+(\.\d+)?$/.test(word)) return false;
+    // تحليل كل سطر للبحث عن أسماء الأدوية المحتملة
+    const medicationLines = lines.filter(line => {
+      // تخطي الأسطر القصيرة جدًا
+      if (line.length < 3) return false;
       
-      // تخطي الكلمات القصيرة الشائعة
-      const commonWords = isArabic ? 
-        ['في', 'من', 'إلى', 'على', 'عن', 'مع', 'هذا', 'هذه', 'تلك', 'ذلك', 'كان', 'كانت', 'يجب', 'هل', 'نعم', 'لا'] :
-        ['the', 'and', 'for', 'with', 'this', 'that', 'was', 'were', 'should', 'would', 'could', 'yes', 'not'];
-        
-      if (commonWords.includes(word.toLowerCase())) return false;
+      // تخطي الأسطر التي تحتوي فقط على أرقام
+      if (/^\d+(\.\d+)?$/.test(line)) return false;
       
-      // محاولة التركيز على الكلمات الكبيرة (عادة ما تكون بالخط الكبير أسماء الأدوية)
-      // في OCR تظهر الكلمات ذات الخط الكبير في بداية الأسطر أو مستقلة
-      const isLikelyBrand = 
-        (word.length >= 4 && /^[A-Z]/.test(word)) || // يبدأ بحرف كبير في الإنجليزية
-        (/^[A-Z]+$/.test(word)) || // كل الحروف كبيرة مثل اسم تجاري
-        (/^[A-Z][a-z]+$/.test(word) && word.length >= 5) || // كلمة تبدأ بحرف كبير وطويلة
-        (isArabic && words.indexOf(word) < 8); // في العربية: احتمالية أعلى للكلمات في بداية النص
-      
-      return isLikelyBrand;
+      return true;
     });
     
-    console.log("Potential medications:", potentialMedications);
+    // استخراج أسماء الأدوية المحتملة من كل سطر
+    // البحث عن الأسطر التي تحتوي على نص بخط كبير (عادة أسماء الأدوية)
+    const potentialMedications: string[] = [];
     
-    // إعطاء الأولوية للكلمات التي يُحتمل أنها أسماء تجارية للأدوية
-    // (عادة أسماء تجارية أو مكونات نشطة)
-    let prioritizedMedications = potentialMedications
-      .filter(word => {
-        // التحقق من بعض الكلمات الشائعة في أسماء الأدوية أو المكملات الغذائية
-        const drugPatterns = [
-          /fast/i, /cata/i, /flex/i, /cef/i, /cin/i, /dine/i, /zole/i, /xol/i, 
-          /pan/i, /pro/i, /nac/i, /fen/i, /mol/i, /tol/i, /lex/i, /pam/i, 
-          /pain/i, /relief/i, /allerg/i, /cold/i, /flu/i, /tab/i, /cap/i,
-          /mg/i, /مغ/i, /ملغ/i
-        ];
-        
-        return drugPatterns.some(pattern => pattern.test(word)) || 
-              word.length >= 6 || // الكلمات الطويلة قد تكون أسماء أدوية
-              /^[A-Z]/.test(word); // الكلمات التي تبدأ بحرف كبير غالباً تكون أسماء تجارية
-      });
-    
-    // إذا لم نجد أدوية باستخدام الطريقة السابقة، نأخذ الكلمات الأولى في النص
-    if (prioritizedMedications.length === 0) {
-      prioritizedMedications = potentialMedications.slice(0, 4);
+    for (let i = 0; i < medicationLines.length; i++) {
+      const line = medicationLines[i];
+      const words = line.split(/\s+/);
+      
+      // بالنسبة للأسطر القصيرة بكلمة واحدة أو كلمتين، اعتبرها أسماء أدوية محتملة
+      if (words.length <= 3 && line.length >= 4 && line.length <= 25) {
+        // استبعاد الأسطر التي تحتوي على كلمات شائعة مثل "مجم" أو "ملغ" أو "mg" فقط
+        if (!/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(line)) {
+          potentialMedications.push(line);
+        }
+      } 
+      // بالنسبة للأسطر الطويلة، ابحث عن الكلمات الفردية التي قد تكون أسماء أدوية
+      else {
+        for (const word of words) {
+          if (
+            (word.length >= 4 && word.length <= 20) && // معظم أسماء الأدوية بين 4 و 20 حرفًا
+            !/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(word) && // استبعاد الأوزان
+            !/^\d+(\.\d+)?$/.test(word) // استبعاد الأرقام
+          ) {
+            // إعطاء أولوية للكلمات التي تبدأ بحرف كبير في اللغة الإنجليزية
+            if (!isArabic && /^[A-Z]/.test(word)) {
+              potentialMedications.push(word);
+            }
+            // إعطاء أولوية للكلمات العربية التي تظهر في بداية السطر
+            else if (isArabic && words.indexOf(word) < 3) {
+              potentialMedications.push(word);
+            }
+          }
+        }
+      }
     }
     
-    // إزالة التكرارات وإرجاع النتائج (بحد أقصى 5 أدوية محتملة)
-    const uniqueMedications = [...new Set(prioritizedMedications)];
-    return uniqueMedications.slice(0, 5);
+    console.log("Potential medications before filtering:", potentialMedications);
+    
+    // تحسين: اكتشاف أسماء الأدوية بناءً على الخط الكبير
+    // هذا يعتمد على فرضية أن أسماء الأدوية عادة ما تظهر بخط كبير في العلبة
+    const brandNamePattern = isArabic 
+      ? /^[أ-ي]{3,}$/  // نمط للبحث عن الكلمات العربية
+      : /^[A-Z][a-z]{2,}$|^[A-Z]+$/;  // نمط للبحث عن الكلمات الإنجليزية التي تبدأ بحرف كبير
+    
+    const prioritizedMeds = potentialMedications.filter(med => 
+      brandNamePattern.test(med) || med.length >= 5
+    );
+    
+    // دمج النتائج وإزالة التكرارات
+    const allMeds = [...new Set([...prioritizedMeds, ...potentialMedications])];
+    console.log("Final medications found:", allMeds);
+    
+    // تقسيم الصورة إلى أقسام افتراضية لاكتشاف عدة علب
+    // بناءً على الافتراض أن كل قسم من النص يمثل علبة دواء مختلفة
+    const result: string[] = [];
+    
+    // إذا كان هناك أسطر كثيرة، افترض أن كل مجموعة من الأسطر المتتالية قد تنتمي لعلبة مختلفة
+    if (allMeds.length > 1) {
+      // إضافة أسماء الأدوية المحتملة مع الحد الأقصى 5 أدوية
+      return allMeds.slice(0, 5);
+    } else if (allMeds.length === 1) {
+      return allMeds;
+    }
+    
+    // فشل في العثور على أي أسماء أدوية، إرجاع الكلمات الطويلة من النص
+    const longWords = cleanedText
+      .split(/\s+/)
+      .filter(word => word.length >= 4 && word.length <= 20)
+      .slice(0, 3);
+    
+    return longWords.length > 0 ? longWords : ['لم يتم العثور على أدوية'];
   };
 
   const preprocessImage = (image: HTMLImageElement): HTMLCanvasElement => {
@@ -142,73 +166,113 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     return canvas;
   };
 
-  const processImage = async (imageFile: File) => {
+  const processImageInSegments = async (imageFile: File) => {
     setIsProcessing(true);
     setProgressPercent(0);
     setError(null);
     
     try {
       // تحميل الصورة في عنصر img للمعالجة المسبقة
-      const image = document.createElement('img');
+      const image = new Image();
       const imageUrl = URL.createObjectURL(imageFile);
+      
+      image.onload = async () => {
+        try {
+          // معالجة الصورة لتحسين دقة التعرف على النص
+          const processedCanvas = preprocessImage(image);
+          
+          // تحويل Canvas إلى Blob
+          const processedImageBlob = await new Promise<Blob | null>((resolve) => {
+            processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
+          });
+          
+          if (!processedImageBlob) {
+            throw new Error('Failed to process image');
+          }
+          
+          // تقسيم الصورة إلى قسمين (أعلى وأسفل) للتعرف على عدة علب دواء
+          const fullWidth = processedCanvas.width;
+          const fullHeight = processedCanvas.height;
+          
+          // إنشاء عدة مناطق محتملة للتعرف على النص
+          const regions = [
+            { x: 0, y: 0, width: fullWidth, height: fullHeight },  // الصورة كاملة
+            { x: 0, y: 0, width: fullWidth, height: fullHeight / 2 },  // النصف العلوي
+            { x: 0, y: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },  // النصف السفلي
+          ];
+          
+          // تهيئة Tesseract worker
+          const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
+          
+          await worker.setParameters({
+            tessedit_char_whitelist: isArabic 
+              ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
+              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ',
+            tessjs_create_pdf: '0',
+            tessjs_create_hocr: '0',
+            tessjs_create_tsv: '0',
+            tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+          });
+          
+          let allText = '';
+          
+          // التعرف على النص في كل منطقة
+          for (let i = 0; i < regions.length; i++) {
+            const region = regions[i];
+            setProgressPercent((i / regions.length) * 90);  // تقدم حتى 90%
+            
+            try {
+              const result = await worker.recognize(processedImageBlob, {
+                rectangle: region
+              });
+              
+              allText += result.data.text + '\n';
+            } catch (err) {
+              console.error(`Error recognizing region ${i}:`, err);
+              // استمر في المحاولة للمناطق الأخرى حتى لو فشلت إحداها
+            }
+          }
+          
+          await worker.terminate();
+          
+          // استخراج أسماء الأدوية من النص
+          const medications = extractMedicationsFromText(allText);
+          
+          setProgressPercent(100);
+          
+          if (medications.length === 0) {
+            setError(isArabic 
+              ? 'لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.' 
+              : 'No medication names detected in the image. Try capturing a clearer image.');
+          } else {
+            onTextExtracted(medications);
+          }
+        } catch (err) {
+          console.error('OCR processing error:', err);
+          setError(isArabic 
+            ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
+            : 'An error occurred while processing the image. Please try again.');
+        } finally {
+          setIsProcessing(false);
+          URL.revokeObjectURL(imageUrl);
+        }
+      };
+      
+      image.onerror = () => {
+        setError(isArabic 
+          ? 'فشل في تحميل الصورة. يرجى المحاولة مرة أخرى.' 
+          : 'Failed to load the image. Please try again.');
+        setIsProcessing(false);
+        URL.revokeObjectURL(imageUrl);
+      };
+      
       image.src = imageUrl;
       
-      await new Promise<void>((resolve) => {
-        image.onload = () => resolve();
-      });
-      
-      // معالجة الصورة لتحسين دقة التعرف على النص
-      const processedCanvas = preprocessImage(image);
-      
-      // تحويل Canvas إلى Blob
-      const processedImageBlob = await new Promise<Blob | null>((resolve) => {
-        processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
-      });
-      
-      if (!processedImageBlob) {
-        throw new Error('Failed to process image');
-      }
-      
-      // تهيئة Tesseract worker مع اللغة المناسبة
-      const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara', 1, {
-        logger: progress => {
-          if (progress.status === 'recognizing text') {
-            setProgressPercent(progress.progress * 100);
-          }
-        },
-      });
-      
-      // Fix: Use the PSM enum from tesseract.js instead of a plain number
-      await worker.setParameters({
-        tessedit_char_whitelist: isArabic 
-          ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
-          : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ',
-        tessjs_create_pdf: '0',
-        tessjs_create_hocr: '0',
-        tessjs_create_tsv: '0',
-        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-      });
-      
-      // التعرف على النص من الصورة المعالجة
-      const result = await worker.recognize(processedImageBlob);
-      await worker.terminate();
-      
-      // استخراج أسماء الأدوية من النص
-      const medications = extractMedicationsFromText(result.data.text);
-      
-      if (medications.length === 0) {
-        setError(isArabic 
-          ? 'لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.' 
-          : 'No medication names detected in the image. Try capturing a clearer image.');
-      } else {
-        onTextExtracted(medications);
-      }
     } catch (err) {
-      console.error('OCR processing error:', err);
+      console.error('Image processing error:', err);
       setError(isArabic 
         ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
         : 'An error occurred while processing the image. Please try again.');
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -217,7 +281,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     const file = e.target.files?.[0];
     if (file) {
       if (file.type.startsWith('image/')) {
-        processImage(file);
+        processImageInSegments(file);
       } else {
         setError(isArabic 
           ? 'يرجى اختيار ملف صورة صالح (JPG، PNG)' 
@@ -264,7 +328,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         if (blob) {
           // إنشاء ملف من البلوب
           const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
-          processImage(file);
+          processImageInSegments(file);
         }
         
         // تنظيف الموارد
