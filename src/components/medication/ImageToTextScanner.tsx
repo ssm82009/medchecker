@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { createWorker, PSM } from 'tesseract.js';
 import { Camera, Image, X } from 'lucide-react';
@@ -74,13 +73,11 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       await worker.loadLanguage('ara+eng');
       await worker.initialize('ara+eng');
       
-      // Set only valid parameters in setParameters
       await worker.setParameters({
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
         preserve_interword_spaces: '1',
       });
 
-      // Pass options directly without the oem property
       const { data } = await worker.recognize(imageData);
       
       const detectedText = data.text.trim();
@@ -153,17 +150,15 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           {t("selectImage")}
         </Button>
         
-        {/* إدخال الكاميرا المخصص */}
         <input 
           type="file"
           ref={cameraInputRef}
           className="hidden"
           accept="image/*"
           onChange={handleFileChange}
-          capture="environment"
+          capture="camera"
         />
         
-        {/* إدخال الصورة العادي */}
         <input 
           type="file"
           ref={fileInputRef}
