@@ -30,14 +30,9 @@ const Progress = React.forwardRef<
     />
     {value !== undefined && value > 0 && value < 100 && (
       <div 
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"
         style={{
-          animation: 'pulse 1.5s ease-in-out infinite',
           backgroundSize: '200% 100%',
-          '@keyframes pulse': {
-            '0%': { backgroundPosition: '0% 0%' },
-            '100%': { backgroundPosition: '200% 0%' }
-          }
         }}
       />
     )}

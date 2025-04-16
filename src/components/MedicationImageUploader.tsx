@@ -184,7 +184,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           // إنشاء worker مع تحميل نموذج اللغة المناسب مسبقًا
           const worker = await createWorker({
-            langPath: 'https://tessdata.projectnaptha.com/4.0.0',
             gzip: false, // تسريع التحميل
             workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/worker.min.js',
             corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
@@ -200,7 +199,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(30);
           
           // تحميل اللغة
-          await worker.loadLanguage(language === 'ar' ? 'ara+eng' : 'eng+ara');
+          await worker.load();
+          await worker.loadLanguage(isArabic ? 'ara+eng' : 'eng+ara');
+          await worker.initialize(isArabic ? 'ara+eng' : 'eng+ara');
           
           // تحسين إعدادات Tesseract
           await optimizeTesseractSettings(worker);
