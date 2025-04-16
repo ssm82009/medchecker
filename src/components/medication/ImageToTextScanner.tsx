@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { createWorker, PSM } from 'tesseract.js';
 import { Camera, Image, X } from 'lucide-react';
@@ -156,7 +157,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           className="hidden"
           accept="image/*"
           onChange={handleFileChange}
-          capture="camera"
+          capture="environment"
         />
         
         <input 
