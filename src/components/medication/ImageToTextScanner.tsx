@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
 import { Camera, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
@@ -160,7 +161,10 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
 
     const blacklistRegex = new RegExp(blacklist.join('|'), 'i');
     
-    const imageHeight = result.data.height || 1000;
+    // Fix: Get image height from the bounding box of the page
+    const imageHeight = result.data.words.reduce((maxY, word) => 
+      Math.max(maxY, word.bbox.y1), 0) || 1000;
+    
     const topThird = imageHeight / 3;
     
     const potentialMedicationNames = result.data.words
