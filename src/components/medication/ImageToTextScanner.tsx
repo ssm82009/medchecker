@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
-import { Camera, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
+import { Camera, Image as ImageIcon, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,13 +13,11 @@ interface ImageToTextScannerProps {
 const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected }) => {
   const { t, language, dir } = useTranslation();
   const { toast } = useToast();
-  const [image, setImage] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const medicationRowsRef = useRef<HTMLDivElement>(null);
 
   const enhanceImage = (file: File, maxWidth = 800): Promise<Blob> => {
     return new Promise((resolve) => {
@@ -79,13 +76,11 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     setIsScanning(true);
     
     try {
-      // Process the image with enhancement
       const enhancedBlob = await enhanceImage(file);
       const reader = new FileReader();
       
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
-        setImage(dataUrl);
         recognizeText(dataUrl);
       };
       
@@ -109,7 +104,6 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   };
 
   const removeImage = () => {
-    setImage(null);
     setProgress(0);
     setIsScanning(false);
     setStatusMessage('');
@@ -335,24 +329,6 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           onChange={handleFileChange}
         />
       </div>
-      
-      {image && (
-        <div className="relative mb-3 border rounded-md overflow-hidden">
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-70 hover:opacity-100 z-10"
-            onClick={removeImage}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-          <img 
-            src={image} 
-            alt={t("selectedImage")} 
-            className="w-full h-auto max-h-40 object-contain bg-gray-100" 
-          />
-        </div>
-      )}
       
       {isScanning && (
         <div className="mb-2">
