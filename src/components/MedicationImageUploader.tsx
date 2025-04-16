@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
+import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker, type Worker, type CreateWorkerOptions } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -21,13 +21,12 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   
   const isArabic = language === 'ar';
   
-  // تحسين أداء التقدم
   const updateProgress = (value: number) => {
     if (value > progressPercent) {
       setProgressPercent(Math.min(value, 99));
     }
   };
-  
+
   const extractMedicationsFromText = (text: string): string[] => {
     console.log("Raw OCR text:", text);
     
@@ -43,7 +42,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       .map(line => line.trim())
       .filter(line => line.length > 2);
     
-    // تبسيط استخراج أسماء الأدوية
     const medicationLines = lines.filter(line => {
       if (line.length < 3) return false;
       if (/^\d+(\.\d+)?$/.test(line)) return false;
@@ -52,7 +50,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     const potentialMedications: string[] = [];
     
-    // تحسين الكشف عن أسماء الأدوية
     for (let i = 0; i < medicationLines.length; i++) {
       const line = medicationLines[i];
       const words = line.split(/\s+/);
@@ -72,15 +69,12 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       }
     }
     
-    // إزالة التكرارات وتحسين النتائج
     return [...new Set(potentialMedications)].slice(0, 5);
   };
 
-  // تحسين معالجة الصور لسرعة أفضل وتحسين التعامل مع الصور القاتمة
   const preprocessImage = (imageData: ImageData): ImageData => {
     const data = imageData.data;
     
-    // حساب متوسط السطوع للكشف عن الصور المظلمة
     let totalBrightness = 0;
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -92,24 +86,18 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     const averageBrightness = totalBrightness / (data.length / 4);
     const isDarkImage = averageBrightness < 100;
     
-    // تعديل معلمات المعالجة بناءً على نوع الصورة
     const contrastFactor = isDarkImage ? 2.0 : 1.2;
     const brightnessAdjustment = isDarkImage ? 80 : 0;
     
-    // تطبيق تحسينات الصورة - تسريع المعالجة باستخدام النقاط
     for (let i = 0; i < data.length; i += 16) {
-      // معالجة كل 4 بكسل للسرعة
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       
-      // حساب السطوع المدرك باستخدام صيغة الإضاءة
       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
       
-      // تطبيق تحسين التباين والسطوع
       const adjustedBrightness = Math.min(255, Math.max(0, (brightness - 128) * contrastFactor + 128 + brightnessAdjustment));
       
-      // تعيين قيمة البكسل الجديدة
       data[i] = adjustedBrightness;
       data[i + 1] = adjustedBrightness;
       data[i + 2] = adjustedBrightness;
@@ -118,8 +106,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     return imageData;
   };
 
-  // تحسين الإعدادات الأولية لـ Tesseract للصور الصغيرة والتحليل السريع
-  const optimizeTesseractSettings = async (worker: any) => {
+  const optimizeTesseractSettings = async (worker: Worker) => {
     await worker.setParameters({
       tessedit_char_whitelist: isArabic 
         ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
@@ -127,9 +114,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       tessjs_create_pdf: '0',
       tessjs_create_hocr: '0',
       tessjs_create_tsv: '0',
-      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-      tessjs_image_dpi: '70', // خفض DPI للمعالجة الأسرع
-      tessjs_ocr_engine_mode: '2', // وضع المحرك السريع
+      tessedit_pageseg_mode: '3',
+      tessjs_image_dpi: '70',
+      tessjs_ocr_engine_mode: '2',
     });
   };
 
@@ -147,8 +134,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         try {
           updateProgress(10);
           
-          // تصغير الصورة لمعالجة أسرع
-          const maxDimension = 800; // محدودية حجم الصورة
+          const maxDimension = 800;
           let width = image.width;
           let height = image.height;
           
@@ -162,7 +148,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             }
           }
           
-          // إنشاء canvas للصورة المصغرة
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
@@ -172,48 +157,41 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             throw new Error('Failed to get canvas context');
           }
           
-          // رسم الصورة المصغرة
           ctx.drawImage(image, 0, 0, width, height);
           
-          // معالجة الصورة لتحسين الاكتشاف
           const imageData = ctx.getImageData(0, 0, width, height);
           const processedData = preprocessImage(imageData);
           ctx.putImageData(processedData, 0, 0);
           
           updateProgress(25);
           
-          // إنشاء worker مع تحميل نموذج اللغة المناسب مسبقًا
-          const worker = await createWorker({
-            gzip: false, // تسريع التحميل
+          const workerOptions: CreateWorkerOptions = {
             workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/worker.min.js',
             corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
             logger: progress => {
               if (progress.status === 'recognizing text') {
-                // تحديث تدريجي للتقدم أثناء التعرف على النص
                 const newProgress = 30 + (progress.progress * 60);
                 updateProgress(Math.floor(newProgress));
               }
             }
-          });
+          };
           
           updateProgress(30);
           
-          // تحميل اللغة
-          await worker.load();
-          await worker.loadLanguage(isArabic ? 'ara+eng' : 'eng+ara');
-          await worker.initialize(isArabic ? 'ara+eng' : 'eng+ara');
+          const worker = await createWorker(workerOptions);
           
-          // تحسين إعدادات Tesseract
+          const langStr = isArabic ? 'ara+eng' : 'eng+ara';
+          await worker.loadLanguage(langStr);
+          await worker.initialize(langStr);
+          
           await optimizeTesseractSettings(worker);
           
           updateProgress(35);
           
-          // تبسيط العملية: معالجة الصورة بالكامل مرة واحدة للسرعة
           const result = await worker.recognize(canvas);
           
           updateProgress(95);
           
-          // استخراج أسماء الأدوية باستخدام الوظيفة المحسنة
           const medications = extractMedicationsFromText(result.data.text);
           
           await worker.terminate();
@@ -240,7 +218,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             });
           }
           
-          // إكمال مؤشر التقدم وإعادة ضبط الواجهة
           updateProgress(100);
           
           setTimeout(() => {
