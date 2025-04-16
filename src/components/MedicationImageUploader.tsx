@@ -166,7 +166,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          const worker = await createWorker(progress => {
+          const worker = await createWorker();
+          
+          worker.logger.addListener('progress', progress => {
             if (progress.status === 'recognizing text') {
               const newProgress = 30 + (progress.progress * 60);
               updateProgress(Math.floor(newProgress));
@@ -334,7 +336,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     } catch (err) {
       console.error('Camera access error:', err);
       setError(isArabic 
-        ? 'لا يمكن الوصول إلى الكاميرا. يرجى التحقق من إذن الكاميرا أو استخدام طريقة تحميل الصور.' 
+        ? 'لا ��مكن الوصول إلى الكاميرا. يرجى التحقق من إذن الكاميرا أو استخدام طريقة تحميل الصور.' 
         : 'Cannot access camera. Please check camera permissions or use image upload instead.');
     }
   };
