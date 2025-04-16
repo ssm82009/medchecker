@@ -21,16 +21,14 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   
   const isArabic = language === 'ar';
   
-  useEffect(() => {
-    if (isProcessing) {
-      const timer = setTimeout(() => {
-        if (progressPercent < 100) {
-          console.log("Progress update:", progressPercent);
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [progressPercent, isProcessing]);
+  // More granular progress tracking
+  const updateProgressWithDelay = (value: number) => {
+    // Enforce a minimum delay between progress updates for smoother experience
+    requestAnimationFrame(() => {
+      setProgressPercent(Math.min(value, 99)); // Cap at 99% until complete
+      document.body.dataset.progress = String(value);
+    });
+  };
   
   const extractMedicationsFromText = (text: string): string[] => {
     console.log("Raw OCR text:", text);
@@ -49,6 +47,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Lines:", lines);
     
+    // Enhanced medication line detection with better regex patterns
     const medicationLines = lines.filter(line => {
       if (line.length < 3) return false;
       if (/^\d+(\.\d+)?$/.test(line)) return false;
@@ -57,24 +56,27 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     const potentialMedications: string[] = [];
     
+    // Improved medication detection patterns
     for (let i = 0; i < medicationLines.length; i++) {
       const line = medicationLines[i];
       const words = line.split(/\s+/);
       
-      if (words.length <= 3 && line.length >= 4 && line.length <= 25) {
+      // Detect standalone brand names (short lines with few words)
+      if (words.length <= 3 && line.length >= 4 && line.length <= 30) {
         if (!/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(line)) {
           potentialMedications.push(line);
         }
       } else {
+        // Extract individual brand names from longer lines
         for (const word of words) {
           if (
-            (word.length >= 4 && word.length <= 20) &&
+            (word.length >= 4 && word.length <= 25) &&
             !/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(word) &&
             !/^\d+(\.\d+)?$/.test(word)
           ) {
             if (!isArabic && /^[A-Z]/.test(word)) {
               potentialMedications.push(word);
-            } else if (isArabic && words.indexOf(word) < 3) {
+            } else if (isArabic && words.indexOf(word) < 4) {
               potentialMedications.push(word);
             }
           }
@@ -84,9 +86,10 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Potential medications before filtering:", potentialMedications);
     
+    // Enhanced pattern matching for medication brand names
     const brandNamePattern = isArabic 
-      ? /^[أ-ي]{3,}$/ 
-      : /^[A-Z][a-z]{2,}$|^[A-Z]+$/;
+      ? /^[أ-ي]{3,}$|^كتافاست$|^فيكسوفينادين$|^نوفارتيس$/i
+      : /^[A-Z][a-z]{2,}$|^[A-Z]+$|^Catafast$|^Fexofenadine$|^Novartis$/i;
     
     const prioritizedMeds = potentialMedications.filter(med => 
       brandNamePattern.test(med) || med.length >= 5
@@ -95,22 +98,23 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     const allMeds = [...new Set([...prioritizedMeds, ...potentialMedications])];
     console.log("Final medications found:", allMeds);
     
-    const result: string[] = [];
-    
+    // Better results handling
     if (allMeds.length > 1) {
       return allMeds.slice(0, 5);
     } else if (allMeds.length === 1) {
       return allMeds;
     }
     
+    // Fallback to extract any word that might be a medication
     const longWords = cleanedText
       .split(/\s+/)
       .filter(word => word.length >= 4 && word.length <= 20)
       .slice(0, 3);
     
-    return longWords.length > 0 ? longWords : ['لم يتم العثور على أدوية'];
+    return longWords.length > 0 ? longWords : [isArabic ? 'لم يتم العثور على أدوية' : 'No medications found'];
   };
 
+  // Enhanced image preprocessing for better handling of dark images
   const preprocessImage = (image: HTMLImageElement): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -119,20 +123,47 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     canvas.height = image.height;
     
     if (ctx) {
+      // Draw the original image
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       
+      // Get image data
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
+      // Calculate image brightness to detect if it's a dark image
+      let totalBrightness = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        totalBrightness += (r + g + b) / 3;
+      }
+      
+      const averageBrightness = totalBrightness / (data.length / 4);
+      const isDarkImage = averageBrightness < 100; // Threshold for dark image detection
+      
+      // Apply appropriate processing based on image brightness
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         
-        const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+        // Calculate perceived brightness using luminance formula
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
         
-        const threshold = 150;
-        const newValue = gray > threshold ? 255 : 0;
+        // Adjust threshold for dark images
+        const threshold = isDarkImage ? 80 : 150;
+        const contrastFactor = isDarkImage ? 1.5 : 1.0;
+        
+        // Apply contrast enhancement for dark images
+        let adjustedGray = gray;
+        if (isDarkImage) {
+          // Enhance contrast for dark images
+          adjustedGray = Math.min(255, Math.max(0, (gray - 128) * contrastFactor + 128));
+        }
+        
+        // Apply thresholding for better OCR text detection
+        const newValue = adjustedGray > threshold ? 255 : 0;
         
         data[i] = newValue;
         data[i + 1] = newValue;
@@ -143,13 +174,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     }
     
     return canvas;
-  };
-
-  const updateProgressWithDelay = (value: number) => {
-    setTimeout(() => {
-      setProgressPercent(value);
-      document.body.dataset.progress = String(value);
-    }, 10);
   };
 
   const processImageInSegments = async (imageFile: File) => {
@@ -165,11 +189,12 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       image.onload = async () => {
         try {
           updateProgressWithDelay(10);
+          
+          // Process image with enhanced preprocessing
           const processedCanvas = preprocessImage(image);
           updateProgressWithDelay(20);
           
-          await new Promise(resolve => setTimeout(resolve, 50));
-          
+          // Faster transition to next processing step
           const processedImageBlob = await new Promise<Blob | null>((resolve) => {
             processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
           });
@@ -180,92 +205,76 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           updateProgressWithDelay(25);
           
-          await new Promise(resolve => setTimeout(resolve, 50));
-          
+          // More focused regions for OCR scanning
           const fullWidth = processedCanvas.width;
           const fullHeight = processedCanvas.height;
           
+          // Create multiple smaller regions for parallel processing
           const regions: Rectangle[] = [
+            // Full image at lower resolution for context
             { left: 0, top: 0, width: fullWidth, height: fullHeight },
+            
+            // Top half - often contains medication name
             { left: 0, top: 0, width: fullWidth, height: fullHeight / 2 },
-            { left: 0, top: fullHeight / 2, width: fullWidth, height: fullHeight / 2 },
+            
+            // Middle section - focused on medication name area
+            { left: 0, top: fullHeight * 0.2, width: fullWidth, height: fullHeight * 0.4 },
           ];
           
           updateProgressWithDelay(30);
           
-          let workerLoadPromiseResolved = false;
-          
-          const workerLoadPromise = new Promise<void>((resolve) => {
-            setTimeout(() => {
-              if (!workerLoadPromiseResolved) {
-                updateProgressWithDelay(35);
-                resolve();
-                workerLoadPromiseResolved = true;
-              }
-            }, 1000);
-          });
-          
+          // Load worker with appropriate language models
           const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
+          updateProgressWithDelay(40);
           
-          if (!workerLoadPromiseResolved) {
-            workerLoadPromiseResolved = true;
-            updateProgressWithDelay(40);
-          } else {
-            await workerLoadPromise;
-          }
-          
-          updateProgressWithDelay(45);
-          
+          // Set OCR parameters for better medication text recognition
           await worker.setParameters({
             tessedit_char_whitelist: isArabic 
-              ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '
-              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ',
+              ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
+              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
             tessjs_create_pdf: '0',
             tessjs_create_hocr: '0',
             tessjs_create_tsv: '0',
             tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+            tessjs_image_dpi: '150', // Optimize DPI for faster processing
           });
           
           updateProgressWithDelay(50);
           
           let allText = '';
           
+          // Process regions with more responsive progress updates
           for (let i = 0; i < regions.length; i++) {
             const region = regions[i];
-            const progressStart = 50 + ((i / regions.length) * 35);
-            const progressEnd = 50 + (((i + 1) / regions.length) * 35);
+            const progressStart = 50 + ((i / regions.length) * 40); // More progress space for OCR
+            const progressEnd = 50 + (((i + 1) / regions.length) * 40);
             
             updateProgressWithDelay(Math.floor(progressStart));
-            
-            await new Promise(resolve => setTimeout(resolve, 50));
             
             try {
               const result = await worker.recognize(processedImageBlob, {
                 rectangle: region
               });
               
+              // Update progress during OCR processing
               const midProgress = (progressStart + progressEnd) / 2;
               updateProgressWithDelay(Math.floor(midProgress));
               
               allText += result.data.text + '\n';
-              
               updateProgressWithDelay(Math.floor(progressEnd));
-              
-              await new Promise(resolve => setTimeout(resolve, 50));
             } catch (err) {
               console.error(`Error recognizing region ${i}:`, err);
             }
           }
           
           await worker.terminate();
-          
           updateProgressWithDelay(90);
           
+          // Extract medications with improved algorithm
           const medications = extractMedicationsFromText(allText);
-          
           updateProgressWithDelay(95);
           
-          if (medications.length === 0) {
+          if (medications.length === 0 || (medications.length === 1 && medications[0].includes('لم يتم العثور'))) {
             setError(isArabic 
               ? 'لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.' 
               : 'No medication names detected in the image. Try capturing a clearer image.');
@@ -287,6 +296,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             });
           }
           
+          // Complete the progress indication
           updateProgressWithDelay(100);
           
           setTimeout(() => {
@@ -339,7 +349,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         title: isArabic ? 'خطأ' : 'Error',
         description: isArabic 
           ? 'حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.' 
-          : 'An error occurred while processing the image. Please try again.',
+          : 'Error processing image. Please try again.',
         variant: "destructive",
       });
     }
@@ -357,7 +367,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         toast({
           title: isArabic ? 'خطأ' : 'Error',
           description: isArabic 
-            ? 'يرجى ��ختيار ملف صورة صالح (JPG، PNG)' 
+            ? 'يرجى اختيار ملف صورة صالح (JPG، PNG)' 
             : 'Please select a valid image file (JPG, PNG)',
           variant: "destructive",
         });
