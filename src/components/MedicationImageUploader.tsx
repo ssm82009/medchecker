@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
@@ -166,12 +167,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          const worker = await createWorker();
-          
-          worker.logger.addListener('progress', progress => {
-            if (progress.status === 'recognizing text') {
-              const newProgress = 30 + (progress.progress * 60);
-              updateProgress(Math.floor(newProgress));
+          // Create worker with progress tracking
+          const worker = await createWorker({
+            logger: progress => {
+              if (progress.status === 'recognizing text') {
+                const newProgress = 30 + (progress.progress * 60);
+                updateProgress(Math.floor(newProgress));
+              }
             }
           });
           
