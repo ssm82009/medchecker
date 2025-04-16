@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, PSM, Rectangle } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -21,13 +21,11 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
   
   const isArabic = language === 'ar';
   
-  // More granular progress tracking
-  const updateProgressWithDelay = (value: number) => {
-    // Enforce a minimum delay between progress updates for smoother experience
-    requestAnimationFrame(() => {
-      setProgressPercent(Math.min(value, 99)); // Cap at 99% until complete
-      document.body.dataset.progress = String(value);
-    });
+  // تحسين أداء التقدم
+  const updateProgress = (value: number) => {
+    if (value > progressPercent) {
+      setProgressPercent(Math.min(value, 99));
+    }
   };
   
   const extractMedicationsFromText = (text: string): string[] => {
@@ -45,9 +43,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       .map(line => line.trim())
       .filter(line => line.length > 2);
     
-    console.log("Lines:", lines);
-    
-    // Enhanced medication line detection with better regex patterns
+    // تبسيط استخراج أسماء الأدوية
     const medicationLines = lines.filter(line => {
       if (line.length < 3) return false;
       if (/^\d+(\.\d+)?$/.test(line)) return false;
@@ -56,124 +52,85 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     const potentialMedications: string[] = [];
     
-    // Improved medication detection patterns
+    // تحسين الكشف عن أسماء الأدوية
     for (let i = 0; i < medicationLines.length; i++) {
       const line = medicationLines[i];
       const words = line.split(/\s+/);
       
-      // Detect standalone brand names (short lines with few words)
       if (words.length <= 3 && line.length >= 4 && line.length <= 30) {
-        if (!/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(line)) {
-          potentialMedications.push(line);
-        }
+        potentialMedications.push(line);
       } else {
-        // Extract individual brand names from longer lines
         for (const word of words) {
           if (
             (word.length >= 4 && word.length <= 25) &&
             !/^(\d+\s*(مجم|ملغ|mg|gram|جرام))$/i.test(word) &&
             !/^\d+(\.\d+)?$/.test(word)
           ) {
-            if (!isArabic && /^[A-Z]/.test(word)) {
-              potentialMedications.push(word);
-            } else if (isArabic && words.indexOf(word) < 4) {
-              potentialMedications.push(word);
-            }
+            potentialMedications.push(word);
           }
         }
       }
     }
     
-    console.log("Potential medications before filtering:", potentialMedications);
-    
-    // Enhanced pattern matching for medication brand names
-    const brandNamePattern = isArabic 
-      ? /^[أ-ي]{3,}$|^كتافاست$|^فيكسوفينادين$|^نوفارتيس$/i
-      : /^[A-Z][a-z]{2,}$|^[A-Z]+$|^Catafast$|^Fexofenadine$|^Novartis$/i;
-    
-    const prioritizedMeds = potentialMedications.filter(med => 
-      brandNamePattern.test(med) || med.length >= 5
-    );
-    
-    const allMeds = [...new Set([...prioritizedMeds, ...potentialMedications])];
-    console.log("Final medications found:", allMeds);
-    
-    // Better results handling
-    if (allMeds.length > 1) {
-      return allMeds.slice(0, 5);
-    } else if (allMeds.length === 1) {
-      return allMeds;
-    }
-    
-    // Fallback to extract any word that might be a medication
-    const longWords = cleanedText
-      .split(/\s+/)
-      .filter(word => word.length >= 4 && word.length <= 20)
-      .slice(0, 3);
-    
-    return longWords.length > 0 ? longWords : [isArabic ? 'لم يتم العثور على أدوية' : 'No medications found'];
+    // إزالة التكرارات وتحسين النتائج
+    return [...new Set(potentialMedications)].slice(0, 5);
   };
 
-  // Enhanced image preprocessing for better handling of dark images
-  const preprocessImage = (image: HTMLImageElement): HTMLCanvasElement => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+  // تحسين معالجة الصور لسرعة أفضل وتحسين التعامل مع الصور القاتمة
+  const preprocessImage = (imageData: ImageData): ImageData => {
+    const data = imageData.data;
     
-    canvas.width = image.width;
-    canvas.height = image.height;
-    
-    if (ctx) {
-      // Draw the original image
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      
-      // Get image data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      // Calculate image brightness to detect if it's a dark image
-      let totalBrightness = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        totalBrightness += (r + g + b) / 3;
-      }
-      
-      const averageBrightness = totalBrightness / (data.length / 4);
-      const isDarkImage = averageBrightness < 100; // Threshold for dark image detection
-      
-      // Apply appropriate processing based on image brightness
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        // Calculate perceived brightness using luminance formula
-        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        
-        // Adjust threshold for dark images
-        const threshold = isDarkImage ? 80 : 150;
-        const contrastFactor = isDarkImage ? 1.5 : 1.0;
-        
-        // Apply contrast enhancement for dark images
-        let adjustedGray = gray;
-        if (isDarkImage) {
-          // Enhance contrast for dark images
-          adjustedGray = Math.min(255, Math.max(0, (gray - 128) * contrastFactor + 128));
-        }
-        
-        // Apply thresholding for better OCR text detection
-        const newValue = adjustedGray > threshold ? 255 : 0;
-        
-        data[i] = newValue;
-        data[i + 1] = newValue;
-        data[i + 2] = newValue;
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
+    // حساب متوسط السطوع للكشف عن الصور المظلمة
+    let totalBrightness = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      totalBrightness += (r + g + b) / 3;
     }
     
-    return canvas;
+    const averageBrightness = totalBrightness / (data.length / 4);
+    const isDarkImage = averageBrightness < 100;
+    
+    // تعديل معلمات المعالجة بناءً على نوع الصورة
+    const contrastFactor = isDarkImage ? 2.0 : 1.2;
+    const brightnessAdjustment = isDarkImage ? 80 : 0;
+    
+    // تطبيق تحسينات الصورة - تسريع المعالجة باستخدام النقاط
+    for (let i = 0; i < data.length; i += 16) {
+      // معالجة كل 4 بكسل للسرعة
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      
+      // حساب السطوع المدرك باستخدام صيغة الإضاءة
+      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+      
+      // تطبيق تحسين التباين والسطوع
+      const adjustedBrightness = Math.min(255, Math.max(0, (brightness - 128) * contrastFactor + 128 + brightnessAdjustment));
+      
+      // تعيين قيمة البكسل الجديدة
+      data[i] = adjustedBrightness;
+      data[i + 1] = adjustedBrightness;
+      data[i + 2] = adjustedBrightness;
+    }
+    
+    return imageData;
+  };
+
+  // تحسين الإعدادات الأولية لـ Tesseract للصور الصغيرة والتحليل السريع
+  const optimizeTesseractSettings = async (worker: any) => {
+    await worker.setParameters({
+      tessedit_char_whitelist: isArabic 
+        ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
+        : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
+      tessjs_create_pdf: '0',
+      tessjs_create_hocr: '0',
+      tessjs_create_tsv: '0',
+      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+      tessjs_image_dpi: '70', // خفض DPI للمعالجة الأسرع
+      tessjs_ocr_engine_mode: '2', // وضع المحرك السريع
+    });
   };
 
   const processImageInSegments = async (imageFile: File) => {
@@ -182,99 +139,85 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     setError(null);
     
     try {
-      updateProgressWithDelay(5);
+      updateProgress(5);
       const image = new Image();
       const imageUrl = URL.createObjectURL(imageFile);
       
       image.onload = async () => {
         try {
-          updateProgressWithDelay(10);
+          updateProgress(10);
           
-          // Process image with enhanced preprocessing
-          const processedCanvas = preprocessImage(image);
-          updateProgressWithDelay(20);
+          // تصغير الصورة لمعالجة أسرع
+          const maxDimension = 800; // محدودية حجم الصورة
+          let width = image.width;
+          let height = image.height;
           
-          // Faster transition to next processing step
-          const processedImageBlob = await new Promise<Blob | null>((resolve) => {
-            processedCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
-          });
-          
-          if (!processedImageBlob) {
-            throw new Error('Failed to process image');
-          }
-          
-          updateProgressWithDelay(25);
-          
-          // More focused regions for OCR scanning
-          const fullWidth = processedCanvas.width;
-          const fullHeight = processedCanvas.height;
-          
-          // Create multiple smaller regions for parallel processing
-          const regions: Rectangle[] = [
-            // Full image at lower resolution for context
-            { left: 0, top: 0, width: fullWidth, height: fullHeight },
-            
-            // Top half - often contains medication name
-            { left: 0, top: 0, width: fullWidth, height: fullHeight / 2 },
-            
-            // Middle section - focused on medication name area
-            { left: 0, top: fullHeight * 0.2, width: fullWidth, height: fullHeight * 0.4 },
-          ];
-          
-          updateProgressWithDelay(30);
-          
-          // Load worker with appropriate language models
-          const worker = await createWorker(language === 'ar' ? 'ara+eng' : 'eng+ara');
-          updateProgressWithDelay(40);
-          
-          // Set OCR parameters for better medication text recognition
-          await worker.setParameters({
-            tessedit_char_whitelist: isArabic 
-              ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
-              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
-            tessjs_create_pdf: '0',
-            tessjs_create_hocr: '0',
-            tessjs_create_tsv: '0',
-            tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-            tessjs_image_dpi: '150', // Optimize DPI for faster processing
-          });
-          
-          updateProgressWithDelay(50);
-          
-          let allText = '';
-          
-          // Process regions with more responsive progress updates
-          for (let i = 0; i < regions.length; i++) {
-            const region = regions[i];
-            const progressStart = 50 + ((i / regions.length) * 40); // More progress space for OCR
-            const progressEnd = 50 + (((i + 1) / regions.length) * 40);
-            
-            updateProgressWithDelay(Math.floor(progressStart));
-            
-            try {
-              const result = await worker.recognize(processedImageBlob, {
-                rectangle: region
-              });
-              
-              // Update progress during OCR processing
-              const midProgress = (progressStart + progressEnd) / 2;
-              updateProgressWithDelay(Math.floor(midProgress));
-              
-              allText += result.data.text + '\n';
-              updateProgressWithDelay(Math.floor(progressEnd));
-            } catch (err) {
-              console.error(`Error recognizing region ${i}:`, err);
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.floor(height * (maxDimension / width));
+              width = maxDimension;
+            } else {
+              width = Math.floor(width * (maxDimension / height));
+              height = maxDimension;
             }
           }
           
+          // إنشاء canvas للصورة المصغرة
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          
+          if (!ctx) {
+            throw new Error('Failed to get canvas context');
+          }
+          
+          // رسم الصورة المصغرة
+          ctx.drawImage(image, 0, 0, width, height);
+          
+          // معالجة الصورة لتحسين الاكتشاف
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const processedData = preprocessImage(imageData);
+          ctx.putImageData(processedData, 0, 0);
+          
+          updateProgress(25);
+          
+          // إنشاء worker مع تحميل نموذج اللغة المناسب مسبقًا
+          const worker = await createWorker({
+            langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+            gzip: false, // تسريع التحميل
+            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/worker.min.js',
+            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
+            logger: progress => {
+              if (progress.status === 'recognizing text') {
+                // تحديث تدريجي للتقدم أثناء التعرف على النص
+                const newProgress = 30 + (progress.progress * 60);
+                updateProgress(Math.floor(newProgress));
+              }
+            }
+          });
+          
+          updateProgress(30);
+          
+          // تحميل اللغة
+          await worker.loadLanguage(language === 'ar' ? 'ara+eng' : 'eng+ara');
+          
+          // تحسين إعدادات Tesseract
+          await optimizeTesseractSettings(worker);
+          
+          updateProgress(35);
+          
+          // تبسيط العملية: معالجة الصورة بالكامل مرة واحدة للسرعة
+          const result = await worker.recognize(canvas);
+          
+          updateProgress(95);
+          
+          // استخراج أسماء الأدوية باستخدام الوظيفة المحسنة
+          const medications = extractMedicationsFromText(result.data.text);
+          
           await worker.terminate();
-          updateProgressWithDelay(90);
           
-          // Extract medications with improved algorithm
-          const medications = extractMedicationsFromText(allText);
-          updateProgressWithDelay(95);
-          
-          if (medications.length === 0 || (medications.length === 1 && medications[0].includes('لم يتم العثور'))) {
+          if (medications.length === 0) {
             setError(isArabic 
               ? 'لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.' 
               : 'No medication names detected in the image. Try capturing a clearer image.');
@@ -296,13 +239,13 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
             });
           }
           
-          // Complete the progress indication
-          updateProgressWithDelay(100);
+          // إكمال مؤشر التقدم وإعادة ضبط الواجهة
+          updateProgress(100);
           
           setTimeout(() => {
             setIsProcessing(false);
             setProgressPercent(0);
-          }, 1000);
+          }, 500);
           
         } catch (err) {
           console.error('OCR processing error:', err);

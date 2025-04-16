@@ -25,16 +25,19 @@ const Progress = React.forwardRef<
       style={{ 
         transform: `translateX(-${100 - (value || 0)}%)`,
         backgroundColor: style?.['--progress-foreground'] as string || 'hsl(var(--primary))',
-        transition: 'transform 0.3s cubic-bezier(0.65, 0, 0.35, 1)'
+        transition: 'transform 0.2s ease-out'
       }}
     />
-    {/* Loading pulse animation overlay for visual feedback */}
-    {value !== 100 && value !== 0 && (
+    {value !== undefined && value > 0 && value < 100 && (
       <div 
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
         style={{
-          animation: 'progressPulse 1.5s ease-in-out infinite',
-          backgroundSize: '200% 100%'
+          animation: 'pulse 1.5s ease-in-out infinite',
+          backgroundSize: '200% 100%',
+          '@keyframes pulse': {
+            '0%': { backgroundPosition: '0% 0%' },
+            '100%': { backgroundPosition: '200% 0%' }
+          }
         }}
       />
     )}
