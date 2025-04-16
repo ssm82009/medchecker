@@ -106,20 +106,6 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     return imageData;
   };
 
-  const optimizeTesseractSettings = async (worker: any) => {
-    await worker.setParameters({
-      tessedit_char_whitelist: isArabic 
-        ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهو��ءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
-        : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
-      tessjs_create_pdf: '0',
-      tessjs_create_hocr: '0',
-      tessjs_create_tsv: '0',
-      tessedit_pageseg_mode: 3,
-      tessjs_image_dpi: '70',
-      tessjs_ocr_engine_mode: '2',
-    });
-  };
-
   const processImageInSegments = async (imageFile: File) => {
     setIsProcessing(true);
     setProgressPercent(0);
@@ -164,22 +150,32 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           ctx.putImageData(processedData, 0, 0);
           
           updateProgress(25);
-          updateProgress(30);
           
-          const worker = await createWorker();
-          
-          worker.logger(m => {
-            if (m.status === 'recognizing text') {
-              const newProgress = 30 + (m.progress * 60);
-              updateProgress(Math.floor(newProgress));
+          // تحديث طريقة استخدام Tesseract worker
+          const worker = await createWorker({
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const newProgress = 30 + (m.progress * 60);
+                updateProgress(Math.floor(newProgress));
+              }
             }
           });
           
-          const langPath = isArabic ? 'ara+eng' : 'eng+ara';
-          await worker.loadLanguage(langPath);
-          await worker.initialize(langPath);
+          // استخدام طريقة البدء الصحيحة مع Tesseract 5.0
+          const langCode = isArabic ? 'ara+eng' : 'eng';
+          await worker.load();
+          await worker.loadLanguage(langCode);
+          await worker.initialize(langCode);
           
-          await optimizeTesseractSettings(worker);
+          // ضبط معلمات التعرف على النص
+          await worker.setParameters({
+            tessedit_char_whitelist: isArabic 
+              ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويةءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
+              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
+            tessjs_create_pdf: '0',
+            tessjs_create_hocr: '0',
+            tessjs_create_tsv: '0'
+          });
           
           updateProgress(35);
           
@@ -334,7 +330,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     } catch (err) {
       console.error('Camera access error:', err);
       setError(isArabic 
-        ? 'لا ��مكن الوصول إلى الكاميرا. يرجى التحقق من إذن الكاميرا أو استخدام طريقة تحميل الصور.' 
+        ? 'لا يمكن الوصول إلى الكاميرا. يرجى التحقق من إذن الكاميرا أو استخدام طريقة تحميل الصور.' 
         : 'Cannot access camera. Please check camera permissions or use image upload instead.');
     }
   };
