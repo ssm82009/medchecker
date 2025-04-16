@@ -80,7 +80,7 @@ const MOCK_INTERACTIONS = {
     ],
     ageWarnings: [
       'وارفارين: يتطلب مراقبة دقيقة لتخثر الدم وغير مناسب للأطفال إلا تحت إشراف طبي صارم',
-      'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
+      'إيبوبروفين: غير مناسب للأطفال أقل من 6 أ��هر'
     ]
   },
   '�����فادول+بنادول': {
@@ -563,7 +563,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       value={med.name} 
                       onChange={(e) => updateMedication(med.id, e.target.value)} 
                       placeholder={`${t('medication')} ${index + 1}`}
-                      className="border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700"
+                      className={`border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700 ${medications.length <= 2 ? 'h-10' : ''}`}
                       dir={dir}
                     />
                   </div>
@@ -575,7 +575,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       medications.length > 2 
                         ? 'opacity-100' 
                         : 'opacity-0 group-hover:opacity-100'
-                    } transition-opacity`}
+                    } transition-opacity ${medications.length <= 2 ? 'h-10' : ''}`}
                   >
                     <X className="h-4 w-4" />
                   </Button>
