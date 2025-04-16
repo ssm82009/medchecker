@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, type Worker, type CreateWorkerOptions } from 'tesseract.js';
+import { createWorker, type Worker, type WorkerOptions } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -114,7 +114,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
       tessjs_create_pdf: '0',
       tessjs_create_hocr: '0',
       tessjs_create_tsv: '0',
-      tessedit_pageseg_mode: '3',
+      tessedit_pageseg_mode: 'PSM_AUTO',
       tessjs_image_dpi: '70',
       tessjs_ocr_engine_mode: '2',
     });
@@ -165,9 +165,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           updateProgress(25);
           
-          const workerOptions: CreateWorkerOptions = {
-            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/worker.min.js',
-            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
+          const workerOptions: WorkerOptions = {
             logger: progress => {
               if (progress.status === 'recognizing text') {
                 const newProgress = 30 + (progress.progress * 60);
@@ -181,6 +179,8 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           const worker = await createWorker(workerOptions);
           
           const langStr = isArabic ? 'ara+eng' : 'eng+ara';
+          
+          await worker.load();
           await worker.loadLanguage(langStr);
           await worker.initialize(langStr);
           
