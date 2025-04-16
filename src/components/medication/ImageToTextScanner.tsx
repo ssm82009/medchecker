@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from 'react';
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker, PSM, OEM } from 'tesseract.js';
 import { Camera, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -64,15 +65,16 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       await worker.loadLanguage('ara+eng');
       await worker.initialize('ara+eng');
       
+      // Set only valid parameters in setParameters
       await worker.setParameters({
-        tessedit_ocr_engine_mode: '2',
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
         preserve_interword_spaces: '1',
-        tessjs_create_hocr: '0',
-        tessjs_create_tsv: '0',
       });
 
-      const { data } = await worker.recognize(imageData);
+      // Use OEM in recognize method instead
+      const { data } = await worker.recognize(imageData, {
+        oem: OEM.LSTM_ONLY
+      });
       
       const detectedText = data.text.trim();
       
