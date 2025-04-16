@@ -83,7 +83,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أ��هر'
     ]
   },
-  '�����فادول+بنادول': {
+  '�������فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -558,12 +558,12 @@ const MedicationInteractionChecker: React.FC = () => {
             <div className="space-y-4">
               {medications.map((med, index) => (
                 <div key={med.id} className="flex items-center gap-2 group transition duration-200 animate-in fade-in">
-                  <div className="flex-1 transition-all duration-200">
+                  <div className={`flex-1 transition-all duration-200 ${medications.length <= 2 ? 'w-[calc(100%-40px)]' : ''}`}>
                     <Input 
                       value={med.name} 
                       onChange={(e) => updateMedication(med.id, e.target.value)} 
                       placeholder={`${t('medication')} ${index + 1}`}
-                      className={`border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700 ${medications.length <= 2 ? 'h-10' : ''}`}
+                      className={`border border-gray-200 focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-gray-700 ${medications.length <= 2 ? 'w-full' : ''}`}
                       dir={dir}
                     />
                   </div>
@@ -575,7 +575,7 @@ const MedicationInteractionChecker: React.FC = () => {
                       medications.length > 2 
                         ? 'opacity-100' 
                         : 'opacity-0 group-hover:opacity-100'
-                    } transition-opacity ${medications.length <= 2 ? 'h-10' : ''}`}
+                    } transition-opacity ${medications.length <= 2 ? 'w-10' : ''}`}
                   >
                     <X className="h-4 w-4" />
                   </Button>
