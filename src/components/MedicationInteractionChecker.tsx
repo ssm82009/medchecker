@@ -83,7 +83,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
-  '�����فادول+بنادول': {
+  '�������فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -572,7 +572,11 @@ const MedicationInteractionChecker: React.FC = () => {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => removeMedication(med.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                        medications.length > 2 
+                          ? 'text-red-500 hover:text-red-600' 
+                          : 'text-gray-400 hover:text-gray-500'
+                      }`}
                     >
                       <X className="h-4 w-4" />
                     </Button>
