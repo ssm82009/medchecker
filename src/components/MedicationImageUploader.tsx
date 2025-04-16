@@ -166,18 +166,15 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          const progressUpdateObj = {
-            progress: (info: any) => {
-              if (info.status === 'recognizing text') {
-                const newProgress = 30 + (info.progress * 60);
-                updateProgress(Math.floor(newProgress));
-              }
-            }
-          };
-          
           const worker = await createWorker();
           
-          await worker.load();
+          worker.logger(m => {
+            if (m.status === 'recognizing text') {
+              const newProgress = 30 + (m.progress * 60);
+              updateProgress(Math.floor(newProgress));
+            }
+          });
+          
           const langPath = isArabic ? 'ara+eng' : 'eng+ara';
           await worker.loadLanguage(langPath);
           await worker.initialize(langPath);
