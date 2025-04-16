@@ -17,22 +17,72 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   const [image, setImage] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeImage = (file: File, maxWidth = 800): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      
+      img.onload = () => {
+        const ratio = img.width > maxWidth ? maxWidth / img.width : 1;
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.8);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const updateStatusMessage = () => {
+    const messages = language === 'ar' 
+      ? [
+          "⏳ جاري قراءة النص...",
+          "🔍 نحاول فهم الحروف...",
+          "📋 التحليل جاري...",
+          "🧠 نعالج البيانات...",
+          "📑 يتم استخراج الأدوية..."
+        ]
+      : [
+          "⏳ Reading text...",
+          "🔍 Trying to understand characters...",
+          "📋 Analysis in progress...",
+          "🧠 Processing data...",
+          "📑 Extracting medications..."
+        ];
+    
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    setStatusMessage(randomMessage);
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setProgress(0);
+    setIsScanning(true);
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setImage(dataUrl);
-      recognizeText(dataUrl);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Resize image before processing
+      const resizedBlob = await resizeImage(file);
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setImage(dataUrl);
+        recognizeText(dataUrl);
+      };
+      
+      reader.readAsDataURL(resizedBlob);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setIsScanning(false);
+    }
   };
 
   const openCamera = () => {
@@ -51,6 +101,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     setImage(null);
     setProgress(0);
     setIsScanning(false);
+    setStatusMessage('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -59,20 +110,45 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     }
   };
 
+  // Set up message interval during scanning
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isScanning) {
+      updateStatusMessage();
+      interval = setInterval(updateStatusMessage, 2500);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isScanning, language]);
+
   const recognizeText = async (imageData: string) => {
     setIsScanning(true);
+    setProgress(0);
     
     try {
       const worker = await createWorker({
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setProgress(Math.floor(m.progress * 100));
+          } else if (m.status === 'loading tesseract core') {
+            setProgress(5);
+          } else if (m.status === 'initializing tesseract') {
+            setProgress(15);
+          } else if (m.status === 'loading language traineddata') {
+            setProgress(30);
+          } else if (m.status === 'initializing api') {
+            setProgress(50);
           }
         },
       });
       
-      await worker.loadLanguage('ara+eng');
-      await worker.initialize('ara+eng');
+      // Use single language for faster processing
+      const langToUse = language === 'ar' ? 'ara' : 'eng';
+      await worker.loadLanguage(langToUse);
+      await worker.initialize(langToUse);
       
       await worker.setParameters({
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
@@ -190,7 +266,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
       {isScanning && (
         <div className="mb-2">
           <div className="flex justify-between text-xs mb-1">
-            <span>{t("analyzingImage")}</span>
+            <span>{statusMessage}</span>
             <span>{progress}%</span>
           </div>
           <Progress value={progress} className="h-2 bg-gray-100" />
