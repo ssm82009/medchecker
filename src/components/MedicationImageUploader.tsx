@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
@@ -151,18 +152,21 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           
           updateProgress(25);
           
-          // تحديث طريقة استخدام Tesseract worker
-          const worker = await createWorker({
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                const newProgress = 30 + (m.progress * 60);
-                updateProgress(Math.floor(newProgress));
-              }
+          // تحديث طريقة استخدام Tesseract worker بشكل صحيح مع v5
+          const worker = await createWorker();
+          
+          // تتبع التقدم بشكل صحيح
+          worker.progress(progress => {
+            if (progress.status === 'recognizing text') {
+              const newProgress = 30 + (progress.progress * 60);
+              updateProgress(Math.floor(newProgress));
             }
           });
           
           // استخدام طريقة البدء الصحيحة مع Tesseract 5.0
           const langCode = isArabic ? 'ara+eng' : 'eng';
+          
+          // تهيئة العامل بشكل صحيح
           await worker.load();
           await worker.loadLanguage(langCode);
           await worker.initialize(langCode);
@@ -171,14 +175,12 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           await worker.setParameters({
             tessedit_char_whitelist: isArabic 
               ? 'ابتثجحخدذرزسشصضطظعغفقكلمنهويةءأإآةىئؤ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- '
-              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- ',
-            tessjs_create_pdf: '0',
-            tessjs_create_hocr: '0',
-            tessjs_create_tsv: '0'
+              : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- '
           });
           
           updateProgress(35);
           
+          // استخدام recognize بشكل صحيح
           const result = await worker.recognize(canvas);
           
           updateProgress(95);
