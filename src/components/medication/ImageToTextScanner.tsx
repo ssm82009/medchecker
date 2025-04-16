@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { createWorker, PSM } from 'tesseract.js';
-import { Camera, Image, X } from 'lucide-react';
+import { Camera, Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -23,19 +23,19 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
 
   const resizeImage = (file: File, maxWidth = 800): Promise<Blob> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const imgElement = new window.Image();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
       
-      img.onload = () => {
-        const ratio = img.width > maxWidth ? maxWidth / img.width : 1;
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      imgElement.onload = () => {
+        const ratio = imgElement.width > maxWidth ? maxWidth / imgElement.width : 1;
+        canvas.width = imgElement.width * ratio;
+        canvas.height = imgElement.height * ratio;
+        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.8);
       };
       
-      img.src = URL.createObjectURL(file);
+      imgElement.src = URL.createObjectURL(file);
     });
   };
 
@@ -223,7 +223,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
           onClick={selectImage}
           disabled={isScanning}
         >
-          <Image className={`h-3 w-3 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
+          <ImageIcon className={`h-3 w-3 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
           {t("selectImage")}
         </Button>
         
