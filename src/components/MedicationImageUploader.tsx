@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, Worker } from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -167,21 +166,18 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          // Create worker with progress tracking - Fixed implementation
           const worker = await createWorker();
           
-          worker.progress((m) => {
+          let progressCallback = (m: { status: string; progress: number }) => {
             if (m.status === 'recognizing text') {
               const newProgress = 30 + (m.progress * 60);
               updateProgress(Math.floor(newProgress));
             }
-          });
+          };
           
-          updateProgress(35);
-          
-          const langStr = isArabic ? 'ara+eng' : 'eng+ara';
-          
-          await worker.load(langStr);
+          await worker.load();
+          await worker.loadLanguage(isArabic ? 'ara+eng' : 'eng+ara');
+          await worker.initialize(isArabic ? 'ara+eng' : 'eng+ara');
           
           await optimizeTesseractSettings(worker);
           
