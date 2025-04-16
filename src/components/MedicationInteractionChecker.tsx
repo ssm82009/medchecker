@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -121,14 +120,6 @@ const MedicationInteractionChecker: React.FC = () => {
           </CardHeader>
           <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
             <div className="space-y-4">
-              {/* نقوم بوضع قسم استخراج النص من الصورة هنا في الأعلى */}
-              <div className="mb-4 pt-1 pb-4 border-b border-gray-100">
-                <p className="text-sm font-medium mb-2 flex items-center text-gray-700">
-                  {t('scanMedicationsFromImage')}
-                </p>
-                <ImageToTextScanner onTextDetected={handleMedicationsDetected} />
-              </div>
-              
               {medications.map((med, index) => (
                 <MedicationInputRow
                   key={med.id}
@@ -148,6 +139,13 @@ const MedicationInteractionChecker: React.FC = () => {
                 <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
                 {t('addMedication')}
               </Button>
+
+              <div className="mb-4 pt-1 pb-4 border-b border-gray-100">
+                <p className="text-sm font-medium mb-2 flex items-center text-gray-700">
+                  {t('scanMedicationsFromImage')}
+                </p>
+                <ImageToTextScanner onTextDetected={handleMedicationsDetected} />
+              </div>
 
               <PatientInfoForm 
                 patientInfo={patientInfo}
