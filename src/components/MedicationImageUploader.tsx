@@ -1,8 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createWorker, createScheduler, Worker, WorkerOptions } from 'tesseract.js';
+import { createWorker, Worker } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -166,15 +167,15 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(25);
           updateProgress(30);
           
-          // Create worker with progress tracking
-          const worker: Worker = await createWorker({
-            logger: (m) => {
-              if (m.status === 'recognizing text') {
-                const newProgress = 30 + (m.progress * 60);
-                updateProgress(Math.floor(newProgress));
-              }
+          // Create worker with progress tracking - Fixed implementation
+          const worker = await createWorker();
+          
+          worker.progress((m) => {
+            if (m.status === 'recognizing text') {
+              const newProgress = 30 + (m.progress * 60);
+              updateProgress(Math.floor(newProgress));
             }
-          } as WorkerOptions);
+          });
           
           updateProgress(35);
           
