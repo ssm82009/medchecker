@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,8 +24,8 @@ export default {
 				'readex': ['Readex Pro', 'sans-serif'],
 			},
 			colors: {
-				border: 'hsl(var(--border))',
-				input: 'hsl(var(--input))',
+				border: "226 26% 80%",
+				input: "226 26% 80%",
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
@@ -43,8 +42,8 @@ export default {
 					foreground: 'hsl(var(--destructive-foreground))'
 				},
 				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
+					DEFAULT: "240 4.8% 90.9%",
+					foreground: "240 3.8% 36.1%"
 				},
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
@@ -68,7 +67,6 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Blue and purple theme colors
 				blue: {
 					50: '#EFF6FF',
 					100: '#DBEAFE',
