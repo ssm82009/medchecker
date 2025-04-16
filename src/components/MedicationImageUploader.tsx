@@ -39,7 +39,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Lines:", lines);
     
-    // استخراج الكلمات من كل سطر واستبعاد الكلمات القصيرة جداً
+    // استخراج الكلمات المحتملة من كل سطر
     const words = lines
       .flatMap(line => line.split(/\s+/))
       .map(word => word.trim())
@@ -47,28 +47,57 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     console.log("Words:", words);
     
-    // تصفية الكلمات المحتملة أن تكون أسماء أدوية
+    // البحث عن الكلمات ذات الأحرف الكبيرة أو الكلمات التي تظهر بخط عريض 
+    // (نفترض أن الكلمات المهمة مثل أسماء الأدوية تكون بارزة في التصميم)
     const potentialMedications = words.filter(word => {
-      // تخطي الأرقام
+      // تخطي الأرقام فقط
       if (/^\d+(\.\d+)?$/.test(word)) return false;
       
-      // تخطي الكلمات الشائعة غير المتعلقة بالأدوية (مثل حروف الجر...)
+      // تخطي الكلمات القصيرة الشائعة
       const commonWords = isArabic ? 
         ['في', 'من', 'إلى', 'على', 'عن', 'مع', 'هذا', 'هذه', 'تلك', 'ذلك', 'كان', 'كانت', 'يجب', 'هل', 'نعم', 'لا'] :
         ['the', 'and', 'for', 'with', 'this', 'that', 'was', 'were', 'should', 'would', 'could', 'yes', 'not'];
         
       if (commonWords.includes(word.toLowerCase())) return false;
       
-      return true;
+      // محاولة التركيز على الكلمات الكبيرة (عادة ما تكون بالخط الكبير أسماء الأدوية)
+      // في OCR تظهر الكلمات ذات الخط الكبير في بداية الأسطر أو مستقلة
+      const isLikelyBrand = 
+        (word.length >= 4 && /^[A-Z]/.test(word)) || // يبدأ بحرف كبير في الإنجليزية
+        (/^[A-Z]+$/.test(word)) || // كل الحروف كبيرة مثل اسم تجاري
+        (/^[A-Z][a-z]+$/.test(word) && word.length >= 5) || // كلمة تبدأ بحرف كبير وطويلة
+        (isArabic && words.indexOf(word) < 8); // في العربية: احتمالية أعلى للكلمات في بداية النص
+      
+      return isLikelyBrand;
     });
     
     console.log("Potential medications:", potentialMedications);
     
-    // إزالة التكرارات
-    const uniqueMedications = [...new Set(potentialMedications)];
+    // إعطاء الأولوية للكلمات التي يُحتمل أنها أسماء تجارية للأدوية
+    // (عادة أسماء تجارية أو مكونات نشطة)
+    let prioritizedMedications = potentialMedications
+      .filter(word => {
+        // التحقق من بعض الكلمات الشائعة في أسماء الأدوية أو المكملات الغذائية
+        const drugPatterns = [
+          /fast/i, /cata/i, /flex/i, /cef/i, /cin/i, /dine/i, /zole/i, /xol/i, 
+          /pan/i, /pro/i, /nac/i, /fen/i, /mol/i, /tol/i, /lex/i, /pam/i, 
+          /pain/i, /relief/i, /allerg/i, /cold/i, /flu/i, /tab/i, /cap/i,
+          /mg/i, /مغ/i, /ملغ/i
+        ];
+        
+        return drugPatterns.some(pattern => pattern.test(word)) || 
+              word.length >= 6 || // الكلمات الطويلة قد تكون أسماء أدوية
+              /^[A-Z]/.test(word); // الكلمات التي تبدأ بحرف كبير غالباً تكون أسماء تجارية
+      });
     
-    // إرجاع أسماء الأدوية المحتملة (أو أقل إذا كان عدد النتائج أقل)
-    return uniqueMedications.slice(0, 8);
+    // إذا لم نجد أدوية باستخدام الطريقة السابقة، نأخذ الكلمات الأولى في النص
+    if (prioritizedMedications.length === 0) {
+      prioritizedMedications = potentialMedications.slice(0, 4);
+    }
+    
+    // إزالة التكرارات وإرجاع النتائج (بحد أقصى 5 أدوية محتملة)
+    const uniqueMedications = [...new Set(prioritizedMedications)];
+    return uniqueMedications.slice(0, 5);
   };
 
   const preprocessImage = (image: HTMLImageElement): HTMLCanvasElement => {
@@ -158,7 +187,8 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         tessjs_create_pdf: '0',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
-        tessedit_pageseg_mode: '6', 
+        // Fix TypeScript error by using number instead of string for PSM
+        tessedit_pageseg_mode: 6,
       });
       
       // التعرف على النص من الصورة المعالجة
@@ -290,7 +320,15 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           <p className="text-sm text-gray-500 text-center">
             {isArabic ? 'جاري معالجة الصورة...' : 'Processing image...'}
           </p>
-          <Progress value={progressPercent} className="h-2" />
+          <Progress 
+            value={progressPercent} 
+            className="h-3 bg-gray-200" 
+            // تعديل لون شريط التقدم ليكون واضحًا بلون بنفسجي مميز
+            style={{ 
+              '--progress-background': '#E5DEFF',
+              '--progress-foreground': '#8B5CF6'
+            } as React.CSSProperties}
+          />
         </div>
       )}
       
