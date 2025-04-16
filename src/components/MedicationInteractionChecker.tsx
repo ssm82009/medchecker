@@ -3,8 +3,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle, Info, Copy, Printer, CheckCircle } from 'lucide-react';
+import { Plus, X, Heart, Pill, User, Weight, ActivitySquare, AlertTriangle, Info, Copy, Printer, CheckCircle, Camera } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +11,9 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import MedicationImageUploader from './MedicationImageUploader';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AISettingsType {
   apiKey: string;
@@ -83,7 +85,7 @@ const MOCK_INTERACTIONS = {
       'إيبوبروفين: غير مناسب للأطفال أقل من 6 أشهر'
     ]
   },
-  '�����فادول+بنادول': {
+  '������فادول+بنادول': {
     hasInteractions: true,
     interactions: [
       'كلا الدوائين يحتويان على الباراسيتامول مما قد يؤدي إلى جرعة زائدة',
@@ -248,6 +250,9 @@ const MedicationInteractionChecker: React.FC = () => {
   const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const resultRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [extractedMedications, setExtractedMedications] = useState<string[]>([]);
+  const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
   
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
@@ -356,6 +361,54 @@ const MedicationInteractionChecker: React.FC = () => {
       }, 300);
     }
   }, [result]);
+
+  const handleTextExtracted = (medications: string[]) => {
+    setExtractedMedications(medications);
+    setSelectedMedications(medications);
+  };
+
+  const toggleMedicationSelection = (medication: string) => {
+    setSelectedMedications(prev => 
+      prev.includes(medication)
+        ? prev.filter(med => med !== medication)
+        : [...prev, medication]
+    );
+  };
+
+  const addExtractedMedications = () => {
+    let updatedMedications = [...medications];
+    
+    let emptyFieldsCount = updatedMedications.filter(med => med.name === '').length;
+    
+    const additionalNeeded = selectedMedications.length - emptyFieldsCount;
+    
+    if (additionalNeeded > 0) {
+      for (let i = 0; i < additionalNeeded; i++) {
+        updatedMedications.push({ id: Date.now().toString() + i, name: '' });
+      }
+    }
+    
+    let medicationIndex = 0;
+    updatedMedications = updatedMedications.map(med => {
+      if (med.name === '' && medicationIndex < selectedMedications.length) {
+        return { ...med, name: selectedMedications[medicationIndex++] };
+      }
+      return med;
+    });
+    
+    setMedications(updatedMedications);
+    setImageDialogOpen(false);
+    setExtractedMedications([]);
+    setSelectedMedications([]);
+    
+    toast({
+      title: language === 'ar' ? 'تم إضافة الأدوية' : 'Medications Added',
+      description: language === 'ar' 
+        ? 'تم إضافة الأدوية المكتشفة بنجاح' 
+        : 'Extracted medications have been added successfully',
+      duration: 2000,
+    });
+  };
 
   const checkInteractions = async () => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
@@ -467,7 +520,7 @@ const MedicationInteractionChecker: React.FC = () => {
       
       let prompt = "";
       if (language === 'ar') {
-        prompt = `حلّل التفاعلات بين الأدوية التالية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}, مع توضيح أي تشابه أو تكرار في المواد الفعالة قد يؤدي إلى جرعة زائدة، تأكد بدقة من أن كل عنصر مدخل هو دواء معروف أو مادة دوائية حقيقية فقط، تجاهل أو ارفض معالجة أي محتوى ساخر أو غذائي أو غير طبي مثل "برجر" أو "سلطة" أو أسماء ليست ضمن الأدوية المعترف بها، ثم قدم النتائج بلغة واضحة تتضمن مستوى الخطورة، بدائل آمنة إن وُجدت، الأسماء التجارية لكل دواء، وروابط أو مراجع طبية موثوقة مثل Mayo Clinic أو WebMD لدعم المعلومات. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+        prompt = `حلّل التفاعلات بين الأدوية التالية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}, مع توضيح أي تشابه أو تكرار في المواد الفعالة قد يؤدي إلى جرعة زائدة، تأكد بدقة من أن كل عنصر مدخل هو دواء معروف أو ��ادة دوائية حقيقية فقط، تجاهل أو ارفض معالجة أي محتوى ساخر أو غذائي أو غير طبي مثل "برجر" أو "سلطة" أو أسماء ليست ضمن الأدوية المعترف بها، ثم قدم النتائج بلغة واضحة تتضمن مستوى الخطورة، بدائل آمنة إن وُجدت، الأسماء التجارية لكل دواء، وروابط أو مراجع طبية موثوقة مثل Mayo Clinic أو WebMD لدعم المعلومات. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
       } else {
         prompt = `Analyze the interactions between the following drugs: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}, highlight any overlapping or repeated active ingredients that may risk overdose, strictly ensure that each input is a recognized drug or pharmaceutical substance only, reject or ignore any humorous, non-medical, or food-related terms such as "burger" or "salad", and then return a clear summary including risk level, safer alternatives if applicable, brand names, and trusted medical references such as Mayo Clinic or WebMD. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
       }
@@ -521,7 +574,7 @@ const MedicationInteractionChecker: React.FC = () => {
       toast({
         title: t('error'),
         description: language === 'ar' 
-          ? 'حدث خطأ أثناء التحقق من التفاعلات. استخدام بيانات تجريبية بدلاً من ذلك.' 
+          ? 'ح��ث خطأ أثناء التحقق من التفاعلات. استخدام بيانات تجريبية بدلاً من ذلك.' 
           : 'Error checking interactions. Using mock data instead.',
         variant: "destructive"
       });
@@ -580,14 +633,68 @@ const MedicationInteractionChecker: React.FC = () => {
                 </div>
               ))}
               
-              <Button 
-                variant="outline" 
-                onClick={addMedication} 
-                className="w-full group hover:bg-primary/5 hover:text-primary transition-colors text-gray-600"
-              >
-                <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
-                {t('addMedication')}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={addMedication} 
+                  className="w-full group hover:bg-primary/5 hover:text-primary transition-colors text-gray-600"
+                >
+                  <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
+                  {t('addMedication')}
+                </Button>
+                
+                <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="hover:bg-primary/5 hover:text-primary transition-colors text-gray-600"
+                    >
+                      <Camera className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`} />
+                      {language === 'ar' ? 'استخراج من صورة' : 'Extract from Image'}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className={`${isMobile ? 'w-[95vw]' : 'max-w-md'}`}>
+                    <DialogHeader>
+                      <DialogTitle>{language === 'ar' ? 'استخراج أسماء الأدوية من صورة' : 'Extract Medication Names from Image'}</DialogTitle>
+                    </DialogHeader>
+                    
+                    <MedicationImageUploader onTextExtracted={handleTextExtracted} />
+                    
+                    {extractedMedications.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        <h3 className="font-medium text-sm">
+                          {language === 'ar' ? 'الأدوية المكتشفة من الصورة:' : 'Extracted medications:'}
+                        </h3>
+                        <div className="space-y-2">
+                          {extractedMedications.map((med, idx) => (
+                            <div key={idx} className="flex items-center space-x-2 rtl:space-x-reverse">
+                              <Checkbox 
+                                id={`med-${idx}`}
+                                checked={selectedMedications.includes(med)}
+                                onCheckedChange={() => toggleMedicationSelection(med)}
+                              />
+                              <label 
+                                htmlFor={`med-${idx}`}
+                                className="text-sm cursor-pointer"
+                              >
+                                {med}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <Button 
+                          className="w-full mt-3" 
+                          onClick={addExtractedMedications}
+                          disabled={selectedMedications.length === 0}
+                        >
+                          {language === 'ar' ? 'إضافة الأدوية المختارة' : 'Add Selected Medications'}
+                        </Button>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
 
               <div className={`mt-6 pt-4 pb-3 border-t border-gray-100 bg-gray-50/50 rounded-md ${isMobile ? 'px-2' : 'px-3'}`}>
                 <h3 className="text-sm font-medium mb-3 flex items-center text-gray-700">

@@ -64,5 +64,20 @@ export const ar = {
   settingsSaved: "تم حفظ الإعدادات بنجاح",
   adSaved: "تم حفظ الإعلان بنجاح",
   secondaryAdSaved: "تم حفظ الإعلان الثانوي بنجاح",
-  logoSaved: "تم حفظ الشعار بنجاح"
-};
+  logoSaved: "تم حفظ الشعار بنجاح",
+  
+  // Image upload translations
+  uploadImage: "اختيار صورة",
+  captureImage: "التقاط صورة",
+  processingImage: "جاري معالجة الصورة...",
+  noMedicationsDetected: "لم يتم التعرف على أي أسماء أدوية في الصورة. حاول التقاط صورة أوضح.",
+  processingError: "حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.",
+  invalidImageFile: "يرجى اختيار ملف صورة صالح (JPG، PNG)",
+  cameraAccessError: "لا يمكن الوصول إلى الكاميرا. يرجى التحقق من إذن الكاميرا أو استخدام طريقة تحميل الصور.",
+  imageUploadHelp: "صوّر علب الأدوية بوضوح لاستخراج أسمائها تلقائياً.",
+  extractFromImage: "استخراج من صورة",
+  addExtractedMedications: "إضافة الأدوية المكتشفة",
+  extractedMedications: "الأدوية المكتشفة من الصورة:",
+  selectMedications: "اختر الأدوية التي تريد إضافتها:",
+  addSelectedMedications: "إضافة الأدوية المختارة"
+}
