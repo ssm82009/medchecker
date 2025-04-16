@@ -167,22 +167,20 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           updateProgress(30);
           
           const worker = await createWorker({
-            logger: progress => {
-              if (progress.status === 'recognizing text') {
-                const newProgress = 30 + (progress.progress * 60);
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const newProgress = 30 + (m.progress * 60);
                 updateProgress(Math.floor(newProgress));
               }
             },
-            langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+            langPath: 'https://tessdata.projectnaptha.com/4.0.0'
           });
           
           updateProgress(35);
           
           const langStr = isArabic ? 'ara+eng' : 'eng+ara';
           
-          await worker.load();
-          await worker.loadLanguage(langStr);
-          await worker.initialize(langStr);
+          await worker.load(langStr);
           
           await optimizeTesseractSettings(worker);
           
