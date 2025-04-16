@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from 'react';
-import { createWorker } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 import { Camera, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -20,15 +19,12 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Function to handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Reset state
     setProgress(0);
     
-    // Read the file
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
@@ -38,14 +34,12 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     reader.readAsDataURL(file);
   };
 
-  // Function to open file selector
   const selectImage = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // Function to remove current image
   const removeImage = () => {
     setImage(null);
     setProgress(0);
@@ -55,12 +49,10 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     }
   };
 
-  // Function to recognize text from image
   const recognizeText = async (imageData: string) => {
     setIsScanning(true);
     
     try {
-      // Create worker with language based on current app language
       const worker = await createWorker({
         logger: (m) => {
           if (m.status === 'recognizing text') {
@@ -69,32 +61,26 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         },
       });
       
-      // Initialize worker with Arabic and English languages
       await worker.loadLanguage('ara+eng');
       await worker.initialize('ara+eng');
       
-      // Set recognition parameters for faster processing
       await worker.setParameters({
-        tessedit_ocr_engine_mode: '2', // Use LSTM neural net mode
-        tessedit_pageseg_mode: '6', // Using string instead of number for PSM enum
+        tessedit_ocr_engine_mode: '2',
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
         preserve_interword_spaces: '1',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
       });
 
-      // Recognize text
       const { data } = await worker.recognize(imageData);
       
-      // Process detected text before sending to parent component
       const detectedText = data.text.trim();
       
-      // Extract potential medication names (split by commas, newlines, etc)
       const potentialMedications = detectedText
         .split(/[\n,،]+/)
         .map(text => text.trim())
-        .filter(text => text.length > 2 && !/^\d+$/.test(text)); // Filter out short texts and numbers
+        .filter(text => text.length > 2 && !/^\d+$/.test(text));
       
-      // Send detected medications to parent
       if (potentialMedications.length > 0) {
         onTextDetected(potentialMedications.join(','));
         
@@ -114,7 +100,6 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         });
       }
       
-      // Terminate worker to free memory
       await worker.terminate();
       
     } catch (error) {
