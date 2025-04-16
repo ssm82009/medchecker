@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Camera, Image, Upload, CheckCircle2 } from 'lucide-react';
+import { Camera, Image as ImageIcon, Upload, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createWorker } from 'tesseract.js';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -121,8 +121,9 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
     
     try {
       // تحميل الصورة في عنصر img للمعالجة المسبقة
-      const image = new Image();
-      image.src = URL.createObjectURL(imageFile);
+      const image = document.createElement('img');
+      const imageUrl = URL.createObjectURL(imageFile);
+      image.src = imageUrl;
       
       await new Promise<void>((resolve) => {
         image.onload = () => resolve();
@@ -157,7 +158,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
         tessjs_create_pdf: '0',
         tessjs_create_hocr: '0',
         tessjs_create_tsv: '0',
-        tessedit_pageseg_mode: '6', // التعرف على النص كمجموعة كلمات
+        tessedit_pageseg_mode: '6', 
       });
       
       // التعرف على النص من الصورة المعالجة
@@ -261,7 +262,7 @@ const MedicationImageUploader: React.FC<MedicationImageUploaderProps> = ({ onTex
           onClick={triggerFileInput}
           disabled={isProcessing}
         >
-          <Image className="mr-2 h-5 w-5" />
+          <ImageIcon className="mr-2 h-5 w-5" />
           <span>{isArabic ? 'اختيار صورة' : 'Upload Image'}</span>
         </Button>
         
