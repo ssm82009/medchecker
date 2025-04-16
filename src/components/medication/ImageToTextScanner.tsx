@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
 import { Camera, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -150,6 +149,91 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
     }
   };
 
+  // Intelligent filter to extract medication names from OCR results
+  const extractMedicationNames = (result: RecognizeResult): string[] => {
+    // If words data is not available, fallback to regular text extraction
+    if (!result.data.words || result.data.words.length === 0) {
+      return extractMedicationNamesFromText(result.data.text);
+    }
+    
+    // Common words that appear on medication boxes but are not medication names
+    const blacklist = [
+      'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
+      'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
+      'capsule', 'capsules', 'suspension', 'cream', 'gel', 'injection',
+      'syrup', 'ointment', 'lotion', 'drop', 'drops', 'spray'
+    ];
+
+    const blacklistRegex = new RegExp(blacklist.join('|'), 'i');
+    
+    // Get image height to help with relative positioning
+    const imageHeight = result.data.height || 1000;
+    const topThird = imageHeight / 3;
+    
+    // Filter words based on multiple criteria
+    const potentialMedicationNames = result.data.words
+      .filter(word => {
+        // Filter by position (typically in the top part of the box)
+        const isInTopPart = word.bbox.y0 < topThird;
+        
+        // Filter by size (medication names are usually bigger)
+        const wordHeight = word.bbox.y1 - word.bbox.y0;
+        const isLargeText = wordHeight > 20; // Adjust based on your images
+        
+        // Filter by content (avoid common non-medication text)
+        const doesNotContainBlacklist = !blacklistRegex.test(word.text.toLowerCase());
+        
+        // Medication names usually start with uppercase and have 3+ characters
+        const matchesMedicationNamePattern = /^[A-Z][a-zA-Z0-9-]{2,}$/.test(word.text);
+        
+        // Combine all filters with priority on position and content
+        return isInTopPart && doesNotContainBlacklist && (isLargeText || matchesMedicationNamePattern);
+      })
+      .map(word => word.text.trim())
+      .filter(text => text.length > 2); // Ensure minimum length
+    
+    // If we couldn't find any using our advanced filtering, try basic text extraction
+    if (potentialMedicationNames.length === 0) {
+      return extractMedicationNamesFromText(result.data.text);
+    }
+    
+    // Remove duplicates
+    return [...new Set(potentialMedicationNames)];
+  };
+  
+  // Fallback function to extract medication names from plain text
+  const extractMedicationNamesFromText = (text: string): string[] => {
+    if (!text) return [];
+    
+    // Split into lines
+    const lines = text.split('\n');
+    
+    // Common words to filter out
+    const blacklist = [
+      'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
+      'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
+      'capsule', 'capsules', 'suspension', 'cream', 'gel', 'injection'
+    ];
+    
+    // Process each line
+    let potentialMedications = lines
+      .map(line => line.trim())
+      .filter(line => 
+        // Keep lines that are likely to be medication names
+        line.length > 2 && 
+        line.length < 30 && 
+        !blacklist.some(term => line.toLowerCase().includes(term)) &&
+        !/^\d+$/.test(line) // Exclude lines that are just numbers
+      );
+    
+    // Focus on the first few lines as they usually contain the medication name
+    if (potentialMedications.length > 3) {
+      potentialMedications = potentialMedications.slice(0, 3);
+    }
+    
+    return potentialMedications;
+  };
+
   const recognizeText = async (imageData: string) => {
     setIsScanning(true);
     setProgress(0);
@@ -180,23 +264,19 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
       });
 
-      const { data } = await worker.recognize(imageData);
+      const result = await worker.recognize(imageData);
       
-      const detectedText = data.text.trim();
+      // Use our intelligent filtering to extract medication names
+      const medicationNames = extractMedicationNames(result);
       
-      const potentialMedications = detectedText
-        .split(/[\n,،]+/)
-        .map(text => text.trim())
-        .filter(text => text.length > 2 && !/^\d+$/.test(text));
-      
-      if (potentialMedications.length > 0) {
-        onTextDetected(potentialMedications.join(','));
+      if (medicationNames.length > 0) {
+        onTextDetected(medicationNames.join(','));
         
         toast({
           title: language === 'ar' ? 'تم التعرف على النص' : 'Text detected',
           description: language === 'ar' 
-            ? `تم العثور على ${potentialMedications.length} أدوية محتملة` 
-            : `Found ${potentialMedications.length} potential medications`,
+            ? `تم العثور على ${medicationNames.length} أدوية محتملة` 
+            : `Found ${medicationNames.length} potential medications`,
         });
         
         // Scroll to medication inputs after text is detected
