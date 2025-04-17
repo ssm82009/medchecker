@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
 import { Camera, Image as ImageIcon, ArrowDown } from 'lucide-react';
@@ -280,7 +281,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
 
   return (
     <div className={`mt-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-      <div className="text-sm text-orange-600 mb-3 flex items-center justify-center">
+      <div className="text-xs font-light text-orange-500 mb-3 flex items-center justify-center opacity-70">
         <ArrowDown className="h-3 w-3 mr-1" />
         {language === 'ar' 
           ? 'التقط صورة لعلبة الدواء بالأحرف الإنجليزية للحصول على أفضل النتائج' 
