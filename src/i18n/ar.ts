@@ -14,7 +14,7 @@ const ar = {
   checkInteractions: 'التحقق من التفاعلات',
   loading: 'جاري التحميل...',
   medicationName: 'اسم الدواء',
-  scanMedicationsFromImage: 'مسح الأدوية من الصورة',
+  scanMedicationsFromImage: 'استخراج أسماء الأدوية من الصورة',
   captureImage: 'التقاط صورة',
   selectImage: 'تحميل صورة',
   imageAnalysisComplete: 'اكتمل تحليل الصورة!',
