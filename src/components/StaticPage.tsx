@@ -20,23 +20,41 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const [content, setContent] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [originalContent, setOriginalContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPageContent = async () => {
-      const { data, error } = await supabase
-        .from('page_content')
-        .select('*')
-        .eq('page_key', pageKey)
-        .single();
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('page_content')
+          .select('*')
+          .eq('page_key', pageKey)
+          .single();
 
-      if (error) {
-        console.error('Error fetching page content:', error);
-        return;
+        if (error) {
+          console.error('Error fetching page content:', error);
+          // Set default content if there's an error
+          setContent('<p>Content not available</p>');
+          setOriginalContent('<p>Content not available</p>');
+          return;
+        }
+
+        // Ensure we have content to display
+        const localizedContent = language === 'en' 
+          ? (data.content_en || '<p>Content not available in English</p>') 
+          : (data.content_ar || '<p>المحتوى غير متوفر باللغة العربية</p>');
+        
+        setContent(localizedContent);
+        setOriginalContent(localizedContent);
+      } catch (err) {
+        console.error('Error in fetch operation:', err);
+        setContent('<p>Error loading content</p>');
+        setOriginalContent('<p>Error loading content</p>');
+      } finally {
+        setIsLoading(false);
       }
-
-      const localizedContent = language === 'en' ? data.content_en : data.content_ar;
-      setContent(localizedContent);
-      setOriginalContent(localizedContent);
     };
 
     fetchPageContent();
@@ -102,7 +120,11 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           <CardTitle>{getPageTitle()}</CardTitle>
         </CardHeader>
         <CardContent>
-          {editMode && isAdmin() ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center h-[200px]">
+              <div className="animate-pulse">جاري التحميل...</div>
+            </div>
+          ) : editMode && isAdmin() ? (
             <>
               <RichTextEditor
                 value={content}
@@ -118,7 +140,10 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
               <RichTextEditor
                 value={content}
                 readOnly={true}
-                onChange={() => {/* No changes needed in read-only mode */}}
+                onChange={(value) => {
+                  /* No changes needed in read-only mode, but we need to provide this function */
+                  console.log('Read-only content:', value);
+                }}
               />
               {isAdmin() && (
                 <Button 

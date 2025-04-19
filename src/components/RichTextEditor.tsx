@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough } from 'lucide-react';
 import { Toggle } from './ui/toggle';
+import { useEffect } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -23,6 +24,13 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
       onChange(editor.getHTML());
     },
   });
+
+  // Update editor content when value prop changes
+  useEffect(() => {
+    if (editor && editor.getHTML() !== value) {
+      editor.commands.setContent(value);
+    }
+  }, [editor, value]);
 
   if (!editor) {
     return null;
@@ -64,7 +72,7 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
       )}
       <EditorContent 
         editor={editor} 
-        className="prose prose-sm max-w-none p-4 focus:outline-none" 
+        className="prose prose-sm max-w-none p-4 focus:outline-none min-h-[150px]" 
       />
     </div>
   );
