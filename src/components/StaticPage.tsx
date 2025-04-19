@@ -28,6 +28,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       setIsLoading(true);
       
       try {
+        console.log('Fetching page content for:', pageKey, 'language:', language);
         const { data, error } = await supabase
           .from('page_content')
           .select('*')
@@ -45,14 +46,18 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           return;
         }
 
+        console.log('Page data received:', data);
+        
         // Store the page ID for update operations
         setPageId(data.id);
         
-        // Ensure we have content to display
-        const localizedContent = language === 'en' 
-          ? (data.content_en || '<p>Content not available in English</p>') 
-          : (data.content_ar || '<p>المحتوى غير متوفر باللغة العربية</p>');
+        // Ensure we have content to display based on language
+        const contentField = language === 'en' ? 'content_en' : 'content_ar';
+        const localizedContent = data[contentField] || (language === 'en' 
+          ? '<p>Content not available in English</p>' 
+          : '<p>المحتوى غير متوفر باللغة العربية</p>');
         
+        console.log('Setting content to:', localizedContent);
         setContent(localizedContent);
         setOriginalContent(localizedContent);
       } catch (err) {
@@ -73,9 +78,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const handleSave = async () => {
     try {
       // Determine which field to update based on language
-      const updateData = language === 'en' 
-        ? { content_en: content } 
-        : { content_ar: content };
+      const contentField = language === 'en' ? 'content_en' : 'content_ar';
+      const updateData = { [contentField]: content };
 
       console.log('Saving content with ID:', pageId);
       console.log('Update data:', updateData);
@@ -101,8 +105,9 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         duration: 3000,
       });
 
-      setEditMode(false);
+      // Update original content to reflect new saved content
       setOriginalContent(content);
+      setEditMode(false);
     } catch (error) {
       console.error('Save error:', error);
       toast({
