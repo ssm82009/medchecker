@@ -25,24 +25,39 @@ self.addEventListener('install', event => {
   );
 });
 
-// استراتيجية الكاش: الشبكة أولاً مع التخزين في الكاش (Network First with Cache Fallback)
+// استراتيجية الكاش المحسنة: فقط طلبات GET
 self.addEventListener('fetch', event => {
+  // تجاهل طلبات غير GET مثل PATCH و POST
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // تخزين النسخة الجديدة في الكاش
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+    // محاولة الحصول على الاستجابة من الكاش أولاً
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) {
+        // إرجاع النسخة المخزنة مؤقتاً إذا كانت موجودة
+        return cachedResponse;
+      }
+
+      // إذا لم تكن موجودة في الكاش، طلب من الشبكة
+      return fetch(event.request).then(response => {
+        // التحقق من أن الاستجابة صالحة
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
         }
+
+        // نسخ الاستجابة لأن الاستجابة هي تيار ويمكن استخدامه مرة واحدة فقط
+        const responseToCache = response.clone();
+
+        // تخزين الاستجابة في الكاش
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+
         return response;
-      })
-      .catch(() => {
-        // استخدام الكاش في حال فشل الاتصال بالإنترنت
-        return caches.match(event.request);
-      })
+      });
+    })
   );
 });
 

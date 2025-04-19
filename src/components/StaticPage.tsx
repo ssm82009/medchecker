@@ -81,6 +81,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     try {
       console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
       
+      // استخدام .select() للحصول على البيانات المحدثة مباشرة بعد التحديث
       const { data, error } = await supabase
         .from('page_content')
         .update({
@@ -89,7 +90,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           last_updated: new Date().toISOString()
         })
         .eq('id', pageId)
-        .select(); // Add this to get back the updated row
+        .select()
+        .single();
 
       console.log('> Supabase update returned:', { data, error });
 
@@ -98,19 +100,18 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         throw error;
       }
 
-      if (!data || data.length === 0) {
+      if (!data) {
         console.error('No data returned after update, check RLS policies');
         throw new Error('Failed to update content, no data returned');
       }
 
       console.log('Content saved successfully');
       
-      // Update state from the returned data
-      const updated = data[0] as PageContent;
-      setContentEn(updated.content_en || '');
-      setContentAr(updated.content_ar || '');
-      setOriginalContentEn(updated.content_en || '');
-      setOriginalContentAr(updated.content_ar || '');
+      // تحديث الحالة من البيانات المحدثة المرجعة مباشرة
+      setContentEn(data.content_en || '');
+      setContentAr(data.content_ar || '');
+      setOriginalContentEn(data.content_en || '');
+      setOriginalContentAr(data.content_ar || '');
       
       toast({
         title: t('saveSuccess'),
