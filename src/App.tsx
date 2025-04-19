@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -73,7 +74,7 @@ const AppWrapper = () => {
         <BrowserRouter>
           <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
             <Navbar />
-            <div className="container mx-auto px-4 flex-grow pt-8"> {/* Reduced padding at the top */}
+            <div className="container mx-auto px-4 flex-grow pt-8"> 
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={
@@ -86,15 +87,16 @@ const AppWrapper = () => {
                     <Admin />
                   </ProtectedRoute>
                 } />
-                <Route path="*" element={<NotFound />} />
                 <Route path="/about" element={<StaticPage pageKey="about" />} />
                 <Route path="/terms" element={<StaticPage pageKey="terms" />} />
                 <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
                 <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
                 <Route path="/contact" element={<StaticPage pageKey="contact" />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
             <Footer />
+            <HiddenMenu />
           </div>
         </BrowserRouter>
       </TooltipProvider>

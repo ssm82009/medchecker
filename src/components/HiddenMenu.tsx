@@ -3,14 +3,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
-  Drawer, 
-  DrawerTrigger, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle 
-} from '@/components/ui/drawer';
+  Sheet, 
+  SheetTrigger, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle 
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Globe, Info, FileText, Lock, Copyright, PhoneCall } from 'lucide-react';
+import { Globe, Info, FileText, Lock, Copyright, PhoneCall, Menu } from 'lucide-react';
 
 const HiddenMenu: React.FC = () => {
   const { t, language, toggleLanguage } = useTranslation();
@@ -24,26 +24,26 @@ const HiddenMenu: React.FC = () => {
   ];
 
   return (
-    <Drawer>
-      <DrawerTrigger asChild>
+    <Sheet>
+      <SheetTrigger asChild>
         <Button 
           variant="ghost" 
           size="icon" 
-          className="fixed bottom-4 left-4 z-50 bg-blue-500 text-white hover:bg-blue-600"
+          className="fixed bottom-4 left-4 z-50 bg-blue-500 text-white hover:bg-blue-600 rounded-full shadow-lg h-12 w-12 flex items-center justify-center"
         >
-          <Info className="h-6 w-6" />
+          <Menu className="h-6 w-6" />
         </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>{t('languageSwitch')}</DrawerTitle>
+      </SheetTrigger>
+      <SheetContent side="left">
+        <SheetHeader>
+          <SheetTitle>{t('languageSwitch')}</SheetTitle>
           <div className="flex items-center justify-between p-4">
             <Button onClick={toggleLanguage} className="w-full">
               <Globe className="mr-2 h-4 w-4" />
               {language === 'en' ? 'العربية' : 'English'}
             </Button>
           </div>
-        </DrawerHeader>
+        </SheetHeader>
         <div className="p-4 space-y-2">
           {menuItems.map(({ icon: Icon, label, path }) => (
             <Link key={label} to={path} className="block">
@@ -54,10 +54,9 @@ const HiddenMenu: React.FC = () => {
             </Link>
           ))}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   );
 };
 
 export default HiddenMenu;
-
