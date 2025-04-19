@@ -1,4 +1,3 @@
-
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -8,11 +7,18 @@ export const en = {
   // App general
   appTitle: 'Medication Interaction Checker',
   contactUs: 'Contact Us',
-  about: 'About the Program',
+  about: 'About',
   termsOfUse: 'Terms of Use',
   privacyPolicy: 'Privacy Policy',
   copyright: 'Copyright',
   languageSwitch: 'Change Language',
+  
+  // Static Pages Titles
+  aboutTitle: 'About Us',
+  termsTitle: 'Terms of Use',
+  privacyTitle: 'Privacy Policy',
+  copyrightTitle: 'Copyright Notice',
+  contactTitle: 'Contact Information',
   
   // Medication interaction checker
   addMedication: 'Add Medication',

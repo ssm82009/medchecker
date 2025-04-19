@@ -82,7 +82,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     <div dir={dir} className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>{t(pageKey.toLowerCase() as any)}</CardTitle>
+          <CardTitle>{t(`${pageKey}Title` as any)}</CardTitle>
         </CardHeader>
         <CardContent>
           {editMode && isAdmin() ? (

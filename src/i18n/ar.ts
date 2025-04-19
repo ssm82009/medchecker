@@ -1,4 +1,3 @@
-
 import { en } from './en';
 
 const ar = {
@@ -9,10 +8,10 @@ const ar = {
   
   // Add Arabic translations for other keys as needed
   appTitle: 'فاحص تفاعلات الأدوية',
-  about: 'حول البرنامج',
+  about: 'من نحن',
   termsOfUse: 'شروط الاستخدام',
   privacyPolicy: 'سياسة الخصوصية',
-  copyright: 'حقوق الملكية',
+  copyright: 'حقوق النشر',
   contactUs: 'اتصل بنا',
   languageSwitch: 'تغيير اللغة',
   
@@ -75,7 +74,14 @@ const ar = {
   save: 'حفظ',
   cancel: 'إلغاء',
   edit: 'تعديل',
-  contentSaved: 'تم حفظ المحتوى بنجاح'
+  contentSaved: 'تم حفظ المحتوى بنجاح',
+
+  // Static Pages Titles
+  aboutTitle: 'من نحن',
+  termsTitle: 'شروط الاستخدام',
+  privacyTitle: 'سياسة الخصوصية',
+  copyrightTitle: 'حقوق النشر',
+  contactTitle: 'معلومات الاتصال',
 };
 
 export default ar;
