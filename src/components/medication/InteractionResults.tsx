@@ -1,13 +1,13 @@
-
 import React, { useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, ActivitySquare, AlertTriangle, Copy, Printer, CheckCircle } from 'lucide-react';
+import { Heart, ActivitySquare, AlertTriangle, Copy, Printer, CheckCircle, Share2 } from 'lucide-react';
 import { InteractionResult } from '@/types/medication';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { captureAndShare } from '@/utils/shareResults';
 
 interface InteractionResultsProps {
   result: InteractionResult | null;
@@ -68,6 +68,27 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
     }
   };
 
+  const handleShare = async () => {
+    if (!resultRef.current) return;
+    
+    try {
+      await captureAndShare(resultRef, language === 'ar' ? 'نتائج التفاعلات الدوائية' : 'Medication Interaction Results');
+      toast({
+        title: language === 'ar' ? 'تمت المشاركة' : 'Shared Successfully',
+        description: language === 'ar' ? 'تم تصدير وحفظ النتائج بنجاح' : 'Results have been exported successfully',
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'حدث خطأ أثناء المشاركة' : 'Error while sharing results',
+        variant: 'destructive',
+        duration: 3000,
+      });
+    }
+  };
+
   return (
     <Card id="result-card" className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16" ref={resultRef}>
       <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
@@ -85,6 +106,15 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
           )}
         </CardTitle>
         <div className="flex items-center justify-end gap-2 mt-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleShare}
+            className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+          >
+            <Share2 className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
+            <span>{language === 'ar' ? 'مشاركة' : 'Share'}</span>
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
