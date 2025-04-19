@@ -8,21 +8,26 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Globe, Pill, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const Navbar: React.FC = () => {
-  // Consolidate all required hooks at the top
   const { t, dir, language, toggleLanguage } = useTranslation();
   const { user, logout } = useAuth();
   const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  const menuItems = [
+    { icon: Globe, label: 'about', path: '/about' },
+    { icon: Globe, label: 'termsOfUse', path: '/terms' },
+    { icon: Globe, label: 'privacyPolicy', path: '/privacy' },
+    { icon: Globe, label: 'copyright', path: '/copyright' },
+    { icon: Globe, label: 'contactUs', path: '/contact' }
+  ];
   
-  // Single language change handler used consistently
   const handleLanguageChange = () => {
     toggleLanguage();
-    
-    // Show notification for language change
     toast({
       title: language === 'en' ? 'تم تغيير اللغة إلى العربية' : 'Language changed to English',
       description: language === 'en' ? 'تم تطبيق التغييرات بنجاح' : 'Changes applied successfully',
@@ -30,7 +35,6 @@ const Navbar: React.FC = () => {
     });
   };
 
-  // Single mobile menu toggle handler
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
@@ -41,6 +45,48 @@ const Navbar: React.FC = () => {
         className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600" 
         dir={dir}
       >
+        {/* Logo */}
+        <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
+          <Link to="/" className="flex items-center gap-2">
+            <Pill className="h-6 w-6 text-white" />
+            <span>{logoText}</span>
+          </Link>
+        </div>
+
+        {/* Menu Button and Sheet */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white hover:bg-white/10"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side={language === 'ar' ? 'right' : 'left'}>
+            <SheetHeader>
+              <SheetTitle>{t('languageSwitch' as any)}</SheetTitle>
+              <div className="flex items-center justify-between p-4">
+                <Button onClick={handleLanguageChange} className="w-full">
+                  <Globe className="mr-2 h-4 w-4" />
+                  {language === 'en' ? 'العربية' : 'English'}
+                </Button>
+              </div>
+            </SheetHeader>
+            <div className="p-4 space-y-2">
+              {menuItems.map(({ icon: Icon, label, path }) => (
+                <Link key={label} to={path} className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Icon className="mr-2 h-4 w-4" />
+                    {t(label as any)}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
+
         {/* Desktop Navigation */}
         {!isMobile && (
           <div className={`flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
@@ -48,11 +94,11 @@ const Navbar: React.FC = () => {
               <>
                 {user.role === 'admin' && (
                   <Button variant="ghost" asChild className="hover:bg-white/10 text-white text-sm h-8 px-2">
-                    <Link to="/dashboard">{t('dashboard')}</Link>
+                    <Link to="/dashboard">{t('dashboard' as any)}</Link>
                   </Button>
                 )}
                 <Button variant="ghost" onClick={logout} className="hover:bg-white/10 text-white text-sm h-8 px-2">
-                  {t('logout')}
+                  {t('logout' as any)}
                 </Button>
               </>
             )}
@@ -68,27 +114,6 @@ const Navbar: React.FC = () => {
             </Button>
           </div>
         )}
-        
-        {/* Logo - Always on the right side for Arabic, left side for English */}
-        <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
-          <Link to="/" className="flex items-center gap-2">
-            <Pill className="h-6 w-6 text-white" />
-            <span>{logoText}</span>
-          </Link>
-        </div>
-        
-        {/* Mobile Menu Toggle */}
-        {isMobile && (
-          <div className="flex items-center">
-            <Button 
-              variant="ghost"
-              onClick={toggleMobileMenu}
-              className="p-1 text-white hover:bg-white/10"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </div>
-        )}
       </nav>
       
       {/* Mobile Menu */}
@@ -99,11 +124,11 @@ const Navbar: React.FC = () => {
               <>
                 {user.role === 'admin' && (
                   <Button variant="ghost" asChild className="w-full justify-start hover:bg-white/10 text-white text-sm">
-                    <Link to="/dashboard">{t('dashboard')}</Link>
+                    <Link to="/dashboard">{t('dashboard' as any)}</Link>
                   </Button>
                 )}
                 <Button variant="ghost" onClick={logout} className="w-full justify-start hover:bg-white/10 text-white text-sm">
-                  {t('logout')}
+                  {t('logout' as any)}
                 </Button>
               </>
             )}

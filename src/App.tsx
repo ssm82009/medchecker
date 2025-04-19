@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,6 @@ import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import StaticPage from './components/StaticPage';
-import HiddenMenu from './components/HiddenMenu';
 
 const queryClient = new QueryClient();
 
@@ -53,12 +51,10 @@ function AppWrapper() {
   const { dir, language } = useTranslation();
   
   useEffect(() => {
-    // تطبيق الاتجاه RTL على عنصر html عند تحميل التطبيق
     document.documentElement.dir = dir;
     document.documentElement.lang = language;
     document.body.className = language === 'ar' ? 'rtl' : 'ltr';
 
-    // تطبيق الاتجاه على عنصر html
     if (language === 'ar') {
       document.querySelector('html')?.setAttribute('dir', 'rtl');
     } else {
@@ -96,7 +92,6 @@ function AppWrapper() {
               </Routes>
             </div>
             <Footer />
-            <HiddenMenu />
           </div>
         </BrowserRouter>
       </TooltipProvider>
@@ -104,7 +99,6 @@ function AppWrapper() {
   );
 }
 
-// Changed from arrow function to regular function component
 function App() {
   return <AppWrapper />;
 }
