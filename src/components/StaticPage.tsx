@@ -17,40 +17,50 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   
-  const [content, setContent] = useState('');
+  const [contentEn, setContentEn] = useState('');
+  const [contentAr, setContentAr] = useState('');
   const [editMode, setEditMode] = useState(false);
-  const [originalContent, setOriginalContent] = useState('');
+  const [originalContentEn, setOriginalContentEn] = useState('');
+  const [originalContentAr, setOriginalContentAr] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPageContent = async () => {
-      const { data, error } = await supabase
-        .from('page_content')
-        .select('*')
-        .eq('page_key', pageKey)
-        .single();
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('page_content')
+          .select('*')
+          .eq('page_key', pageKey)
+          .single();
 
-      if (error) {
-        console.error('Error fetching page content:', error);
-        return;
+        if (error) {
+          console.error('Error fetching page content:', error);
+          return;
+        }
+
+        setContentEn(data.content_en || '');
+        setContentAr(data.content_ar || '');
+        setOriginalContentEn(data.content_en || '');
+        setOriginalContentAr(data.content_ar || '');
+      } catch (error) {
+        console.error('Error in fetchPageContent:', error);
+      } finally {
+        setIsLoading(false);
       }
-
-      const localizedContent = language === 'en' ? data.content_en : data.content_ar;
-      setContent(localizedContent);
-      setOriginalContent(localizedContent);
     };
 
     fetchPageContent();
-  }, [pageKey, language]);
+  }, [pageKey]);
 
   const handleSave = async () => {
     try {
-      const updateData = language === 'en' 
-        ? { content_en: content } 
-        : { content_ar: content };
-
       const { error } = await supabase
         .from('page_content')
-        .update(updateData)
+        .update({
+          content_en: contentEn,
+          content_ar: contentAr
+        })
         .eq('page_key', pageKey);
 
       if (error) throw error;
@@ -62,7 +72,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       });
 
       setEditMode(false);
-      setOriginalContent(content);
+      setOriginalContentEn(contentEn);
+      setOriginalContentAr(contentAr);
     } catch (error) {
       toast({
         title: t('error'),
@@ -74,9 +85,28 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   };
 
   const handleCancel = () => {
-    setContent(originalContent);
+    setContentEn(originalContentEn);
+    setContentAr(originalContentAr);
     setEditMode(false);
   };
+
+  // الحصول على المحتوى المناسب حسب اللغة الحالية
+  const currentContent = language === 'en' ? contentEn : contentAr;
+  const setCurrentContent = language === 'en' 
+    ? (value: string) => setContentEn(value) 
+    : (value: string) => setContentAr(value);
+
+  if (isLoading) {
+    return (
+      <div dir={dir} className="container mx-auto p-4 text-center">
+        <Card className="min-h-[300px] flex items-center justify-center">
+          <CardContent>
+            <p>{t('loading')}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div dir={dir} className="container mx-auto p-4">
@@ -87,11 +117,24 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         <CardContent>
           {editMode && isAdmin() ? (
             <>
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="mb-4 min-h-[200px]"
-              />
+              <div className="mb-4">
+                <h3 className="font-medium mb-2">{language === 'en' ? 'Arabic Content:' : 'المحتوى العربي:'}</h3>
+                <Textarea
+                  value={contentAr}
+                  onChange={(e) => setContentAr(e.target.value)}
+                  className="mb-4 min-h-[200px] font-arabic"
+                  dir="rtl"
+                />
+              </div>
+              <div className="mb-4">
+                <h3 className="font-medium mb-2">{language === 'en' ? 'English Content:' : 'المحتوى الإنجليزي:'}</h3>
+                <Textarea
+                  value={contentEn}
+                  onChange={(e) => setContentEn(e.target.value)}
+                  className="mb-4 min-h-[200px]"
+                  dir="ltr"
+                />
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave}>{t('save')}</Button>
                 <Button variant="secondary" onClick={handleCancel}>{t('cancel')}</Button>
@@ -99,7 +142,10 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
             </>
           ) : (
             <>
-              <p>{content}</p>
+              <div 
+                className="static-page-content"
+                dangerouslySetInnerHTML={{ __html: currentContent }}
+              />
               {isAdmin() && (
                 <Button 
                   variant="outline" 
