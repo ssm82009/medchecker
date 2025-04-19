@@ -51,15 +51,20 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         // Store the page ID for update operations
         setPageId(data.id);
         
-        // Ensure we have content to display based on language
+        // Get the content based on language
         const contentField = language === 'en' ? 'content_en' : 'content_ar';
-        const localizedContent = data[contentField] || (language === 'en' 
-          ? '<p>Content not available in English</p>' 
-          : '<p>المحتوى غير متوفر باللغة العربية</p>');
+        let htmlContent = data[contentField];
         
-        console.log('Setting content to:', localizedContent);
-        setContent(localizedContent);
-        setOriginalContent(localizedContent);
+        // Ensure we have valid HTML content
+        if (!htmlContent || typeof htmlContent !== 'string') {
+          htmlContent = language === 'en' 
+            ? '<p>Content not available in English</p>' 
+            : '<p>المحتوى غير متوفر باللغة العربية</p>';
+        }
+
+        console.log('Setting HTML content:', htmlContent);
+        setContent(htmlContent);
+        setOriginalContent(htmlContent);
       } catch (err) {
         console.error('Error in fetch operation:', err);
         const errorContent = language === 'en' 
@@ -77,6 +82,10 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
   const handleSave = async () => {
     try {
+      if (!content) {
+        throw new Error(t('contentRequired'));
+      }
+
       // Determine which field to update based on language
       const contentField = language === 'en' ? 'content_en' : 'content_ar';
       const updateData = { [contentField]: content };
@@ -97,6 +106,18 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       if (error) {
         console.error('Error updating content:', error);
         throw error;
+      }
+
+      // Verify the content was saved by fetching it again
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('page_content')
+        .select(contentField)
+        .eq('id', pageId)
+        .single();
+
+      if (verifyError || !verifyData || verifyData[contentField] !== content) {
+        console.error('Content verification failed:', verifyError);
+        throw new Error(t('saveFailed'));
       }
 
       toast({
@@ -165,7 +186,10 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
             </>
           ) : (
             <>
-              <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: content }} />
+              <div 
+                className="rich-text-content prose prose-sm max-w-none" 
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
               {isAdmin() && (
                 <Button 
                   variant="outline" 
