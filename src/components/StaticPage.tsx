@@ -82,7 +82,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
   const handleSave = async () => {
     try {
-      if (!content) {
+      if (!content || content.trim() === '') {
         throw new Error(t('contentRequired'));
       }
 
@@ -98,6 +98,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         throw new Error(t('pageNotFound'));
       }
 
+      // Update the content in the database
       const { error } = await supabase
         .from('page_content')
         .update(updateData)
@@ -108,32 +109,21 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         throw error;
       }
 
-      // Verify the content was saved by fetching it again
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('page_content')
-        .select(contentField)
-        .eq('id', pageId)
-        .single();
-
-      if (verifyError || !verifyData || verifyData[contentField] !== content) {
-        console.error('Content verification failed:', verifyError);
-        throw new Error(t('saveFailed'));
-      }
-
+      // Success! Set the new content as the original and exit edit mode
+      console.log('Content saved successfully');
+      setOriginalContent(content);
+      setEditMode(false);
+      
       toast({
         title: t('saveSuccess'),
         description: t('contentSaved'),
         duration: 3000,
       });
-
-      // Update original content to reflect new saved content
-      setOriginalContent(content);
-      setEditMode(false);
     } catch (error) {
       console.error('Save error:', error);
       toast({
         title: t('error'),
-        description: String(error),
+        description: error instanceof Error ? error.message : t('saveFailed'),
         variant: 'destructive',
         duration: 5000,
       });

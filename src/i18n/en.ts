@@ -1,3 +1,4 @@
+
 export const en = {
   // Original modified keys
   enterMedication: 'Enter medications to check interactions by typing names or extracting from images',
