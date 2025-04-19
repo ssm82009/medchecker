@@ -49,6 +49,12 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
       if (error) {
         console.error('Error fetching page content:', error);
+        toast({
+          title: t('error'),
+          description: t('contentFetchError'),
+          variant: 'destructive',
+          duration: 5000,
+        });
         setIsLoading(false);
         return;
       }
@@ -63,6 +69,12 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       }
     } catch (error) {
       console.error('Error in fetchPageContent:', error);
+      toast({
+        title: t('error'),
+        description: String(error),
+        variant: 'destructive',
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +87,12 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const handleSave = async () => {
     if (!pageId) {
       console.error('No page ID found, cannot save');
+      toast({
+        title: t('error'),
+        description: t('pageIdMissing'),
+        variant: 'destructive',
+        duration: 3000,
+      });
       return;
     }
 
@@ -97,16 +115,26 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
       if (error) {
         console.error('Error updating content:', error);
-        throw error;
+        toast({
+          title: t('error'),
+          description: `${error.message} (${error.code})`,
+          variant: 'destructive',
+          duration: 5000,
+        });
+        return;
       }
 
       if (!data) {
         console.error('No data returned after update, check RLS policies');
-        throw new Error('Failed to update content, no data returned');
+        toast({
+          title: t('error'),
+          description: t('updatePermissionError'),
+          variant: 'destructive',
+          duration: 5000,
+        });
+        return;
       }
 
-      console.log('Content saved successfully');
-      
       // تحديث الحالة من البيانات المحدثة المرجعة مباشرة
       setContentEn(data.content_en || '');
       setContentAr(data.content_ar || '');
