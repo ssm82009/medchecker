@@ -21,6 +21,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const [editMode, setEditMode] = useState(false);
   const [originalContent, setOriginalContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [pageId, setPageId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchPageContent = async () => {
@@ -44,6 +45,9 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           return;
         }
 
+        // Store the page ID for update operations
+        setPageId(data.id);
+        
         // Ensure we have content to display
         const localizedContent = language === 'en' 
           ? (data.content_en || '<p>Content not available in English</p>') 
@@ -68,16 +72,28 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
   const handleSave = async () => {
     try {
+      // Determine which field to update based on language
       const updateData = language === 'en' 
         ? { content_en: content } 
         : { content_ar: content };
 
+      console.log('Saving content with ID:', pageId);
+      console.log('Update data:', updateData);
+      
+      if (!pageId) {
+        console.error('No page ID found for update');
+        throw new Error(t('pageNotFound'));
+      }
+
       const { error } = await supabase
         .from('page_content')
         .update(updateData)
-        .eq('page_key', pageKey);
+        .eq('id', pageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating content:', error);
+        throw error;
+      }
 
       toast({
         title: t('saveSuccess'),
@@ -88,6 +104,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       setEditMode(false);
       setOriginalContent(content);
     } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: t('error'),
         description: String(error),
