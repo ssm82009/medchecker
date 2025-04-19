@@ -78,7 +78,8 @@ export const en = {
   save: 'Save',
   cancel: 'Cancel',
   edit: 'Edit',
-  contentSaved: 'Content saved successfully'
+  contentSaved: 'Content saved successfully',
+  pageNotFound: 'Page not found or could not be updated'
 };
 
 export default en;

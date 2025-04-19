@@ -75,7 +75,8 @@ const ar = {
   save: 'حفظ',
   cancel: 'إلغاء',
   edit: 'تعديل',
-  contentSaved: 'تم حفظ المحتوى بنجاح'
+  contentSaved: 'تم حفظ المحتوى بنجاح',
+  pageNotFound: 'الصفحة غير موجودة أو تعذر تحديثها'
 };
 
 export default ar;
