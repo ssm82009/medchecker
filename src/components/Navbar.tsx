@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -13,24 +12,6 @@ const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const { user, logout } = useAuth();
   const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
-
-  // Get translations for menu items based on current language
-  const getMenuLabel = (key: string): string => {
-    if (language === 'ar') {
-      switch (key) {
-        case 'appTitle': return 'الرئيسية';
-        case 'about': return 'حول البرنامج';
-        case 'termsOfUse': return 'شروط الاستخدام';
-        case 'privacyPolicy': return 'سياسة الخصوصية';
-        case 'copyright': return 'حقوق النشر';
-        case 'contactUs': return 'اتصل بنا';
-        case 'dashboard': return 'لوحة التحكم';
-        case 'logout': return 'تسجيل الخروج';
-        default: return t(key as any);
-      }
-    }
-    return t(key as any);
-  };
 
   return (
     <div className="sticky top-0 z-50 w-full">
@@ -66,22 +47,22 @@ const Navbar: React.FC = () => {
               
               {/* Page Links */}
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/">{getMenuLabel('appTitle')}</Link>
+                <Link to="/">{t('appTitle' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/about">{getMenuLabel('about')}</Link>
+                <Link to="/about">{t('about' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/terms">{getMenuLabel('termsOfUse')}</Link>
+                <Link to="/terms">{t('termsOfUse' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/privacy">{getMenuLabel('privacyPolicy')}</Link>
+                <Link to="/privacy">{t('privacyPolicy' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/copyright">{getMenuLabel('copyright')}</Link>
+                <Link to="/copyright">{t('copyright' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/contact">{getMenuLabel('contactUs')}</Link>
+                <Link to="/contact">{t('contactUs' as any)}</Link>
               </Button>
               
               {/* Admin and Logout Buttons */}
@@ -89,11 +70,11 @@ const Navbar: React.FC = () => {
                 <>
                   {user.role === 'admin' && (
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link to="/dashboard">{getMenuLabel('dashboard')}</Link>
+                      <Link to="/dashboard">{t('dashboard' as any)}</Link>
                     </Button>
                   )}
                   <Button variant="outline" onClick={logout} className="w-full justify-start">
-                    {getMenuLabel('logout')}
+                    {t('logout' as any)}
                   </Button>
                 </>
               )}
