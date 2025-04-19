@@ -30,6 +30,7 @@ export const safelyParseAISettings = (value: Record<string, Json>): AISettingsTy
 };
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
+  // Make sure this useState is called within a React component
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
       return initialValue;

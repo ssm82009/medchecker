@@ -9,7 +9,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import { useAuth } from "./hooks/useAuth";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -49,7 +49,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppWrapper = () => {
+function AppWrapper() {
   const { dir, language } = useTranslation();
   
   useEffect(() => {
@@ -102,8 +102,11 @@ const AppWrapper = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
-const App = () => <AppWrapper />;
+// Changed from arrow function to regular function component
+function App() {
+  return <AppWrapper />;
+}
 
 export default App;
