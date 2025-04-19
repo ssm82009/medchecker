@@ -8,18 +8,24 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import RichTextEditor from './RichTextEditor';
 
-interface StaticPageProps {
-  pageKey: string;
+interface PageContent {
+  id: number;
+  page_key: string;
+  content_en: string;
+  content_ar: string;
+  title_en: string;
+  title_ar: string;
+  last_updated: string;
 }
 
-const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
+const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
   const { t, language, dir } = useTranslation();
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState<string>('');
   const [editMode, setEditMode] = useState(false);
-  const [originalContent, setOriginalContent] = useState('');
+  const [originalContent, setOriginalContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [pageId, setPageId] = useState<number | null>(null);
 
@@ -33,11 +39,10 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           .from('page_content')
           .select('*')
           .eq('page_key', pageKey)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching page content:', error);
-          // Set default content if there's an error
           const defaultContent = language === 'en' 
             ? '<p>Content not available</p>' 
             : '<p>المحتوى غير متوفر</p>';
@@ -48,23 +53,21 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
         console.log('Page data received:', data);
         
-        // Store the page ID for update operations
-        setPageId(data.id);
-        
-        // Get the content based on language
-        const contentField = language === 'en' ? 'content_en' : 'content_ar';
-        let htmlContent = data[contentField];
-        
-        // Ensure we have valid HTML content
-        if (!htmlContent || typeof htmlContent !== 'string') {
-          htmlContent = language === 'en' 
-            ? '<p>Content not available in English</p>' 
-            : '<p>المحتوى غير متوفر باللغة العربية</p>';
-        }
+        if (data) {
+          setPageId(data.id);
+          const contentField = language === 'en' ? 'content_en' : 'content_ar';
+          let htmlContent = data[contentField] || '';
+          
+          if (!htmlContent.trim()) {
+            htmlContent = language === 'en' 
+              ? '<p>Content not available in English</p>' 
+              : '<p>المحتوى غير متوفر باللغة العربية</p>';
+          }
 
-        console.log('Setting HTML content:', htmlContent);
-        setContent(htmlContent);
-        setOriginalContent(htmlContent);
+          console.log('Setting HTML content:', htmlContent);
+          setContent(htmlContent);
+          setOriginalContent(htmlContent);
+        }
       } catch (err) {
         console.error('Error in fetch operation:', err);
         const errorContent = language === 'en' 
@@ -81,12 +84,16 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   }, [pageKey, language]);
 
   const handleSave = async () => {
-    try {
-      if (!content || content.trim() === '') {
-        throw new Error(t('contentRequired' as any));
-      }
+    if (!content?.trim()) {
+      toast({
+        title: t('error'),
+        description: t('contentRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
 
-      // Determine which field to update based on language
+    try {
       const contentField = language === 'en' ? 'content_en' : 'content_ar';
       const updateData = { [contentField]: content };
 
@@ -94,38 +101,35 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       console.log('Update data:', updateData);
       
       if (!pageId) {
-        console.error('No page ID found for update');
-        throw new Error(t('pageNotFound' as any));
+        throw new Error(t('pageNotFound'));
       }
 
-      // Update the content in the database
       const { error } = await supabase
         .from('page_content')
         .update(updateData)
         .eq('id', pageId);
 
       if (error) {
-        console.error('Error updating content:', error);
         throw error;
       }
 
-      // Success! Set the new content as the original and exit edit mode
-      console.log('Content saved successfully');
       setOriginalContent(content);
       setEditMode(false);
       
       toast({
-        title: t('saveSuccess' as any),
-        description: t('contentSaved' as any),
-        duration: 3000,
+        title: t('saveSuccess'),
+        description: t('contentSaved'),
       });
+      
+      // Trigger a page reload to ensure content is fresh
+      window.location.reload();
+      
     } catch (error) {
       console.error('Save error:', error);
       toast({
-        title: t('error' as any),
-        description: error instanceof Error ? error.message : t('saveFailed' as any),
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('saveFailed'),
         variant: 'destructive',
-        duration: 5000,
       });
     }
   };
@@ -167,18 +171,20 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
             <>
               <RichTextEditor
                 value={content}
-                onChange={setContent}
+                onChange={(html: string) => setContent(html)}
+                readOnly={false}
               />
               <div className="flex gap-2 mt-4">
-                <Button onClick={handleSave}>{t('save' as any)}</Button>
-                <Button variant="secondary" onClick={handleCancel}>{t('cancel' as any)}</Button>
+                <Button onClick={handleSave}>{t('save')}</Button>
+                <Button variant="secondary" onClick={handleCancel}>{t('cancel')}</Button>
               </div>
             </>
           ) : (
             <>
-              <div 
-                className="rich-text-content prose prose-sm max-w-none" 
-                dangerouslySetInnerHTML={{ __html: content }}
+              <RichTextEditor
+                value={content}
+                onChange={() => {}}
+                readOnly={true}
               />
               {isAdmin() && (
                 <Button 
@@ -186,7 +192,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
                   className="mt-4" 
                   onClick={() => setEditMode(true)}
                 >
-                  {t('edit' as any)}
+                  {t('edit')}
                 </Button>
               )}
             </>
