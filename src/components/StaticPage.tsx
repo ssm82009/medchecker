@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import './StaticPage.css';
 
 // تعريف واجهة للتوافق مع هيكل جدول محتوى الصفحة
 interface PageContent {
@@ -41,7 +42,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     try {
       console.log('Fetching page content for:', pageKey);
       const { data, error } = await supabase
-        .from<PageContent>('page_content')
+        .from('page_content')
         .select('*')
         .eq('page_key', pageKey)
         .single();
@@ -53,11 +54,13 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       }
 
       console.log('Fetched page content:', data);
-      setPageId(data.id);
-      setContentEn(data.content_en || '');
-      setContentAr(data.content_ar || '');
-      setOriginalContentEn(data.content_en || '');
-      setOriginalContentAr(data.content_ar || '');
+      if (data) {
+        setPageId(data.id);
+        setContentEn(data.content_en || '');
+        setContentAr(data.content_ar || '');
+        setOriginalContentEn(data.content_en || '');
+        setOriginalContentAr(data.content_ar || '');
+      }
     } catch (error) {
       console.error('Error in fetchPageContent:', error);
     } finally {
@@ -79,7 +82,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
       
       const { data, error } = await supabase
-        .from<PageContent>('page_content')
+        .from('page_content')
         .update({
           content_en: contentEn,
           content_ar: contentAr,
@@ -103,7 +106,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       console.log('Content saved successfully');
       
       // Update state from the returned data
-      const updated = data[0];
+      const updated = data[0] as PageContent;
       setContentEn(updated.content_en || '');
       setContentAr(updated.content_ar || '');
       setOriginalContentEn(updated.content_en || '');
