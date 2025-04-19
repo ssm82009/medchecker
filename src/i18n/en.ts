@@ -1,3 +1,4 @@
+
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -71,7 +72,13 @@ export const en = {
   secondaryAdvertisement: 'Footer Advertisement',
   saveAd: 'Save Advertisement',
   saveSecondaryAd: 'Save Footer Advertisement',
-  dashboard: 'Dashboard'
+  dashboard: 'Dashboard',
+  
+  // New keys for static pages functionality
+  save: 'Save',
+  cancel: 'Cancel',
+  edit: 'Edit',
+  contentSaved: 'Content saved successfully'
 };
 
 export default en;

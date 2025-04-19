@@ -1,3 +1,4 @@
+
 import { en } from './en';
 
 const ar = {
@@ -8,7 +9,13 @@ const ar = {
   
   // Add Arabic translations for other keys as needed
   appTitle: 'فاحص تفاعلات الأدوية',
+  about: 'حول البرنامج',
+  termsOfUse: 'شروط الاستخدام',
+  privacyPolicy: 'سياسة الخصوصية',
+  copyright: 'حقوق الملكية',
   contactUs: 'اتصل بنا',
+  languageSwitch: 'تغيير اللغة',
+  
   addMedication: 'إضافة دواء',
   checkInteractions: 'التحقق من التفاعلات',
   loading: 'جاري التحميل...',
@@ -64,12 +71,11 @@ const ar = {
   saveSecondaryAd: 'حفظ إعلان التذييل',
   dashboard: 'لوحة القيادة',
   
-  about: 'حول البرنامج',
-  termsOfUse: 'شروط الاستخدام',
-  privacyPolicy: 'سياسة الخصوصية',
-  copyright: 'حقوق الملكية',
-  contactUs: 'اتصل بنا',
-  languageSwitch: 'تغيير اللغة'
+  // New keys for static pages functionality
+  save: 'حفظ',
+  cancel: 'إلغاء',
+  edit: 'تعديل',
+  contentSaved: 'تم حفظ المحتوى بنجاح'
 };
 
 export default ar;
