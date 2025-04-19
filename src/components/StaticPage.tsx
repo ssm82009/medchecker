@@ -36,8 +36,11 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         if (error) {
           console.error('Error fetching page content:', error);
           // Set default content if there's an error
-          setContent('<p>Content not available</p>');
-          setOriginalContent('<p>Content not available</p>');
+          const defaultContent = language === 'en' 
+            ? '<p>Content not available</p>' 
+            : '<p>المحتوى غير متوفر</p>';
+          setContent(defaultContent);
+          setOriginalContent(defaultContent);
           return;
         }
 
@@ -50,8 +53,11 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         setOriginalContent(localizedContent);
       } catch (err) {
         console.error('Error in fetch operation:', err);
-        setContent('<p>Error loading content</p>');
-        setOriginalContent('<p>Error loading content</p>');
+        const errorContent = language === 'en' 
+          ? '<p>Error loading content</p>' 
+          : '<p>خطأ في تحميل المحتوى</p>';
+        setContent(errorContent);
+        setOriginalContent(errorContent);
       } finally {
         setIsLoading(false);
       }
@@ -122,7 +128,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center h-[200px]">
-              <div className="animate-pulse">جاري التحميل...</div>
+              <div className="animate-pulse">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
             </div>
           ) : editMode && isAdmin() ? (
             <>
