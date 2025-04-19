@@ -19,7 +19,8 @@ export const useAuth = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error('Error parsing stored user:', e);
         localStorage.removeItem('user');

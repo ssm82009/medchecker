@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
-// تعريف نوع إعدادات الذكاء الاصطناعي
+// Define AI settings type
 export interface AISettingsType {
   apiKey: string;
   model: string;
 }
 
-// التحقق من أن القيمة تطابق نوع إعدادات الذكاء الاصطناعي
+// Type validation function
 export const isAISettingsType = (value: any): value is AISettingsType => {
   return (
     typeof value === 'object' &&
@@ -21,7 +21,7 @@ export const isAISettingsType = (value: any): value is AISettingsType => {
   );
 };
 
-// تحويل القيمة إلى نوع إعدادات الذكاء الاصطناعي بشكل آمن
+// Safe parsing function
 export const safelyParseAISettings = (value: Record<string, Json>): AISettingsType => {
   return {
     apiKey: typeof value.apiKey === 'string' ? value.apiKey : '',
@@ -30,7 +30,7 @@ export const safelyParseAISettings = (value: Record<string, Json>): AISettingsTy
 };
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
-  // Make sure this useState is called within a React component
+  // This useState call must be used inside a React component
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
       return initialValue;
@@ -87,15 +87,10 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     fetchFromDatabase();
   }, [key]);
 
+  // Update localStorage when storedValue changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
-      
-      // For AI settings, also update the database
-      if (key === 'aiSettings') {
-        // Don't update the database here, as it should be done explicitly
-        // in the Admin component to avoid unwanted updates
-      }
     }
   }, [key, storedValue]);
 

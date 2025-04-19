@@ -1,5 +1,6 @@
 
-import { useEditor, EditorContent, type Content } from '@tiptap/react';
+import React, { useEffect, useState } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
@@ -7,9 +8,7 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   AlignLeft, AlignCenter, AlignRight, ListOrdered, List
 } from 'lucide-react';
-import { Toggle } from './ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
-import { useEffect, useState } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -103,12 +102,11 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
           
           <div className="border-r mx-1 h-6"></div>
           
-          <ToggleGroup type="single" className="justify-start">
+          <ToggleGroup type="single" value={editor.isActive({ textAlign: 'center' }) ? 'center' : editor.isActive({ textAlign: 'right' }) ? 'right' : 'left'} className="justify-start">
             <ToggleGroupItem
               size="sm"
               value="left"
               aria-label="محاذاة لليسار"
-              data-state={editor.isActive({ textAlign: 'left' }) ? 'on' : 'off'}
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
             >
               <AlignLeft className="h-4 w-4" />
@@ -117,7 +115,6 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
               size="sm"
               value="center"
               aria-label="توسيط"
-              data-state={editor.isActive({ textAlign: 'center' }) ? 'on' : 'off'}
               onClick={() => editor.chain().focus().setTextAlign('center').run()}
             >
               <AlignCenter className="h-4 w-4" />
@@ -126,7 +123,6 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
               size="sm"
               value="right"
               aria-label="محاذاة لليمين"
-              data-state={editor.isActive({ textAlign: 'right' }) ? 'on' : 'off'}
               onClick={() => editor.chain().focus().setTextAlign('right').run()}
             >
               <AlignRight className="h-4 w-4" />

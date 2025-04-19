@@ -143,14 +143,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
             </>
           ) : (
             <>
-              <RichTextEditor
-                value={content}
-                readOnly={true}
-                onChange={(value) => {
-                  /* Read-only mode, but we need to provide this function */
-                  console.log('Read-only content:', value);
-                }}
-              />
+              <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: content }} />
               {isAdmin() && (
                 <Button 
                   variant="outline" 
