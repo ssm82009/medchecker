@@ -6,6 +6,27 @@ export const captureAndShare = async (elementRef: React.RefObject<HTMLElement>, 
 
   try {
     const canvas = await html2canvas(elementRef.current);
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Add watermark
+      ctx.save();
+      
+      // Set watermark style
+      ctx.fillStyle = 'rgba(128, 128, 128, 0.3)';
+      ctx.font = 'bold 24px Arial';
+      ctx.textAlign = 'center';
+      
+      // Add دواء آمن
+      ctx.fillText('دواء آمن', canvas.width / 2, canvas.height - 60);
+      
+      // Add dwaa.app
+      ctx.font = '20px Arial';
+      ctx.fillText('dwaa.app', canvas.width / 2, canvas.height - 30);
+      
+      ctx.restore();
+    }
+
     const imageBlob = await new Promise<Blob>((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) resolve(blob);
