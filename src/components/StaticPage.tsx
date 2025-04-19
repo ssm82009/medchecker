@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import './StaticPage.css';
 
-// تعريف واجهة للتوافق مع هيكل جدول محتوى الصفحة
 interface PageContent {
   id: number;
   page_key: string;
@@ -41,7 +40,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const fetchPageContent = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching page content for:', pageKey);
       const { data, error } = await supabase
         .from('page_content')
         .select('*')
@@ -56,11 +54,9 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
           variant: 'destructive',
           duration: 5000,
         });
-        setIsLoading(false);
         return;
       }
 
-      console.log('Fetched page content:', data);
       if (data) {
         setPageId(data.id);
         setContentEn(data.content_en || '');
@@ -99,9 +95,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
     setIsSaving(true);
     try {
-      console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
-      
-      // رفع الأذونات: استخدام معلمة rpc_params لتمرير userRole
       const { data, error } = await supabase
         .from('page_content')
         .update({
@@ -117,7 +110,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
       if (error) {
         console.error('Error updating content:', error);
-        // إظهار رسالة خطأ مع معلومات أكثر تفصيلاً
         toast({
           title: t('error'),
           description: error.message || t('updatePermissionError'),
@@ -127,7 +119,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         return;
       }
 
-      // استخدام البيانات المحدّثة المُرجعة من supabase
       if (data) {
         setContentEn(data.content_en || '');
         setContentAr(data.content_ar || '');
@@ -142,14 +133,14 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         
         setEditMode(false);
       } else {
-        // إظهار رسالة نجاح حتى إذا لم يتم إرجاع البيانات (لأننا قمنا بتغيير RLS)
+        // إظهار رسالة نجاح حتى إذا لم يتم إرجاع البيانات
         toast({
           title: t('saveSuccess'),
           description: t('contentSaved'),
           duration: 3000,
         });
         
-        // إعادة تحميل المحتوى لأن البيانات لم ترجع
+        // إعادة تحميل المحتوى
         await fetchPageContent();
         setEditMode(false);
       }
@@ -172,7 +163,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     setEditMode(false);
   };
 
-  // الحصول على المحتوى المناسب حسب اللغة الحالية
   const currentContent = language === 'en' ? contentEn : contentAr;
 
   if (isLoading) {
