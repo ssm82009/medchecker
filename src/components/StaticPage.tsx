@@ -147,7 +147,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
                 value={content}
                 readOnly={true}
                 onChange={(value) => {
-                  /* No changes needed in read-only mode, but we need to provide this function */
+                  /* Read-only mode, but we need to provide this function */
                   console.log('Read-only content:', value);
                 }}
               />
