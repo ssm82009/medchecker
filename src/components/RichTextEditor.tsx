@@ -1,7 +1,8 @@
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Bold, Italic, Underline, Strikethrough, TextCursor } from 'lucide-react';
+import Underline from '@tiptap/extension-underline';
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough } from 'lucide-react';
 import { Toggle } from './ui/toggle';
 
 interface RichTextEditorProps {
@@ -12,7 +13,10 @@ interface RichTextEditorProps {
 
 const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorProps) => {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Underline
+    ],
     content: value,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
@@ -47,7 +51,7 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
             pressed={editor.isActive('underline')}
             onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
           >
-            <Underline className="h-4 w-4" />
+            <UnderlineIcon className="h-4 w-4" />
           </Toggle>
           <Toggle
             size="sm"

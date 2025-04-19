@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -117,6 +118,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
               <RichTextEditor
                 value={content}
                 readOnly={true}
+                onChange={() => {/* No changes needed in read-only mode */}}
               />
               {isAdmin() && (
                 <Button 
