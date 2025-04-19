@@ -1,4 +1,3 @@
-
 import { en } from './en';
 
 const ar = {
@@ -63,7 +62,14 @@ const ar = {
   secondaryAdvertisement: 'إعلان التذييل',
   saveAd: 'حفظ الإعلان',
   saveSecondaryAd: 'حفظ إعلان التذييل',
-  dashboard: 'لوحة القيادة'
+  dashboard: 'لوحة القيادة',
+  
+  about: 'حول البرنامج',
+  termsOfUse: 'شروط الاستخدام',
+  privacyPolicy: 'سياسة الخصوصية',
+  copyright: 'حقوق الملكية',
+  contactUs: 'اتصل بنا',
+  languageSwitch: 'تغيير اللغة'
 };
 
 export default ar;

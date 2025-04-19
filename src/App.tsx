@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,8 @@ import { useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import StaticPage from './components/StaticPage';
+import HiddenMenu from './components/HiddenMenu';
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,11 @@ const AppWrapper = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
+                <Route path="/about" element={<StaticPage pageKey="about" />} />
+                <Route path="/terms" element={<StaticPage pageKey="terms" />} />
+                <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
+                <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
+                <Route path="/contact" element={<StaticPage pageKey="contact" />} />
               </Routes>
             </div>
             <Footer />
