@@ -1,3 +1,4 @@
+
 import { en } from './en';
 
 const ar = {
@@ -82,6 +83,11 @@ const ar = {
   privacyTitle: 'سياسة الخصوصية',
   copyrightTitle: 'حقوق النشر',
   contactTitle: 'معلومات الاتصال',
+  
+  // Error messages - new keys (Arabic translations)
+  contentFetchError: 'فشل في جلب المحتوى. يرجى المحاولة مرة أخرى لاحقًا.',
+  pageIdMissing: 'معرف الصفحة مفقود، لا يمكن حفظ المحتوى.',
+  updatePermissionError: 'ليس لديك صلاحية لتحديث هذا المحتوى.',
 };
 
 export default ar;

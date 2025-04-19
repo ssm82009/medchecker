@@ -1,3 +1,4 @@
+
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -84,7 +85,12 @@ export const en = {
   save: 'Save',
   cancel: 'Cancel',
   edit: 'Edit',
-  contentSaved: 'Content saved successfully'
+  contentSaved: 'Content saved successfully',
+  
+  // Error messages - new keys we need to add
+  contentFetchError: 'Failed to fetch content. Please try again later.',
+  pageIdMissing: 'Page ID is missing, cannot save content.',
+  updatePermissionError: 'You don\'t have permission to update this content.',
 };
 
 export default en;
