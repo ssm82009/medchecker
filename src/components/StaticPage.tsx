@@ -24,32 +24,33 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const [originalContentAr, setOriginalContentAr] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPageContent = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('page_content')
-          .select('*')
-          .eq('page_key', pageKey)
-          .single();
+  const fetchPageContent = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('page_content')
+        .select('*')
+        .eq('page_key', pageKey)
+        .single();
 
-        if (error) {
-          console.error('Error fetching page content:', error);
-          return;
-        }
-
-        setContentEn(data.content_en || '');
-        setContentAr(data.content_ar || '');
-        setOriginalContentEn(data.content_en || '');
-        setOriginalContentAr(data.content_ar || '');
-      } catch (error) {
-        console.error('Error in fetchPageContent:', error);
-      } finally {
+      if (error) {
+        console.error('Error fetching page content:', error);
         setIsLoading(false);
+        return;
       }
-    };
 
+      setContentEn(data.content_en || '');
+      setContentAr(data.content_ar || '');
+      setOriginalContentEn(data.content_en || '');
+      setOriginalContentAr(data.content_ar || '');
+    } catch (error) {
+      console.error('Error in fetchPageContent:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPageContent();
   }, [pageKey]);
 
@@ -71,9 +72,13 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         duration: 3000,
       });
 
-      setEditMode(false);
+      // Update the original content after successful save
       setOriginalContentEn(contentEn);
       setOriginalContentAr(contentAr);
+      setEditMode(false);
+      
+      // Refresh the content from the database to ensure consistency
+      fetchPageContent();
     } catch (error) {
       toast({
         title: t('error'),
@@ -92,9 +97,6 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
   // الحصول على المحتوى المناسب حسب اللغة الحالية
   const currentContent = language === 'en' ? contentEn : contentAr;
-  const setCurrentContent = language === 'en' 
-    ? (value: string) => setContentEn(value) 
-    : (value: string) => setContentAr(value);
 
   if (isLoading) {
     return (
