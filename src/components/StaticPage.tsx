@@ -81,7 +81,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     try {
       console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
       
-      // استخدام .select() للحصول على البيانات المحدثة مباشرة بعد التحديث
+      // استخدام .select().maybeSingle() للحصول على البيانات المحدثة مباشرة بعد التحديث
       const { data, error } = await supabase
         .from('page_content')
         .update({
@@ -91,7 +91,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         })
         .eq('id', pageId)
         .select()
-        .single();
+        .maybeSingle();
 
       console.log('> Supabase update returned:', { data, error });
 
