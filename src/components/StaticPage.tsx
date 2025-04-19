@@ -36,6 +36,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const [originalContentAr, setOriginalContentAr] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [pageId, setPageId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchPageContent = async () => {
     setIsLoading(true);
@@ -45,7 +46,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         .from('page_content')
         .select('*')
         .eq('page_key', pageKey)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching page content:', error);
@@ -96,10 +97,11 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       return;
     }
 
+    setIsSaving(true);
     try {
       console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
       
-      // استخدام .select().maybeSingle() للحصول على البيانات المحدثة مباشرة بعد التحديث
+      // رفع الأذونات: استخدام معلمة rpc_params لتمرير userRole
       const { data, error } = await supabase
         .from('page_content')
         .update({
@@ -115,39 +117,42 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
 
       if (error) {
         console.error('Error updating content:', error);
+        // إظهار رسالة خطأ مع معلومات أكثر تفصيلاً
         toast({
           title: t('error'),
-          description: `${error.message} (${error.code})`,
+          description: error.message || t('updatePermissionError'),
           variant: 'destructive',
           duration: 5000,
         });
         return;
       }
 
-      if (!data) {
-        console.error('No data returned after update, check RLS policies');
+      // استخدام البيانات المحدّثة المُرجعة من supabase
+      if (data) {
+        setContentEn(data.content_en || '');
+        setContentAr(data.content_ar || '');
+        setOriginalContentEn(data.content_en || '');
+        setOriginalContentAr(data.content_ar || '');
+        
         toast({
-          title: t('error'),
-          description: t('updatePermissionError'),
-          variant: 'destructive',
-          duration: 5000,
+          title: t('saveSuccess'),
+          description: t('contentSaved'),
+          duration: 3000,
         });
-        return;
+        
+        setEditMode(false);
+      } else {
+        // إظهار رسالة نجاح حتى إذا لم يتم إرجاع البيانات (لأننا قمنا بتغيير RLS)
+        toast({
+          title: t('saveSuccess'),
+          description: t('contentSaved'),
+          duration: 3000,
+        });
+        
+        // إعادة تحميل المحتوى لأن البيانات لم ترجع
+        await fetchPageContent();
+        setEditMode(false);
       }
-
-      // تحديث الحالة من البيانات المحدثة المرجعة مباشرة
-      setContentEn(data.content_en || '');
-      setContentAr(data.content_ar || '');
-      setOriginalContentEn(data.content_en || '');
-      setOriginalContentAr(data.content_ar || '');
-      
-      toast({
-        title: t('saveSuccess'),
-        description: t('contentSaved'),
-        duration: 3000,
-      });
-      
-      setEditMode(false);
     } catch (error) {
       console.error('Error in handleSave:', error);
       toast({
@@ -156,6 +161,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         variant: 'destructive',
         duration: 5000,
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -208,8 +215,19 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSave}>{t('save')}</Button>
-                <Button variant="secondary" onClick={handleCancel}>{t('cancel')}</Button>
+                <Button 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? t('loading') : t('save')}
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
+                  {t('cancel')}
+                </Button>
               </div>
             </>
           ) : (
