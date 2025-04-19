@@ -14,15 +14,20 @@ export const captureAndShare = async (elementRef: React.RefObject<HTMLElement>, 
       
       // Set watermark style
       ctx.fillStyle = 'rgba(128, 128, 128, 0.3)';
-      ctx.font = 'bold 24px Arial';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Calculate center position
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
       
       // Add دواء آمن
-      ctx.fillText('دواء آمن', canvas.width / 2, canvas.height - 60);
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('دواء آمن', centerX, centerY - 15);
       
       // Add dwaa.app
       ctx.font = '20px Arial';
-      ctx.fillText('dwaa.app', canvas.width / 2, canvas.height - 30);
+      ctx.fillText('dwaa.app', centerX, centerY + 15);
       
       ctx.restore();
     }
