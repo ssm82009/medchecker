@@ -83,6 +83,7 @@ export const en = {
   // New keys for static page content management
   contentRequired: 'Content cannot be empty',
   saveFailed: 'Failed to save content. Please try again.',
+  contentLoadError: 'Failed to load content. Please try again later.',
 };
 
 export default en;

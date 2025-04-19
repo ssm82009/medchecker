@@ -29,6 +29,7 @@ const ar = {
   pageNotFound: 'الصفحة غير موجودة أو لا يمكن تحديثها',
   saveSuccess: 'تم بنجاح',
   error: 'خطأ',
+  contentLoadError: 'فشل في تحميل المحتوى. يرجى المحاولة مرة أخرى لاحقًا.',
 };
 
 export default ar;
