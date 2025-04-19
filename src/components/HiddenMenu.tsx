@@ -49,7 +49,7 @@ const HiddenMenu: React.FC = () => {
             <Link key={label} to={path} className="block">
               <Button variant="outline" className="w-full justify-start">
                 <Icon className="mr-2 h-4 w-4" />
-                {t(label)}
+                {t(label as any)}
               </Button>
             </Link>
           ))}
@@ -60,3 +60,4 @@ const HiddenMenu: React.FC = () => {
 };
 
 export default HiddenMenu;
+
