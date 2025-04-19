@@ -1,0 +1,8 @@
+
+.static-page-content {
+  white-space: pre-wrap; /* يحافظ على فراغات الأسطر والمسافات */
+}
+
+.font-arabic {
+  font-family: 'Tajawal', Arial, sans-serif;
+}

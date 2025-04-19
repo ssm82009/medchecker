@@ -8,6 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
+// تعريف واجهة للتوافق مع هيكل جدول محتوى الصفحة
+interface PageContent {
+  id: number;
+  page_key: string;
+  content_en: string | null;
+  content_ar: string | null;
+  title_en: string;
+  title_ar: string;
+  last_updated: string | null;
+}
+
 interface StaticPageProps {
   pageKey: string;
 }
@@ -30,7 +41,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     try {
       console.log('Fetching page content for:', pageKey);
       const { data, error } = await supabase
-        .from('page_content')
+        .from<PageContent>('page_content')
         .select('*')
         .eq('page_key', pageKey)
         .single();
@@ -65,28 +76,38 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
     }
 
     try {
-      console.log('Saving content for page ID:', pageId);
-      console.log('Content to save:', { en: contentEn, ar: contentAr });
+      console.log('> Saving pageId=', pageId, 'contentEn=', contentEn, 'contentAr=', contentAr);
       
-      const { error } = await supabase
-        .from('page_content')
+      const { data, error } = await supabase
+        .from<PageContent>('page_content')
         .update({
           content_en: contentEn,
           content_ar: contentAr,
           last_updated: new Date().toISOString()
         })
-        .eq('id', pageId);
+        .eq('id', pageId)
+        .select(); // Add this to get back the updated row
+
+      console.log('> Supabase update returned:', { data, error });
 
       if (error) {
         console.error('Error updating content:', error);
         throw error;
       }
 
+      if (!data || data.length === 0) {
+        console.error('No data returned after update, check RLS policies');
+        throw new Error('Failed to update content, no data returned');
+      }
+
       console.log('Content saved successfully');
       
-      // Update the original content variables directly
-      setOriginalContentEn(contentEn);
-      setOriginalContentAr(contentAr);
+      // Update state from the returned data
+      const updated = data[0];
+      setContentEn(updated.content_en || '');
+      setContentAr(updated.content_ar || '');
+      setOriginalContentEn(updated.content_en || '');
+      setOriginalContentAr(updated.content_ar || '');
       
       toast({
         title: t('saveSuccess'),
