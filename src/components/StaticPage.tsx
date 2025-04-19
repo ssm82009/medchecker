@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -43,12 +42,7 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
 
         if (error) {
           console.error('Error fetching page content:', error);
-          const defaultContent = language === 'en' 
-            ? '<p>Content not available</p>' 
-            : '<p>المحتوى غير متوفر</p>';
-          setContent(defaultContent);
-          setOriginalContent(defaultContent);
-          return;
+          throw error;
         }
 
         console.log('Page data received:', data);
@@ -56,43 +50,32 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
         if (data) {
           setPageId(data.id);
           const contentField = language === 'en' ? 'content_en' : 'content_ar';
-          let htmlContent = data[contentField] || '';
+          const htmlContent = data[contentField] || '';
           
-          if (!htmlContent.trim()) {
-            htmlContent = language === 'en' 
-              ? '<p>Content not available in English</p>' 
-              : '<p>المحتوى غير متوفر باللغة العربية</p>';
-          }
-
           console.log('Setting HTML content:', htmlContent);
           setContent(htmlContent);
           setOriginalContent(htmlContent);
+        } else {
+          const defaultContent = '';
+          setContent(defaultContent);
+          setOriginalContent(defaultContent);
         }
       } catch (err) {
         console.error('Error in fetch operation:', err);
-        const errorContent = language === 'en' 
-          ? '<p>Error loading content</p>' 
-          : '<p>خطأ في تحميل المحتوى</p>';
-        setContent(errorContent);
-        setOriginalContent(errorContent);
+        toast({
+          title: t('error'),
+          description: t('contentLoadError'),
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPageContent();
-  }, [pageKey, language]);
+  }, [pageKey, language, t]);
 
   const handleSave = async () => {
-    if (!content?.trim()) {
-      toast({
-        title: t('error'),
-        description: t('contentRequired'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       const contentField = language === 'en' ? 'content_en' : 'content_ar';
       const updateData = { [contentField]: content };
@@ -120,9 +103,6 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
         title: t('saveSuccess'),
         description: t('contentSaved'),
       });
-      
-      // Trigger a page reload to ensure content is fresh
-      window.location.reload();
       
     } catch (error) {
       console.error('Save error:', error);
@@ -165,13 +145,13 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center h-[200px]">
-              <div className="animate-pulse">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
+              <div className="animate-pulse">{t('loading')}</div>
             </div>
           ) : editMode && isAdmin() ? (
             <>
               <RichTextEditor
                 value={content}
-                onChange={(html: string) => setContent(html)}
+                onChange={setContent}
                 readOnly={false}
               />
               <div className="flex gap-2 mt-4">
