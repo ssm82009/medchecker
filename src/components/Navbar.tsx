@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Pill, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
@@ -43,6 +44,32 @@ const Navbar: React.FC = () => {
               <SheetTitle>{t('menu' as any)}</SheetTitle>
             </SheetHeader>
             <div className="flex flex-col gap-4 mt-6">
+              {/* Language Switcher */}
+              <div className="mb-4">
+                <LanguageSwitcher />
+              </div>
+              
+              {/* Page Links */}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/">{t('appTitle' as any)}</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/about">{t('about' as any)}</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/terms">{t('termsOfUse' as any)}</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/privacy">{t('privacyPolicy' as any)}</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/copyright">{t('copyright' as any)}</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/contact">{t('contactUs' as any)}</Link>
+              </Button>
+              
+              {/* Admin and Logout Buttons */}
               {user && (
                 <>
                   {user.role === 'admin' && (
