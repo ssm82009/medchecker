@@ -83,7 +83,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const handleSave = async () => {
     try {
       if (!content || content.trim() === '') {
-        throw new Error(t('contentRequired'));
+        throw new Error(t('contentRequired' as any));
       }
 
       // Determine which field to update based on language
@@ -95,7 +95,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       
       if (!pageId) {
         console.error('No page ID found for update');
-        throw new Error(t('pageNotFound'));
+        throw new Error(t('pageNotFound' as any));
       }
 
       // Update the content in the database
@@ -115,15 +115,15 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
       setEditMode(false);
       
       toast({
-        title: t('saveSuccess'),
-        description: t('contentSaved'),
+        title: t('saveSuccess' as any),
+        description: t('contentSaved' as any),
         duration: 3000,
       });
     } catch (error) {
       console.error('Save error:', error);
       toast({
-        title: t('error'),
-        description: error instanceof Error ? error.message : t('saveFailed'),
+        title: t('error' as any),
+        description: error instanceof Error ? error.message : t('saveFailed' as any),
         variant: 'destructive',
         duration: 5000,
       });
@@ -138,15 +138,15 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const getPageTitle = () => {
     switch (pageKey) {
       case 'about':
-        return language === 'ar' ? 'حول البرنامج' : t('about');
+        return language === 'ar' ? 'حول البرنامج' : t('about' as any);
       case 'terms':
-        return language === 'ar' ? 'شروط الاستخدام' : t('termsOfUse');
+        return language === 'ar' ? 'شروط الاستخدام' : t('termsOfUse' as any);
       case 'privacy':
-        return language === 'ar' ? 'سياسة الخصوصية' : t('privacyPolicy');
+        return language === 'ar' ? 'سياسة الخصوصية' : t('privacyPolicy' as any);
       case 'copyright':
-        return language === 'ar' ? 'حقوق النشر' : t('copyright');
+        return language === 'ar' ? 'حقوق النشر' : t('copyright' as any);
       case 'contact':
-        return language === 'ar' ? 'اتصل بنا' : t('contactUs');
+        return language === 'ar' ? 'اتصل بنا' : t('contactUs' as any);
       default:
         return t(pageKey as any);
     }
@@ -170,8 +170,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
                 onChange={setContent}
               />
               <div className="flex gap-2 mt-4">
-                <Button onClick={handleSave}>{t('save')}</Button>
-                <Button variant="secondary" onClick={handleCancel}>{t('cancel')}</Button>
+                <Button onClick={handleSave}>{t('save' as any)}</Button>
+                <Button variant="secondary" onClick={handleCancel}>{t('cancel' as any)}</Button>
               </div>
             </>
           ) : (
@@ -186,7 +186,7 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
                   className="mt-4" 
                   onClick={() => setEditMode(true)}
                 >
-                  {t('edit')}
+                  {t('edit' as any)}
                 </Button>
               )}
             </>

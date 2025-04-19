@@ -1,9 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Globe, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { translations, TranslationKey } from '@/i18n';
 
 const LanguageSwitcher: React.FC = () => {
   const { t, toggleLanguage, language } = useTranslation();
@@ -29,42 +29,12 @@ const LanguageSwitcher: React.FC = () => {
       document.body.classList.remove('language-changing');
       document.body.classList.add('language-changed');
       
-      // Force page reload - adding a clearer implementation
+      // Reload the page to ensure all components update properly
       setTimeout(() => {
-        // Ensure we reload the page after language change
-        window.location.href = window.location.pathname; // Force a clean reload of the current page
+        window.location.reload();
       }, 300);
     }, 50);
   };
-  
-  // Helper function to update content without page reload - keeping for backup
-  const updatePageContent = (newLanguage: 'en' | 'ar') => {
-    // Apply data-i18n attributes to elements that need translation
-    const applyDataI18nAttributes = () => {
-      // Find elements with text that matches translation keys and add data-i18n attribute
-      Object.keys(translations[newLanguage]).forEach(key => {
-        document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, button, a, label').forEach(element => {
-          if (element.textContent?.trim() === translations[language === 'en' ? 'en' : 'ar'][key as TranslationKey]) {
-            element.setAttribute('data-i18n', key);
-          }
-        });
-      });
-    };
-    
-    // Apply data-i18n attributes if they don't exist yet
-    applyDataI18nAttributes();
-    
-    // Force re-render by triggering a small state change in the document
-    document.body.style.opacity = '0.99';
-    setTimeout(() => {
-      document.body.style.opacity = '1';
-    }, 10);
-  };
-  
-  // Apply data-i18n attributes on initial load
-  useEffect(() => {
-    updatePageContent(language);
-  }, []);
   
   return (
     <Button 
