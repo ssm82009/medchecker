@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,10 +11,10 @@ import RichTextEditor from './RichTextEditor';
 interface PageContent {
   id: number;
   page_key: string;
-  content_en: string;
-  content_ar: string;
-  title_en: string;
-  title_ar: string;
+  content_en: string | null;
+  content_ar: string | null;
+  title_en: string | null;
+  title_ar: string | null;
   last_updated: string;
 }
 
@@ -33,35 +34,26 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
       setIsLoading(true);
       
       try {
-        console.log('Fetching page content for:', pageKey, 'language:', language);
         const { data, error } = await supabase
           .from('page_content')
           .select('*')
           .eq('page_key', pageKey)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching page content:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('Page data received:', data);
-        
         if (data) {
           setPageId(data.id);
           const contentField = language === 'en' ? 'content_en' : 'content_ar';
           const htmlContent = data[contentField] || '';
-          
-          console.log('Setting HTML content:', htmlContent);
           setContent(htmlContent);
           setOriginalContent(htmlContent);
         } else {
-          const defaultContent = '';
-          setContent(defaultContent);
-          setOriginalContent(defaultContent);
+          setContent('');
+          setOriginalContent('');
         }
-      } catch (err) {
-        console.error('Error in fetch operation:', err);
+      } catch (error) {
+        console.error('Error fetching content:', error);
         toast({
           title: t('error'),
           description: t('contentLoadError'),
@@ -73,28 +65,21 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
     };
 
     fetchPageContent();
-  }, [pageKey, language, t]);
+  }, [pageKey, language, t, toast]);
 
   const handleSave = async () => {
     try {
-      const contentField = language === 'en' ? 'content_en' : 'content_ar';
-      const updateData = { [contentField]: content };
-
-      console.log('Saving content with ID:', pageId);
-      console.log('Update data:', updateData);
-      
       if (!pageId) {
         throw new Error(t('pageNotFound'));
       }
 
+      const contentField = language === 'en' ? 'content_en' : 'content_ar';
       const { error } = await supabase
         .from('page_content')
-        .update(updateData)
+        .update({ [contentField]: content })
         .eq('id', pageId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setOriginalContent(content);
       setEditMode(false);
@@ -114,33 +99,20 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
     }
   };
 
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+  };
+
   const handleCancel = () => {
     setContent(originalContent);
     setEditMode(false);
-  };
-
-  const getPageTitle = () => {
-    switch (pageKey) {
-      case 'about':
-        return language === 'ar' ? 'حول البرنامج' : t('about' as any);
-      case 'terms':
-        return language === 'ar' ? 'شروط الاستخدام' : t('termsOfUse' as any);
-      case 'privacy':
-        return language === 'ar' ? 'سياسة الخصوصية' : t('privacyPolicy' as any);
-      case 'copyright':
-        return language === 'ar' ? 'حقوق النشر' : t('copyright' as any);
-      case 'contact':
-        return language === 'ar' ? 'اتصل بنا' : t('contactUs' as any);
-      default:
-        return t(pageKey as any);
-    }
   };
 
   return (
     <div dir={dir} className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>{getPageTitle()}</CardTitle>
+          <CardTitle>{getPageTitle(pageKey, language, t)}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -151,12 +123,14 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
             <>
               <RichTextEditor
                 value={content}
-                onChange={setContent}
+                onChange={handleContentChange}
                 readOnly={false}
               />
               <div className="flex gap-2 mt-4">
                 <Button onClick={handleSave}>{t('save')}</Button>
-                <Button variant="secondary" onClick={handleCancel}>{t('cancel')}</Button>
+                <Button variant="secondary" onClick={handleCancel}>
+                  {t('cancel')}
+                </Button>
               </div>
             </>
           ) : (
@@ -181,6 +155,24 @@ const StaticPage: React.FC<{ pageKey: string }> = ({ pageKey }) => {
       </Card>
     </div>
   );
+};
+
+// Helper function to get page title
+const getPageTitle = (pageKey: string, language: string, t: (key: string) => string) => {
+  switch (pageKey) {
+    case 'about':
+      return language === 'ar' ? 'حول البرنامج' : t('about');
+    case 'terms':
+      return language === 'ar' ? 'شروط الاستخدام' : t('termsOfUse');
+    case 'privacy':
+      return language === 'ar' ? 'سياسة الخصوصية' : t('privacyPolicy');
+    case 'copyright':
+      return language === 'ar' ? 'حقوق النشر' : t('copyright');
+    case 'contact':
+      return language === 'ar' ? 'اتصل بنا' : t('contactUs');
+    default:
+      return t(pageKey);
+  }
 };
 
 export default StaticPage;

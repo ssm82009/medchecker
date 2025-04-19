@@ -31,32 +31,34 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
       TextAlign.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right'],
-        defaultAlignment: 'right',
       }),
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[150px] rtl:text-right ltr:text-left'
+        class: cn(
+          'prose prose-sm max-w-none focus:outline-none min-h-[150px]',
+          'rtl:text-right ltr:text-left',
+          readOnly && 'pointer-events-none'
+        )
       }
     },
-    content: value || '',
+    content: value,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      console.log('Editor content updated:', html);
       onChange(html);
     },
   });
 
-  // Ensure editor is mounted
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    return () => {
+      editor?.destroy();
+    };
+  }, [editor]);
 
-  // Update editor content when value prop changes
   useEffect(() => {
     if (editor && value !== undefined && editor.getHTML() !== value) {
-      console.log('Setting editor content:', value);
       editor.commands.setContent(value);
     }
   }, [editor, value]);
@@ -71,7 +73,10 @@ const RichTextEditor = ({ value, onChange, readOnly = false }: RichTextEditorPro
   }
 
   return (
-    <div className={cn("border rounded-md", readOnly && "bg-muted/10")}>
+    <div className={cn(
+      "border rounded-md",
+      readOnly && "bg-muted/10"
+    )}>
       {!readOnly && (
         <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50" dir="ltr">
           <ToggleGroup type="multiple" className="justify-start">
