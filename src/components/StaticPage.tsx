@@ -23,10 +23,12 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   const [originalContentEn, setOriginalContentEn] = useState('');
   const [originalContentAr, setOriginalContentAr] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [pageId, setPageId] = useState<number | null>(null);
 
   const fetchPageContent = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching page content for:', pageKey);
       const { data, error } = await supabase
         .from('page_content')
         .select('*')
@@ -39,6 +41,8 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
         return;
       }
 
+      console.log('Fetched page content:', data);
+      setPageId(data.id);
       setContentEn(data.content_en || '');
       setContentAr(data.content_ar || '');
       setOriginalContentEn(data.content_en || '');
@@ -55,31 +59,44 @@ const StaticPage: React.FC<StaticPageProps> = ({ pageKey }) => {
   }, [pageKey]);
 
   const handleSave = async () => {
+    if (!pageId) {
+      console.error('No page ID found, cannot save');
+      return;
+    }
+
     try {
+      console.log('Saving content for page ID:', pageId);
+      console.log('Content to save:', { en: contentEn, ar: contentAr });
+      
       const { error } = await supabase
         .from('page_content')
         .update({
           content_en: contentEn,
-          content_ar: contentAr
+          content_ar: contentAr,
+          last_updated: new Date().toISOString()
         })
-        .eq('page_key', pageKey);
+        .eq('id', pageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating content:', error);
+        throw error;
+      }
 
+      console.log('Content saved successfully');
+      
+      // Update the original content variables directly
+      setOriginalContentEn(contentEn);
+      setOriginalContentAr(contentAr);
+      
       toast({
         title: t('saveSuccess'),
         description: t('contentSaved'),
         duration: 3000,
       });
-
-      // Update the original content after successful save
-      setOriginalContentEn(contentEn);
-      setOriginalContentAr(contentAr);
-      setEditMode(false);
       
-      // Refresh the content from the database to ensure consistency
-      fetchPageContent();
+      setEditMode(false);
     } catch (error) {
+      console.error('Error in handleSave:', error);
       toast({
         title: t('error'),
         description: String(error),
