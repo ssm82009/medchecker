@@ -1,5 +1,3 @@
-
-// Define the base English translations
 export const en = {
   // Original modified keys
   enterMedication: 'Enter medications to check interactions by typing names or extracting from images',
@@ -79,7 +77,11 @@ export const en = {
   cancel: 'Cancel',
   edit: 'Edit',
   contentSaved: 'Content saved successfully',
-  pageNotFound: 'Page not found or could not be updated'
+  pageNotFound: 'Page not found or could not be updated',
+  
+  // New keys for static page content management
+  contentRequired: 'Content cannot be empty',
+  saveFailed: 'Failed to save content. Please try again.',
 };
 
 export default en;
