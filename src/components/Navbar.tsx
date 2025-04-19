@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -6,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Pill, Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar: React.FC = () => {
@@ -40,9 +39,6 @@ const Navbar: React.FC = () => {
             </Button>
           </SheetTrigger>
           <SheetContent side={language === 'ar' ? 'right' : 'left'}>
-            <SheetHeader>
-              <SheetTitle>{t('menu' as any)}</SheetTitle>
-            </SheetHeader>
             <div className="flex flex-col gap-4 mt-6">
               {/* Language Switcher */}
               <div className="mb-4">

@@ -1,10 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Mail } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { supabase } from '@/integrations/supabase/client';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const SecondaryAdvertisement: React.FC = () => {
   const [htmlContent, setHtmlContent] = React.useState<string>('');
@@ -45,8 +42,7 @@ const SecondaryAdvertisement: React.FC = () => {
 };
 
 const Footer: React.FC = () => {
-  const { t, dir } = useTranslation();
-  const isMobile = useIsMobile();
+  const { dir } = useTranslation();
   
   return (
     <>
@@ -54,47 +50,11 @@ const Footer: React.FC = () => {
       
       <footer className="bg-white border-t mt-auto py-8 sm:py-10 px-4 sm:px-8" dir={dir}>
         <div className="container mx-auto">
-          {isMobile ? (
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex flex-row justify-center w-full gap-4">
-                <a 
-                  href="https://t.me/icodexteam" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center gap-2 text-gray-700 hover:text-primary transition-colors py-3 px-4 rounded-md hover:bg-gray-100"
-                >
-                  <Mail className="h-4 w-4" />
-                  <span className="text-sm">{t('contactUs')}</span>
-                </a>
-              </div>
-              
-              <div className="w-full text-center mb-2">
-                <p className="text-gray-800 text-sm">
-                  جميع الحقوق محفوظة © لـ تطبيق دواء آمن
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:gap-10">
-              <div className="order-1 sm:order-2 w-full text-center mb-6 sm:mb-0">
-                <p className="text-gray-800 text-sm">
-                  جميع الحقوق محفوظة © لـ تطبيق دواء آمن
-                </p>
-              </div>
-              
-              <div className="order-2 sm:order-3 w-full sm:w-auto text-center sm:text-end mb-6 sm:mb-0">
-                <a 
-                  href="https://t.me/icodexteam" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center justify-center sm:justify-start gap-3 text-gray-700 hover:text-primary transition-colors py-4 px-8 rounded-md hover:bg-gray-100 min-w-40"
-                >
-                  <Mail className="h-4 w-4" />
-                  <span className="text-sm">{t('contactUs')}</span>
-                </a>
-              </div>
-            </div>
-          )}
+          <div className="text-center">
+            <p className="text-gray-800 text-sm">
+              جميع الحقوق محفوظة © لـ تطبيق دواء آمن
+            </p>
+          </div>
         </div>
       </footer>
     </>
