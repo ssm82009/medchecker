@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -29,10 +30,9 @@ const LanguageSwitcher: React.FC = () => {
       document.body.classList.remove('language-changing');
       document.body.classList.add('language-changed');
       
-      // Force page reload - adding a clearer implementation
+      // Force page reload after a short delay
       setTimeout(() => {
-        // Ensure we reload the page after language change
-        window.location.href = window.location.pathname; // Force a clean reload of the current page
+        window.location.href = window.location.pathname;
       }, 300);
     }, 50);
   };
@@ -64,7 +64,7 @@ const LanguageSwitcher: React.FC = () => {
   // Apply data-i18n attributes on initial load
   useEffect(() => {
     updatePageContent(language);
-  }, []);
+  }, [language]);
   
   return (
     <Button 
