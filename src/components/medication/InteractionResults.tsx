@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, ActivitySquare, AlertTriangle, Copy, Printer, CheckCircle, Share2, Loader } from 'lucide-react';
+import { Heart, ActivitySquare, AlertTriangle, Copy, Printer, CheckCircle, Share2 } from 'lucide-react';
 import { InteractionResult } from '@/types/medication';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { captureAndShare } from '@/utils/shareResults';
@@ -21,7 +21,6 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
   const isMobile = useIsMobile();
   const resultRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
   
   if (!result) return null;
   
@@ -72,7 +71,6 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
   const handleShare = async () => {
     if (!resultRef.current) return;
     
-    setIsSharing(true);
     try {
       await captureAndShare(resultRef, language === 'ar' ? 'نتائج التفاعلات الدوائية' : 'Medication Interaction Results');
       toast({
@@ -88,8 +86,6 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
         variant: 'destructive',
         duration: 3000,
       });
-    } finally {
-      setIsSharing(false);
     }
   };
 
@@ -114,15 +110,10 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             variant="outline" 
             size="sm" 
             onClick={handleShare}
-            disabled={isSharing}
             className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
           >
-            {isSharing ? (
-              <Loader className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'} animate-spin`} />
-            ) : (
-              <Share2 className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
-            )}
-            <span>{isSharing ? (language === 'ar' ? 'جاري المشاركة...' : 'Sharing...') : (language === 'ar' ? 'مشاركة' : 'Share')}</span>
+            <Share2 className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
+            <span>{language === 'ar' ? 'مشاركة' : 'Share'}</span>
           </Button>
           <Button 
             variant="outline" 
