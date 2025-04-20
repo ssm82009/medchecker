@@ -4,7 +4,7 @@ import { useLocalStorage } from './useLocalStorage';
 import { Language, translations, TranslationKey } from '../i18n';
 
 export const useTranslation = () => {
-  const [language, setLanguage] = useLocalStorage<Language>('language', 'ar');
+  const [language, setLanguage] = useLocalStorage<Language>('language', 'ar'); // جعل العربية هي اللغة الافتراضية
   const [isChanging, setIsChanging] = useState(false);
 
   const t = useCallback((key: TranslationKey): string => {

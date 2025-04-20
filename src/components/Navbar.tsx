@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,13 +12,6 @@ const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const { user, logout } = useAuth();
   const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleNavigate = (path: string) => {
-    setOpen(false); // Close the sheet when navigating
-    navigate(path);
-  };
 
   return (
     <div className="sticky top-0 z-50 w-full">
@@ -36,7 +28,7 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Menu Button and Sheet */}
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet>
           <SheetTrigger asChild>
             <Button 
               variant="ghost" 
@@ -54,31 +46,31 @@ const Navbar: React.FC = () => {
               </div>
               
               {/* Page Links */}
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/")}>
-                {t('appTitle' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/">{t('appTitle' as any)}</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/about")}>
-                {t('about' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/about">{t('about' as any)}</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/terms")}>
-                {t('termsOfUse' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/terms">{t('termsOfUse' as any)}</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/privacy")}>
-                {t('privacyPolicy' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/privacy">{t('privacyPolicy' as any)}</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/copyright")}>
-                {t('copyright' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/copyright">{t('copyright' as any)}</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/contact")}>
-                {t('contactUs' as any)}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/contact">{t('contactUs' as any)}</Link>
               </Button>
               
               {/* Admin and Logout Buttons */}
               {user && (
                 <>
                   {user.role === 'admin' && (
-                    <Button variant="outline" className="w-full justify-start" onClick={() => handleNavigate("/dashboard")}>
-                      {t('dashboard' as any)}
+                    <Button variant="outline" asChild className="w-full justify-start">
+                      <Link to="/dashboard">{t('dashboard' as any)}</Link>
                     </Button>
                   )}
                   <Button variant="outline" onClick={logout} className="w-full justify-start">

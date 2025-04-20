@@ -30,14 +30,19 @@ export const safelyParseAISettings = (value: Record<string, Json>): AISettingsTy
 };
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
-  // This is a React hook, must be called within a React component
+  // Make sure this useState is called within a React component
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') {
+      return initialValue;
+    }
     try {
-      // Get from localStorage
-      if (typeof window !== 'undefined') {
-        const item = window.localStorage.getItem(key);
-        return item ? JSON.parse(item) : initialValue;
+      // Get from localStorage first
+      const item = window.localStorage.getItem(key);
+      if (item) {
+        return JSON.parse(item);
       }
+      
+      // If this is the AI settings key, we'll try to fetch from database in useEffect
       return initialValue;
     } catch (error) {
       console.error(error);
@@ -66,6 +71,7 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
             const jsonValue = data.value as Record<string, Json>;
             
             // Create a proper object that matches type T
+            // This ensures we have the right shape before setting it
             const typedValue = safelyParseAISettings(jsonValue) as unknown as T;
             
             setStoredValue(typedValue);
@@ -81,10 +87,15 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     fetchFromDatabase();
   }, [key]);
 
-  // Update localStorage when the storedValue changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
+      
+      // For AI settings, also update the database
+      if (key === 'aiSettings') {
+        // Don't update the database here, as it should be done explicitly
+        // in the Admin component to avoid unwanted updates
+      }
     }
   }, [key, storedValue]);
 
