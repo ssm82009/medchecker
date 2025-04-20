@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pill, AlertTriangle } from 'lucide-react';
+import { Plus, Pill, AlertTriangle, Loader } from 'lucide-react';
 import Advertisement from './Advertisement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Medication, PatientInfo } from '@/types/medication';
@@ -167,7 +167,14 @@ const MedicationInteractionChecker: React.FC = () => {
               disabled={loading || medications.filter(m => m.name.trim() !== '').length < 2}
               className={`${isMobile ? 'w-full mt-2' : 'w-full'} bg-primary hover:bg-primary/90 transition-colors`}
             >
-              {loading ? t('loading') : t('checkInteractions')}
+              {loading ? (
+                <>
+                  <Loader className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} animate-spin`} />
+                  <span>{t('loading')}</span>
+                </>
+              ) : (
+                t('checkInteractions')
+              )}
             </Button>
           </CardFooter>
         </Card>
