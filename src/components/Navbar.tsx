@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,6 +13,11 @@ const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const { user, logout } = useAuth();
   const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
+  const [open, setOpen] = React.useState(false);
+
+  const handleLinkClick = () => {
+    setOpen(false);
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full">
@@ -21,14 +27,14 @@ const Navbar: React.FC = () => {
       >
         {/* Logo */}
         <div className={`navbar-brand text-xl font-bold text-white flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
             <Pill className="h-6 w-6 text-white" />
             <span>{logoText}</span>
           </Link>
         </div>
 
         {/* Menu Button and Sheet */}
-        <Sheet>
+        <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button 
               variant="ghost" 
@@ -47,22 +53,22 @@ const Navbar: React.FC = () => {
               
               {/* Page Links */}
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/">{t('appTitle' as any)}</Link>
+                <Link to="/" onClick={handleLinkClick}>{t('appTitle' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/about">{t('about' as any)}</Link>
+                <Link to="/about" onClick={handleLinkClick}>{t('about' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/terms">{t('termsOfUse' as any)}</Link>
+                <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/privacy">{t('privacyPolicy' as any)}</Link>
+                <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/copyright">{t('copyright' as any)}</Link>
+                <Link to="/copyright" onClick={handleLinkClick}>{t('copyright' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/contact">{t('contactUs' as any)}</Link>
+                <Link to="/contact" onClick={handleLinkClick}>{t('contactUs' as any)}</Link>
               </Button>
               
               {/* Admin and Logout Buttons */}
@@ -70,10 +76,17 @@ const Navbar: React.FC = () => {
                 <>
                   {user.role === 'admin' && (
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link to="/dashboard">{t('dashboard' as any)}</Link>
+                      <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard' as any)}</Link>
                     </Button>
                   )}
-                  <Button variant="outline" onClick={logout} className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      handleLinkClick();
+                      logout();
+                    }} 
+                    className="w-full justify-start"
+                  >
                     {t('logout' as any)}
                   </Button>
                 </>
