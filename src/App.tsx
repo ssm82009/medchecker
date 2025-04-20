@@ -4,12 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import { useAuth } from "./hooks/useAuth";
-import { useState, useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -65,44 +65,46 @@ function AppWrapper() {
   }, [dir, language]);
   
   return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
+      <Navbar />
+      <div className="container mx-auto px-4 flex-grow pt-8"> 
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
+          <Route path="/about" element={<StaticPage pageKey="about" />} />
+          <Route path="/terms" element={<StaticPage pageKey="terms" />} />
+          <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
+          <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
+          <Route path="/contact" element={<StaticPage pageKey="contact" />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
-            <Navbar />
-            <div className="container mx-auto px-4 flex-grow pt-8"> 
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Admin />
-                  </ProtectedRoute>
-                } />
-                <Route path="/about" element={<StaticPage pageKey="about" />} />
-                <Route path="/terms" element={<StaticPage pageKey="terms" />} />
-                <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
-                <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
-                <Route path="/contact" element={<StaticPage pageKey="contact" />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-            <Footer />
-          </div>
+          <AppWrapper />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
-}
-
-function App() {
-  return <AppWrapper />;
 }
 
 export default App;
