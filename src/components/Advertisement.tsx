@@ -32,7 +32,7 @@ const Advertisement: React.FC = () => {
   }, []);
 
   // Only render if there's content
-  if (!htmlContent) return null;
+  if (!htmlContent || htmlContent.trim() === '') return null;
   
   return (
     <div 
