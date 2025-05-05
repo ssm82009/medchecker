@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // إضافة إعدادات النشر
-  base: '/', // استخدام مسار مطلق للأصول (يمكن تغييره إلى './' للتطوير المحلي)
+  // إضافة إعدادات النشر لسيرفر أباتشي
+  base: './', // استخدام مسارات نسبية بدلاً من مسارات مطلقة
   build: {
     outDir: 'dist', // مجلد الإخراج
     assetsDir: 'assets', // مجلد الأصول (CSS, JS, etc.)
@@ -36,10 +36,6 @@ export default defineConfig(({ mode }) => ({
             '@tanstack/react-query'
           ],
         },
-        // تجنب استخدام الهاش في أسماء الملفات لمنع مشاكل 404
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]'
       },
     },
   },
