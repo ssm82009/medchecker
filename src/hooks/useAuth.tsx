@@ -39,7 +39,7 @@ export const useAuth = () => {
       // Query to find the user with matching email and password
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, role, password, plan_code, is_active')
+        .select('id, email, role, password, plan_code')
         .eq('email', email)
         .eq('password', password)
         .maybeSingle();
@@ -59,7 +59,7 @@ export const useAuth = () => {
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',
-        is_active: data.is_active !== false, // Ensure is_active is included
+        is_active: true, // Set a default value since the column doesn't exist yet
       };
       
       setUser(userData);

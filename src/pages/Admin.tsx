@@ -194,7 +194,7 @@ const Admin: React.FC = () => {
       // تحديث في localStorage
       setAiSettings(newSettings);
       
-      // تح��يث في قاعدة البيانات
+      // تح����يث في قاعدة البيانات
       const { error } = await supabase
         .from('settings')
         .upsert({
@@ -334,7 +334,7 @@ const Admin: React.FC = () => {
     }
   };
 
-  // فتح نا��ذة التعديل
+  // فتح ��ا��ذة التعديل
   const openEditModal = (plan: any) => {
     setEditPlanData({ ...plan, features: (plan.features || []).join('\n'), features_ar: (plan.features_ar || []).join('\n') });
     setShowEditModal(true);
