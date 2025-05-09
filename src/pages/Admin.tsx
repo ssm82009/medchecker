@@ -557,6 +557,14 @@ const Admin: React.FC = () => {
     }
   };
   
+  // Fix the type assignment issue with a more robust type check
+  const handlePaypalModeChange = (value: string) => {
+    // Explicitly check and ensure the value is one of the allowed types
+    if (value === 'sandbox' || value === 'live') {
+      setPaypalMode(value);
+    }
+  };
+  
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
       {/* Sidebar */}
@@ -733,10 +741,7 @@ const Admin: React.FC = () => {
                   <label className="block mb-1 font-medium">وضع التشغيل</label>
                   <select
                     value={paypalMode}
-                    onChange={(e) => {
-                      // Use type assertion to tell TypeScript this value is specifically 'sandbox' or 'live'
-                      setPaypalMode(e.target.value as 'sandbox' | 'live');
-                    }}
+                    onChange={(e) => handlePaypalModeChange(e.target.value)}
                     className="w-full p-2 border rounded"
                   >
                     <option value="sandbox">Sandbox (اختبار)</option>
