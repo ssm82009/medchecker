@@ -26,8 +26,8 @@ const Login = () => {
 
     try {
       const result = await login(email, password);
-      if (result && 'error' in result && result.error) {
-        throw new Error(result.error.message);
+      if (result && result.user === null) {
+        throw new Error(language === 'ar' ? 'بيانات الدخول غير صحيحة' : 'Invalid login credentials');
       }
       toast({
         title: t('loginSuccess'),
@@ -36,10 +36,11 @@ const Login = () => {
       navigate('/');
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'حدث خطأ غير معروف أثناء تسجيل الدخول');
+      const errorMsg = error instanceof Error ? error.message : 'حدث خطأ غير معروف أثناء تسجيل الدخول';
+      setErrorMessage(errorMsg);
       toast({
         title: t('loginFailed'),
-        description: error instanceof Error ? error.message : 'حدث خطأ غير معروف أثناء تسجيل الدخول',
+        description: errorMsg,
         variant: 'destructive',
       });
     } finally {

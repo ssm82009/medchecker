@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ const Subscribe: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const [paypalSettings, setPaypalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [proPlan, setProPlan] = useState<any>(null);
@@ -134,7 +135,7 @@ const Subscribe: React.FC = () => {
               // @ts-ignore
               <PayPalScriptProvider
                 options={{
-                  'client-id': paypalSettings.mode === 'live' ? paypalSettings.clientId : paypalSettings.clientId,
+                  'client-id': paypalSettings.clientId,
                   currency: paypalSettings.currency || 'USD',
                   intent: paymentType === 'recurring' ? 'subscription' : 'capture',
                   'data-client-token': undefined,
@@ -143,7 +144,6 @@ const Subscribe: React.FC = () => {
                   'enable-funding': 'paypal',
                   'data-sdk-integration-source': 'button',
                   ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {}),
-                  clientId: paypalSettings.clientId, // Required property
                 }}
               >
                 <PayPalButtons

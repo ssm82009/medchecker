@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useToast } from './use-toast';
 import { useTranslation } from './useTranslation';
@@ -29,7 +30,7 @@ export const useInteractionChecker = (config: InteractionConfig) => {
         if (!data || typeof data !== 'object' || !('status' in data)) {
           toast({
             title: t('error'),
-            description: 'Invalid response format from API',
+            description: t('invalidResponseFormat'),
             variant: 'destructive',
           });
           return;
@@ -38,26 +39,26 @@ export const useInteractionChecker = (config: InteractionConfig) => {
         if (data.status === 'error') {
           toast({
             title: t('error'),
-            description: data.message || 'An error occurred',
+            description: data.message || t('errorOccurred'),
             variant: 'destructive',
           });
         } else if (data.status === 'warning') {
           toast({
             title: t('warning'),
-            description: data.message || 'A warning occurred',
+            description: data.message || t('warningOccurred'),
             variant: 'warning',
           });
         } else if (data.status === 'info') {
           toast({
             title: t('info'),
-            description: data.message || 'Information update',
+            description: data.message || t('informationUpdate'),
           });
         }
       } catch (error: any) {
         console.error('Interaction check failed:', error);
         toast({
           title: t('error'),
-          description: error.message || 'Failed to check interaction',
+          description: error.message || t('failedToCheckInteraction'),
           variant: 'destructive',
         });
       }
