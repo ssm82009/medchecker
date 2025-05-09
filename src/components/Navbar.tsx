@@ -1,18 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Pill, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const { user, logout } = useAuth();
-  const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
+  const [logoText, setLogoText] = useState('دواء آمن');
   const [open, setOpen] = React.useState(false);
+
+  useEffect(() => {
+    const fetchLogoSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'logo_text')
+          .maybeSingle();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching logo text:', error);
+        } else if (data?.value) {
+          const text = typeof data.value === 'string' ? data.value : 'دواء آمن';
+          setLogoText(text);
+        }
+      } catch (error) {
+        console.error('Error in fetchLogoSettings:', error);
+      }
+    };
+
+    fetchLogoSettings();
+  }, []);
 
   const handleLinkClick = () => {
     setOpen(false);

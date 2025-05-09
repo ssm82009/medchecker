@@ -88,6 +88,9 @@ const ar = {
   pageIdMissing: 'معرف الصفحة مفقود، لا يمكن حفظ المحتوى.',
   updatePermissionError: 'ليس لديك صلاحية لتحديث هذا المحتوى.',
   noAccount: 'ليس لديك حساب؟ إنشاء حساب جديد',
+  retry: 'إعادة المحاولة',
+  unauthorized: 'غير مصرح',
+  adminAccessRequired: 'هذه الصفحة تتطلب صلاحيات مشرف.',
 };
 
 export default ar;

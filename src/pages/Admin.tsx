@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocalStorage, AISettingsType, safelyParseAISettings } from '@/hooks/useLocalStorage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +14,8 @@ import { Json, Tables } from '@/integrations/supabase/types';
 import { PlanType } from '../types/plan';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/types';
 
 const adminSections = [
   { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },
@@ -25,21 +26,55 @@ const adminSections = [
   { key: 'paypal', label: 'بوابة الدفع بايبال', icon: CreditCard },
 ];
 
+type PaypalMode = 'sandbox' | 'live';
+
+// تحويل من قاعدة البيانات إلى PlanType (camelCase)
+function dbToPlanType(dbPlan: any): PlanType {
+  return {
+    id: dbPlan.id,
+    code: dbPlan.code,
+    name: dbPlan.name,
+    nameAr: dbPlan.name_ar,
+    description: dbPlan.description,
+    descriptionAr: dbPlan.description_ar,
+    price: dbPlan.price,
+    features: dbPlan.features,
+    featuresAr: dbPlan.features_ar,
+    isDefault: dbPlan.is_default,
+  };
+}
+
+// تحويل من PlanType إلى قاعدة البيانات (snake_case)
+function planTypeToDb(plan: PlanType): any {
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    name_ar: plan.nameAr,
+    description: plan.description,
+    description_ar: plan.descriptionAr,
+    price: plan.price,
+    features: plan.features,
+    features_ar: plan.featuresAr,
+    is_default: plan.isDefault,
+  };
+}
+
 const Admin: React.FC = () => {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
-  const [aiSettings, setAiSettings] = useLocalStorage<AISettingsType>('aiSettings', { 
-    apiKey: '', 
-    model: 'gpt-4o-mini' 
-  });
+  const { user, isAdmin, loading: userLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
   const [adHTML, setAdHTML] = useState('');
   const [secondaryAdHTML, setSecondaryAdHTML] = useState('');
-  const [logoText, setLogoText] = useLocalStorage<string>('logoText', 'دواء آمن');
+  const [logoText, setLogoText] = useState('دواء آمن');
   const [logoTextInput, setLogoTextInput] = useState('');
   
-  const [plans, setPlans] = useState<any[]>([]);
+  const [plans, setPlans] = useState<PlanType[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanType | null>(null);
   const [newPlan, setNewPlan] = useState<Partial<PlanType>>({
@@ -56,27 +91,27 @@ const Admin: React.FC = () => {
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editPlanData, setEditPlanData] = useState<any | null>(null);
-  const [addPlanData, setAddPlanData] = useState({
+  const [editPlanData, setEditPlanData] = useState<(Omit<PlanType, 'features' | 'featuresAr'> & { features: string; featuresAr: string }) | null>(null);
+  const [addPlanData, setAddPlanData] = useState<Omit<PlanType, 'id' | 'features' | 'featuresAr'> & { features: string; featuresAr: string }>({
     code: '',
     name: '',
-    name_ar: '',
+    nameAr: '',
     description: '',
-    description_ar: '',
+    descriptionAr: '',
     price: 0,
     features: '',
-    features_ar: '',
-    is_default: false,
+    featuresAr: '',
+    isDefault: false,
   });
   
-  const [users, setUsers] = useState<Tables<'users'>[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [searchEmail, setSearchEmail] = useState('');
-  const [plansList, setPlansList] = useState<any[]>([]);
+  const [plansList, setPlansList] = useState<Pick<PlanType, 'code' | 'name' | 'nameAr'>[]>([]);
   
   const [activeSection, setActiveSection] = useState('ai');
   
-  const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [paypalMode, setPaypalMode] = useState<PaypalMode>('sandbox');
   const [sandboxClientId, setSandboxClientId] = useState('');
   const [sandboxSecret, setSandboxSecret] = useState('');
   const [liveClientId, setLiveClientId] = useState('');
@@ -87,7 +122,7 @@ const Admin: React.FC = () => {
   const fetchPlans = useCallback(async () => {
     setLoadingPlans(true);
     const { data, error } = await supabase.from('plans').select('*').order('price', { ascending: true });
-    if (!error && data) setPlans(data);
+    if (!error && data) setPlans(data.map(dbToPlanType));
     setLoadingPlans(false);
   }, []);
 
@@ -100,7 +135,7 @@ const Admin: React.FC = () => {
 
   const fetchPlansList = useCallback(async () => {
     const { data, error } = await supabase.from('plans').select('code, name, name_ar');
-    if (!error && data) setPlansList(data);
+    if (!error && data) setPlansList(data.map((p: any) => ({ code: p.code, name: p.name, nameAr: p.name_ar })));
   }, []);
 
   useEffect(() => {
@@ -109,466 +144,149 @@ const Admin: React.FC = () => {
     fetchPlansList();
   }, [fetchPlans, fetchUsers, fetchPlansList]);
   
-  useEffect(() => {
-    // الحصول على إعدادات الذكاء الاصطناعي عند تحميل الصفحة
-    const fetchSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('type', 'ai_settings')
-          .maybeSingle();
-        
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching AI settings:', error);
-          return;
-        }
-        
-        if (data?.value) {
-          // التحقق من أن البيانات مناسبة لنوع AISettingsType
-          const value = data.value;
-          
-          if (typeof value === 'object' && !Array.isArray(value)) {
-            // استخدام وظيفة التحويل الآمن
-            const parsedSettings = safelyParseAISettings(value as Record<string, Json>);
-            
-            setApiKey(parsedSettings.apiKey || '');
-            setModel(parsedSettings.model || 'gpt-4o-mini');
-          }
-        } else {
-          // استخدام القيم من localStorage إذا لم تكن متوفرة في قاعدة البيانات
-          setApiKey(aiSettings.apiKey || '');
-          setModel(aiSettings.model || 'gpt-4o-mini');
-        }
-      } catch (error) {
-        console.error('Error in fetchSettings:', error);
-      }
-    };
-    
-    // الحصول على إعدادات الإعلانات
-    const fetchAdSettings = async () => {
-      try {
-        const { data: adData, error: adError } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('type', 'advertisement')
-          .maybeSingle();
-          
-        if (adError && adError.code !== 'PGRST116') {
-          console.error('Error fetching advertisement:', adError);
-        } else if (adData?.value) {
-          setAdHTML(typeof adData.value === 'string' ? adData.value : '');
-        }
-        
-        const { data: secondaryAdData, error: secondaryAdError } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('type', 'secondary_advertisement')
-          .maybeSingle();
-          
-        if (secondaryAdError && secondaryAdError.code !== 'PGRST116') {
-          console.error('Error fetching secondary advertisement:', secondaryAdError);
-        } else if (secondaryAdData?.value) {
-          setSecondaryAdHTML(typeof secondaryAdData.value === 'string' ? secondaryAdData.value : '');
-        }
-      } catch (error) {
-        console.error('Error in fetchAdSettings:', error);
-      }
-    };
-    
-    // تعيين قيمة logoTextInput
-    setLogoTextInput(logoText);
-    
-    fetchSettings();
-    fetchAdSettings();
-  }, []);
-  
-  const saveAISettings = async () => {
-    // تعيين القيم الحالية
-    const newSettings: AISettingsType = {
-      apiKey,
-      model
-    };
-    
+  // Combine all fetch operations into a single initialization function
+  const initializeDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      // تحديث في localStorage
-      setAiSettings(newSettings);
-      
-      // تح��يث في قاعدة البيانات
-      const { error } = await supabase
-        .from('settings')
-        .upsert({
-          type: 'ai_settings',
-          value: newSettings as unknown as Json
-        }, {
-          onConflict: 'type'
-        });
-      
-      if (error) {
-        throw error;
+      // Check if user is admin
+      if (!user || !isAdmin()) {
+        throw new Error('Unauthorized access');
       }
-      
-      toast({
-        title: t('saveSuccess'),
-        description: t('settingsSaved'),
-        duration: 3000,
-      });
+
+      // Fetch all settings in parallel
+      const [
+        aiSettings,
+        adSettings,
+        logoSettings,
+        plansData,
+        usersData,
+        plansListData,
+        paypalSettings
+      ] = await Promise.all([
+        supabase.from('settings').select('value').eq('type', 'ai_settings').maybeSingle(),
+        supabase.from('settings').select('value').eq('type', 'advertisement').maybeSingle(),
+        supabase.from('settings').select('value').eq('type', 'logo_text').maybeSingle(),
+        supabase.from('plans').select('*').order('price', { ascending: true }),
+        supabase.from('users').select('*').order('id', { ascending: true }),
+        supabase.from('plans').select('code, name, name_ar'),
+        supabase.from('paypal_settings').select('*').single()
+      ]);
+
+      // Process AI settings
+      if (aiSettings.data?.value) {
+        const value = aiSettings.data.value;
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          setApiKey(String(value.apiKey || ''));
+          setModel(String(value.model || 'gpt-4o-mini'));
+        }
+      }
+
+      // Process ad settings
+      if (adSettings.data?.value) {
+        setAdHTML(typeof adSettings.data.value === 'string' ? adSettings.data.value : '');
+      }
+      if (adSettings.data?.value) {
+        setSecondaryAdHTML(typeof adSettings.data.value === 'string' ? adSettings.data.value : '');
+      }
+
+      // Process logo settings
+      if (logoSettings.data?.value) {
+        const text = typeof logoSettings.data.value === 'string' ? logoSettings.data.value : 'دواء آمن';
+        setLogoText(text);
+        setLogoTextInput(text);
+      }
+
+      // Process plans
+      if (plansData.data) {
+        setPlans(plansData.data.map(dbToPlanType));
+      }
+
+      // Process users
+      if (usersData.data) {
+        setUsers(usersData.data);
+      }
+
+      // Process plans list
+      if (plansListData.data) {
+        setPlansList(plansListData.data.map((p: any) => ({ code: p.code, name: p.name, nameAr: p.name_ar })));
+      }
+
+      // Process PayPal settings
+      if (paypalSettings.data) {
+        setPaypalSettingsId(paypalSettings.data.id);
+        setPaypalMode((paypalSettings.data.mode as PaypalMode) || 'sandbox');
+        setSandboxClientId(paypalSettings.data.sandbox_client_id || '');
+        setSandboxSecret(paypalSettings.data.sandbox_secret || '');
+        setLiveClientId(paypalSettings.data.live_client_id || '');
+        setLiveSecret(paypalSettings.data.live_secret || '');
+      }
+
+      setIsInitialized(true);
     } catch (error) {
-      console.error('Error saving AI settings:', error);
+      console.error('Error initializing dashboard:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
       toast({
         title: t('error'),
-        description: String(error),
+        description: t('contentFetchError'),
         variant: 'destructive',
         duration: 5000,
-      });
-    }
-  };
-  
-  const saveAd = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({
-          type: 'advertisement',
-          value: adHTML as unknown as Json
-        }, {
-          onConflict: 'type'
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: t('saveSuccess'),
-        description: t('adSaved'),
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Error saving advertisement:', error);
-      toast({
-        title: t('error'),
-        description: String(error),
-        variant: 'destructive',
-        duration: 5000,
-      });
-    }
-  };
-  
-  const saveSecondaryAd = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({
-          type: 'secondary_advertisement',
-          value: secondaryAdHTML as unknown as Json
-        }, {
-          onConflict: 'type'
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: t('saveSuccess'),
-        description: t('secondaryAdSaved'),
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Error saving secondary advertisement:', error);
-      toast({
-        title: t('error'),
-        description: String(error),
-        variant: 'destructive',
-        duration: 5000,
-      });
-    }
-  };
-  
-  const saveLogo = () => {
-    setLogoText(logoTextInput);
-    toast({
-      title: t('saveSuccess'),
-      description: t('logoSaved'),
-      duration: 3000,
-    });
-  };
-  
-  // إضافة خطة جديدة
-  const handleAddPlan = async () => {
-    if (!addPlanData.code || !addPlanData.name || !addPlanData.name_ar) {
-      toast({ title: 'خطأ', description: 'يرجى تعبئة جميع الحقول المطلوبة', variant: 'destructive' });
-      return;
-    }
-    const { error } = await supabase.from('plans').insert({
-      code: addPlanData.code,
-      name: addPlanData.name,
-      name_ar: addPlanData.name_ar,
-      description: addPlanData.description,
-      description_ar: addPlanData.description_ar,
-      price: addPlanData.price,
-      features: addPlanData.features.split('\n').filter(Boolean),
-      features_ar: addPlanData.features_ar.split('\n').filter(Boolean),
-      is_default: addPlanData.is_default,
-    });
-    if (!error) {
-      toast({ title: 'تمت الإضافة', description: 'تمت إضافة الخطة بنجاح' });
-      setShowAddModal(false);
-      setAddPlanData({ code: '', name: '', name_ar: '', description: '', description_ar: '', price: 0, features: '', features_ar: '', is_default: false });
-      fetchPlans();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  // حذف خطة
-  const handleDeletePlan = async (id: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
-    const { error } = await supabase.from('plans').delete().eq('id', id);
-    if (!error) {
-      toast({ title: 'تم الحذف', description: 'تم حذف الخطة' });
-      fetchPlans();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  // فتح نا��ذة التعديل
-  const openEditModal = (plan: any) => {
-    setEditPlanData({ ...plan, features: (plan.features || []).join('\n'), features_ar: (plan.features_ar || []).join('\n') });
-    setShowEditModal(true);
-  };
-
-  // حفظ التعديل
-  const handleEditPlan = async () => {
-    if (!editPlanData.code || !editPlanData.name || !editPlanData.name_ar) {
-      toast({ title: 'خطأ', description: 'يرجى تعبئة جميع الحقول المطلوبة', variant: 'destructive' });
-      return;
-    }
-    const { id, ...rest } = editPlanData;
-    const { error } = await supabase.from('plans').update({
-      code: rest.code,
-      name: rest.name,
-      name_ar: rest.name_ar,
-      description: rest.description,
-      description_ar: rest.description_ar,
-      price: rest.price,
-      features: rest.features.split('\n').filter(Boolean),
-      features_ar: rest.features_ar.split('\n').filter(Boolean),
-      is_default: rest.is_default,
-    }).eq('id', id);
-    if (!error) {
-      toast({ title: 'تم التحديث', description: 'تم تحديث الخطة' });
-      setShowEditModal(false);
-      setEditPlanData(null);
-      fetchPlans();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-  
-  const handleChangePlan = async (userId: number, newPlan: string) => {
-    const { error } = await supabase.from('users').update({ plan_code: newPlan }).eq('id', userId);
-    if (!error) {
-      toast({ title: 'تم التحديث', description: 'تم تغيير الباقة للمستخدم' });
-      fetchUsers();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (!error) {
-      toast({ title: 'تم الحذف', description: 'تم حذف المستخدم' });
-      fetchUsers();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-  
-  const updatePlansToNewStructure = async () => {
-    try {
-      // تحديث جميع الخطط لتكون غير افتراضية
-      await supabase.from('plans').update({ is_default: false }).neq('code', 'basic');
-      
-      // تحديث خطة الزائر
-      await supabase.from('plans').upsert({
-        code: 'visitor',
-        name: 'Visitor Plan',
-        name_ar: 'باقة الزائر',
-        description: 'Basic features for unregistered users',
-        description_ar: 'ميزات أساسية للمستخدمين غير المسجلين',
-        price: 0,
-        features: [
-          'Check up to 2 medications',
-          'Basic interaction analysis'
-        ],
-        features_ar: [
-          'فحص حتى دوائين',
-          'تحليل أساسي للتفاعلات'
-        ],
-        is_default: false
-      }, { onConflict: 'code' });
-
-      // تحديث الخطة الأساسية لتكون مجانية وافتراضية
-      await supabase.from('plans').upsert({ 
-        code: 'basic',
-        is_default: true,
-        price: 0,
-        name: 'Basic Plan',
-        name_ar: 'الباقة الأساسية',
-        description: 'Free basic plan for registered users',
-        description_ar: 'الباقة الأساسية المجانية للمستخدمين المسجلين',
-        features: [
-          'Check up to 5 medications',
-          'Basic interaction analysis'
-        ],
-        features_ar: [
-          'فحص حتى 5 أدوية',
-          'تحليل أساسي للتفاعلات'
-        ]
-      }, { onConflict: 'code' });
-
-      // تحديث الخطة الاحترافية
-      await supabase.from('plans').upsert({
-        code: 'pro',
-        name: 'Professional Plan',
-        name_ar: 'ال���اقة الاحترافية',
-        description: 'Advanced features for healthcare professionals',
-        description_ar: 'مميزات متقدمة للمهنيين الصحيين',
-        price: 9.99,
-        features: [
-          'Check up to 10 medications',
-          'Advanced interaction analysis',
-          'Image-based medication search',
-          'Patient medication history'
-        ],
-        features_ar: [
-          'فحص حتى 10 أدوية',
-          'تحليل متقدم للتفاعلات',
-          'البحث عن الأدوية بالصور',
-          'سجل أدوية المريض'
-        ],
-        is_default: false
-      }, { onConflict: 'code' });
-
-      toast({ 
-        title: 'تم التحديث', 
-        description: 'تم تحديث الخطط بنجاح', 
-        duration: 3000 
-      });
-      
-      // تحديث عرض الخطط
-      fetchPlans();
-    } catch (error) {
-      console.error('Error updating plans:', error);
-      toast({ 
-        title: 'خطأ', 
-        description: 'حدث خطأ أثناء تحديث الخطط', 
-        variant: 'destructive',
-        duration: 5000 
-      });
-    }
-  };
-  
-  // جلب الإعدادات من قاعدة البيانات
-  const fetchPaypalSettings = async () => {
-    try {
-      const { data, error } = await supabase.from('paypal_settings').select('*').single();
-      if (error) {
-        console.error('Error fetching PayPal settings:', error);
-        return;
-      }
-      
-      if (data) {
-        setPaypalSettingsId(data.id);
-        setPaypalMode(data.mode || 'sandbox');
-        setSandboxClientId(data.sandbox_client_id || '');
-        setSandboxSecret(data.sandbox_secret || '');
-        setLiveClientId(data.live_client_id || '');
-        setLiveSecret(data.live_secret || '');
-      }
-    } catch (error) {
-      console.error('Error in fetchPaypalSettings:', error);
-    }
-  };
-  
-  useEffect(() => { 
-    fetchPaypalSettings(); 
-  }, []);
-
-  // حفظ الإعدادات
-  const savePaypalSettings = async () => {
-    setSavingPaypal(true);
-    try {
-      const toSave = {
-        id: paypalSettingsId,
-        mode: paypalMode,
-        sandbox_client_id: sandboxClientId,
-        sandbox_secret: sandboxSecret,
-        live_client_id: liveClientId,
-        live_secret: liveSecret,
-        currency: 'USD',
-        payment_type: 'one_time' as const,
-        updated_at: new Date().toISOString()
-      };
-
-      let error;
-      if (paypalSettingsId) {
-        // تحديث الإعدادات الموجودة
-        const result = await supabase.from('paypal_settings').update(toSave).eq('id', paypalSettingsId);
-        error = result.error;
-      } else {
-        // إدراج إعدادات جديدة
-        const result = await supabase.from('paypal_settings').insert(toSave);
-        error = result.error;
-        
-        // إعادة استرداد المعرف الجديد
-        if (!error) {
-          fetchPaypalSettings();
-        }
-      }
-
-      if (error) {
-        console.error('Error saving PayPal settings:', error);
-        toast({ 
-          title: 'خطأ في حفظ الإعدادات',
-          description: error.message,
-          variant: 'destructive' 
-        });
-      } else {
-        toast({ 
-          title: 'تم حفظ الإعدادات بنجاح',
-          variant: 'default'
-        });
-      }
-    } catch (error: any) {
-      console.error('Exception in savePaypalSettings:', error);
-      toast({ 
-        title: 'خطأ في حفظ الإعدادات',
-        description: error.message,
-        variant: 'destructive'
       });
     } finally {
-      setSavingPaypal(false);
+      setIsLoading(false);
     }
-  };
-  
-  // Fix the type assignment issue with a more robust type check
-  const handlePaypalModeChange = (value: string) => {
-    // Type guard: only set state when value matches one of our allowed types
-    if (value === 'sandbox' || value === 'live') {
-      // Now TypeScript knows value can only be 'sandbox' or 'live'
-      setPaypalMode(value);
-    } else {
-      // Log an error if an invalid value is passed
-      console.error(`Invalid PayPal mode: ${value}. Expected 'sandbox' or 'live'.`);
+  }, [toast, t, user, isAdmin]);
+
+  // Initialize dashboard only after user loading is done
+  useEffect(() => {
+    if (!userLoading) {
+      initializeDashboard();
     }
-  };
-  
+  }, [userLoading, initializeDashboard]);
+
+  // Show loading if user is still loading
+  if (userLoading || isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">{t('loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('error')}</h2>
+          <p className="text-gray-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          >
+            {t('retry')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show unauthorized message
+  if (!user || !isAdmin()) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('unauthorized')}</h2>
+          <p className="text-gray-600">{t('adminAccessRequired')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show dashboard content
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
       {/* Sidebar */}
@@ -677,10 +395,10 @@ const Admin: React.FC = () => {
                       <tr key={plan.id} className="border-b hover:bg-gray-50">
                         <td>{plan.code}</td>
                         <td>{plan.name}</td>
-                        <td>{plan.name_ar}</td>
+                        <td>{plan.nameAr}</td>
                         <td>{plan.price}</td>
                         <td><ul>{plan.features?.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul></td>
-                        <td><ul>{plan.features_ar?.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul></td>
+                        <td><ul>{plan.featuresAr?.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul></td>
                         <td>
                           <Button size="sm" onClick={() => openEditModal(plan)}>تعديل</Button>
                           <Button size="sm" variant="destructive" onClick={() => handleDeletePlan(plan.id)}>حذف</Button>
@@ -695,7 +413,7 @@ const Admin: React.FC = () => {
         )}
         {activeSection === 'users' && (
           <Card className="mb-8">
-            <CardHeader><CardTitle>إ��ارة الأعضاء</CardTitle></CardHeader>
+            <CardHeader><CardTitle>إدارة الأعضاء</CardTitle></CardHeader>
             <CardContent>
               <div className="mb-4 flex gap-2 items-center">
                 <Input placeholder="بحث بالبريد الإلكتروني" value={searchEmail} onChange={e => setSearchEmail(e.target.value)} />
@@ -721,7 +439,7 @@ const Admin: React.FC = () => {
                         <td>
                           <select value={user.plan_code || 'visitor'} onChange={e => handleChangePlan(user.id, e.target.value)} className="border rounded px-2 py-1">
                             {plansList.map(plan => (
-                              <option key={plan.code} value={plan.code}>{plan.name_ar || plan.name}</option>
+                              <option key={plan.code} value={plan.code}>{plan.nameAr || plan.name}</option>
                             ))}
                           </select>
                         </td>
@@ -797,12 +515,12 @@ const Admin: React.FC = () => {
             <div className="space-y-2">
               <Input placeholder="رمز الخطة (مثال: visitor)" value={addPlanData.code} onChange={e => setAddPlanData({ ...addPlanData, code: e.target.value })} />
               <Input placeholder="اسم الخطة" value={addPlanData.name} onChange={e => setAddPlanData({ ...addPlanData, name: e.target.value })} />
-              <Input placeholder="الاسم بالعربية" value={addPlanData.name_ar} onChange={e => setAddPlanData({ ...addPlanData, name_ar: e.target.value })} />
+              <Input placeholder="الاسم بالعربية" value={addPlanData.nameAr} onChange={e => setAddPlanData({ ...addPlanData, nameAr: e.target.value })} />
               <Input placeholder="الوصف" value={addPlanData.description} onChange={e => setAddPlanData({ ...addPlanData, description: e.target.value })} />
-              <Input placeholder="الوصف بالعربية" value={addPlanData.description_ar} onChange={e => setAddPlanData({ ...addPlanData, description_ar: e.target.value })} />
+              <Input placeholder="الوصف بالعربية" value={addPlanData.descriptionAr} onChange={e => setAddPlanData({ ...addPlanData, descriptionAr: e.target.value })} />
               <Input type="number" placeholder="السعر" value={addPlanData.price} onChange={e => setAddPlanData({ ...addPlanData, price: Number(e.target.value) })} />
               <Textarea placeholder="المميزات (سطر لكل ميزة)" value={addPlanData.features} onChange={e => setAddPlanData({ ...addPlanData, features: e.target.value })} />
-              <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={addPlanData.features_ar} onChange={e => setAddPlanData({ ...addPlanData, features_ar: e.target.value })} />
+              <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={addPlanData.featuresAr} onChange={e => setAddPlanData({ ...addPlanData, featuresAr: e.target.value })} />
             </div>
             <DialogFooter>
               <Button onClick={handleAddPlan}>إضافة</Button>
@@ -812,17 +530,17 @@ const Admin: React.FC = () => {
         </Dialog>
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
           <DialogContent>
-            <DialogHeader><DialogTitle>تع��يل الخطة</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>تعديل الخطة</DialogTitle></DialogHeader>
             {editPlanData && (
               <div className="space-y-2">
                 <Input placeholder="رمز الخطة" value={editPlanData.code} onChange={e => setEditPlanData({ ...editPlanData, code: e.target.value })} />
                 <Input placeholder="اسم الخطة" value={editPlanData.name} onChange={e => setEditPlanData({ ...editPlanData, name: e.target.value })} />
-                <Input placeholder="الاسم بالعربية" value={editPlanData.name_ar} onChange={e => setEditPlanData({ ...editPlanData, name_ar: e.target.value })} />
+                <Input placeholder="الاسم بالعربية" value={editPlanData.nameAr} onChange={e => setEditPlanData({ ...editPlanData, nameAr: e.target.value })} />
                 <Input placeholder="الوصف" value={editPlanData.description} onChange={e => setEditPlanData({ ...editPlanData, description: e.target.value })} />
-                <Input placeholder="الوصف بالعربية" value={editPlanData.description_ar} onChange={e => setEditPlanData({ ...editPlanData, description_ar: e.target.value })} />
+                <Input placeholder="الوصف بالعربية" value={editPlanData.descriptionAr} onChange={e => setEditPlanData({ ...editPlanData, descriptionAr: e.target.value })} />
                 <Input type="number" placeholder="السعر" value={editPlanData.price} onChange={e => setEditPlanData({ ...editPlanData, price: Number(e.target.value) })} />
                 <Textarea placeholder="المميزات (سطر لكل ميزة)" value={editPlanData.features} onChange={e => setEditPlanData({ ...editPlanData, features: e.target.value })} />
-                <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={editPlanData.features_ar} onChange={e => setEditPlanData({ ...editPlanData, features_ar: e.target.value })} />
+                <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={editPlanData.featuresAr} onChange={e => setEditPlanData({ ...editPlanData, featuresAr: e.target.value })} />
               </div>
             )}
             <DialogFooter>
@@ -834,6 +552,141 @@ const Admin: React.FC = () => {
       </main>
     </div>
   );
+};
+
+// حفظ إعدادات الذكاء الاصطناعي
+const saveAISettings = async () => {
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert({
+        type: 'ai_settings',
+        value: { apiKey, model } as Json
+      }, { onConflict: 'type' });
+    if (error) throw error;
+    toast({ title: t('saveSuccess'), description: t('settingsSaved'), duration: 3000 });
+  } catch (error) {
+    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+  }
+};
+
+// حفظ نص الشعار
+const saveLogo = async () => {
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ type: 'logo_text', value: logoTextInput as Json }, { onConflict: 'type' });
+    if (error) throw error;
+    setLogoText(logoTextInput);
+    toast({ title: t('saveSuccess'), description: t('logoSaved'), duration: 3000 });
+  } catch (error) {
+    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+  }
+};
+
+// حفظ الإعلان الرئيسي
+const saveAd = async () => {
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ type: 'advertisement', value: adHTML as Json }, { onConflict: 'type' });
+    if (error) throw error;
+    toast({ title: t('saveSuccess'), description: t('adSaved'), duration: 3000 });
+  } catch (error) {
+    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+  }
+};
+
+// حفظ الإعلان الثانوي
+const saveSecondaryAd = async () => {
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ type: 'secondary_advertisement', value: secondaryAdHTML as Json }, { onConflict: 'type' });
+    if (error) throw error;
+    toast({ title: t('saveSuccess'), description: t('secondaryAdSaved'), duration: 3000 });
+  } catch (error) {
+    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+  }
+};
+
+// تحديث هيكل الخطط
+const updatePlansToNewStructure = async () => {
+  try {
+    await supabase.from('plans').update({ is_default: false }).neq('code', 'basic');
+    await supabase.from('plans').upsert(planTypeToDb({
+      code: 'visitor',
+      name: 'Visitor Plan',
+      nameAr: 'باقة الزائر',
+      description: 'Basic features for unregistered users',
+      descriptionAr: 'ميزات أساسية للمستخدمين غير المسجلين',
+      price: 0,
+      features: ['Check up to 2 medications', 'Basic interaction analysis'],
+      featuresAr: ['فحص حتى دوائين', 'تحليل أساسي للتفاعلات'],
+      isDefault: false
+    }));
+    await supabase.from('plans').upsert(planTypeToDb({
+      code: 'basic',
+      name: 'Basic Plan',
+      nameAr: 'الباقة الأساسية',
+      description: 'Free basic plan for registered users',
+      descriptionAr: 'الباقة الأساسية المجانية للمستخدمين المسجلين',
+      price: 0,
+      features: ['Check up to 5 medications', 'Basic interaction analysis'],
+      featuresAr: ['فحص حتى 5 أدوية', 'تحليل أساسي للتفاعلات'],
+      isDefault: true
+    }));
+    await supabase.from('plans').upsert(planTypeToDb({
+      code: 'pro',
+      name: 'Professional Plan',
+      nameAr: 'الباقة الاحترافية',
+      description: 'Advanced features for healthcare professionals',
+      descriptionAr: 'مميزات متقدمة للمهنيين الصحيين',
+      price: 9.99,
+      features: ['Check up to 10 medications', 'Advanced interaction analysis', 'Image-based medication search', 'Patient medication history'],
+      featuresAr: ['فحص حتى 10 أدوية', 'تحليل متقدم للتفاعلات', 'البحث عن الأدوية بالصور', 'سجل أدوية المريض'],
+      isDefault: false
+    }));
+    toast({ title: 'تم التحديث', description: 'تم تحديث الخطط بنجاح', duration: 3000 });
+    fetchPlans();
+  } catch (error) {
+    toast({ title: 'خطأ', description: 'حدث خطأ أثناء تحديث الخطط', variant: 'destructive', duration: 5000 });
+  }
+};
+
+// حذف خطة
+const handleDeletePlan = async (id: string) => {
+  if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
+  const { error } = await supabase.from('plans').delete().eq('id', id);
+  if (!error) {
+    toast({ title: 'تم الحذف', description: 'تم حذف الخطة' });
+    fetchPlans();
+  } else {
+    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+  }
+};
+
+// تغيير باقة المستخدم
+const handleChangePlan = async (userId: string, newPlan: string) => {
+  const { error } = await supabase.from('users').update({ plan_code: newPlan }).eq('id', userId);
+  if (!error) {
+    toast({ title: 'تم التحديث', description: 'تم تغيير الباقة للمستخدم' });
+    fetchUsers();
+  } else {
+    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+  }
+};
+
+// حذف مستخدم
+const handleDeleteUser = async (userId: string) => {
+  if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+  const { error } = await supabase.from('users').delete().eq('id', userId);
+  if (!error) {
+    toast({ title: 'تم الحذف', description: 'تم حذف المستخدم' });
+    fetchUsers();
+  } else {
+    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+  }
 };
 
 export default Admin;

@@ -91,6 +91,9 @@ export const en = {
   pageIdMissing: 'Page ID is missing, cannot save content.',
   updatePermissionError: 'You don\'t have permission to update this content.',
   noAccount: "Don't have an account? Create a new one",
+  retry: 'Retry',
+  unauthorized: 'Unauthorized',
+  adminAccessRequired: 'This page requires admin access.',
 };
 
 export default en;
