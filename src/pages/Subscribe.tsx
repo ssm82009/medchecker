@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,9 +69,8 @@ const Subscribe: React.FC = () => {
 
       // تحديث خطة المستخدم
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ 
-          // Only include fields that exist on the profiles table
           plan_code: proPlan.code 
         })
         .eq('id', user.id);

@@ -53,7 +53,7 @@ export const useAuth = () => {
       
       // Save user data in localStorage
       const userData: User = {
-        id: data.id,
+        id: String(data.id), // Convert id to string to match the User interface
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',

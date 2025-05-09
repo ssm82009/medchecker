@@ -436,7 +436,7 @@ const Admin: React.FC = () => {
       await supabase.from('plans').upsert({
         code: 'pro',
         name: 'Professional Plan',
-        name_ar: 'الباقة الاحترافية',
+        name_ar: 'ال��اقة الاحترافية',
         description: 'Advanced features for healthcare professionals',
         description_ar: 'مميزات متقدمة للمهنيين الصحيين',
         price: 9.99,
@@ -733,7 +733,11 @@ const Admin: React.FC = () => {
                   <label className="block mb-1 font-medium">وضع التشغيل</label>
                   <select
                     value={paypalMode}
-                    onChange={(e) => setPaypalMode(e.target.value === 'sandbox' ? 'sandbox' : 'live')}
+                    onChange={(e) => {
+                      // Explicitly cast the value to the correct type
+                      const newMode = e.target.value === 'sandbox' ? 'sandbox' : 'live';
+                      setPaypalMode(newMode);
+                    }}
                     className="w-full p-2 border rounded"
                   >
                     <option value="sandbox">Sandbox (اختبار)</option>
@@ -800,7 +804,7 @@ const Admin: React.FC = () => {
         </Dialog>
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
           <DialogContent>
-            <DialogHeader><DialogTitle>تعديل الخطة</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>تع��يل الخطة</DialogTitle></DialogHeader>
             {editPlanData && (
               <div className="space-y-2">
                 <Input placeholder="رمز الخطة" value={editPlanData.code} onChange={e => setEditPlanData({ ...editPlanData, code: e.target.value })} />
