@@ -734,9 +734,8 @@ const Admin: React.FC = () => {
                   <select
                     value={paypalMode}
                     onChange={(e) => {
-                      // Explicitly cast the value to the correct type
-                      const newMode = e.target.value === 'sandbox' ? 'sandbox' : 'live';
-                      setPaypalMode(newMode);
+                      // Use type assertion to tell TypeScript this value is specifically 'sandbox' or 'live'
+                      setPaypalMode(e.target.value as 'sandbox' | 'live');
                     }}
                     className="w-full p-2 border rounded"
                   >

@@ -73,7 +73,7 @@ const Subscribe: React.FC = () => {
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', user.id);
+        .eq('id', parseInt(user.id)); // Convert string ID to number for users table
 
       if (updateError) throw updateError;
 
@@ -143,7 +143,7 @@ const Subscribe: React.FC = () => {
                   'enable-funding': 'paypal',
                   'data-sdk-integration-source': 'button',
                   ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {}),
-                  clientId: paypalSettings.clientId, // Add the required clientId property
+                  clientId: paypalSettings.clientId, // Required property
                 }}
               >
                 <PayPalButtons
