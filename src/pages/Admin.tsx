@@ -563,6 +563,9 @@ const Admin: React.FC = () => {
     if (value === 'sandbox' || value === 'live') {
       // Now TypeScript knows value can only be 'sandbox' or 'live'
       setPaypalMode(value);
+    } else {
+      // Log an error if an invalid value is passed
+      console.error(`Invalid PayPal mode: ${value}. Expected 'sandbox' or 'live'.`);
     }
   };
   
