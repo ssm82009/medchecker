@@ -194,7 +194,7 @@ const Admin: React.FC = () => {
       // تحديث في localStorage
       setAiSettings(newSettings);
       
-      // تحديث في قاعدة البيانات
+      // تح��يث في قاعدة البيانات
       const { error } = await supabase
         .from('settings')
         .upsert({
@@ -334,7 +334,7 @@ const Admin: React.FC = () => {
     }
   };
 
-  // فتح نافذة التعديل
+  // فتح نا��ذة التعديل
   const openEditModal = (plan: any) => {
     setEditPlanData({ ...plan, features: (plan.features || []).join('\n'), features_ar: (plan.features_ar || []).join('\n') });
     setShowEditModal(true);
@@ -436,7 +436,7 @@ const Admin: React.FC = () => {
       await supabase.from('plans').upsert({
         code: 'pro',
         name: 'Professional Plan',
-        name_ar: 'ال��اقة الاحترافية',
+        name_ar: 'ال���اقة الاحترافية',
         description: 'Advanced features for healthcare professionals',
         description_ar: 'مميزات متقدمة للمهنيين الصحيين',
         price: 9.99,
@@ -559,8 +559,9 @@ const Admin: React.FC = () => {
   
   // Fix the type assignment issue with a more robust type check
   const handlePaypalModeChange = (value: string) => {
-    // Explicitly check and ensure the value is one of the allowed types
+    // Type guard: only set state when value matches one of our allowed types
     if (value === 'sandbox' || value === 'live') {
+      // Now TypeScript knows value can only be 'sandbox' or 'live'
       setPaypalMode(value);
     }
   };
@@ -691,7 +692,7 @@ const Admin: React.FC = () => {
         )}
         {activeSection === 'users' && (
           <Card className="mb-8">
-            <CardHeader><CardTitle>إدارة الأعضاء</CardTitle></CardHeader>
+            <CardHeader><CardTitle>إ��ارة الأعضاء</CardTitle></CardHeader>
             <CardContent>
               <div className="mb-4 flex gap-2 items-center">
                 <Input placeholder="بحث بالبريد الإلكتروني" value={searchEmail} onChange={e => setSearchEmail(e.target.value)} />
