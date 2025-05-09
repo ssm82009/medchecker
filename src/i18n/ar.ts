@@ -1,4 +1,3 @@
-
 import { en } from './en';
 
 const ar = {
@@ -39,7 +38,7 @@ const ar = {
   noInteractions: 'لم يتم اكتشاف أي تفاعلات بين هذه الأدوية.',
   ageWarnings: 'تحذيرات متعلقة بالعمر',
   alternatives: 'أدوية بديلة',
-  disclaimer: 'تُقدَّم هذه المعلومات عبر تطبيق « دواء آمن dwaa.app » لأغراض تعليمية، ولا تُغني عن استشارة الطبيب المختص!',
+  disclaimer: 'تُقدَّم هذه المعلومات عبر تطبيق « دواء آمن dwaa.app » لأغراض تعليمية، ولا تُغني عن استشارة الطبيب المختص!',
   
   login: 'تسجيل الدخول',
   loginButton: 'تسجيل الدخول',
@@ -51,13 +50,6 @@ const ar = {
   invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صالحة',
   email: 'البريد الإلكتروني',
   password: 'كلمة المرور',
-  forgot: 'نسيت كلمة المرور؟',
-  enterCredentials: 'أدخل بيانات تسجيل الدخول',
-  forgotPassword: 'نسيت كلمة المرور؟',
-  loggingIn: 'جاري تسجيل الدخول...',
-  createAccount: 'إنشاء حساب جديد',
-  byContinuing: 'بالمتابعة',
-  and: 'و',
   
   saveSuccess: 'نجاح',
   settingsSaved: 'تم حفظ الإعدادات بنجاح',
@@ -96,45 +88,6 @@ const ar = {
   pageIdMissing: 'معرف الصفحة مفقود، لا يمكن حفظ المحتوى.',
   updatePermissionError: 'ليس لديك صلاحية لتحديث هذا المحتوى.',
   noAccount: 'ليس لديك حساب؟ إنشاء حساب جديد',
-  retry: 'إعادة المحاولة',
-  unauthorized: 'غير مصرح',
-  adminAccessRequired: 'هذه الصفحة تتطلب صلاحيات مشرف.',
-  
-  // Added toast messages
-  invalidResponseFormat: 'تنسيق الاستجابة غير صالح',
-  errorOccurred: 'حدث خطأ',
-  warningOccurred: 'هناك تحذير',
-  informationUpdate: 'تحديث المعلومات',
-  failedToCheckInteraction: 'فشل في التحقق من التفاعلات',
-  
-  // Admin page translations
-  adminDashboard: 'لوحة تحكم المدير',
-  filterUsers: 'تصفية المستخدمين',
-  searchAndFilterUsers: 'بحث وتصفية المستخدمين',
-  search: 'بحث',
-  searchByEmail: 'البحث بالبريد الإلكتروني',
-  filterByRole: 'تصفية حسب الدور',
-  selectRole: 'اختر الدور',
-  allRoles: 'كل الأدوار',
-  user: 'مستخدم',
-  admin: 'مدير',
-  userManagement: 'إدارة المستخدمين',
-  id: 'المعرف',
-  role: 'الدور',
-  active: 'نشط',
-  deactivate: 'تعطيل',
-  activate: 'تفعيل',
-  totalUsers: 'إجمالي المستخدمين',
-  success: 'نجاح',
-  userActivated: 'تم تفعيل المستخدم',
-  userDeactivated: 'تم تعطيل المستخدم',
-  failedToFetchUsers: 'فشل في جلب المستخدمين',
-  errorUpdatingUser: 'خطأ في تحديث المستخدم',
-  
-  // Warning variants
-  warning: 'تحذير',
-  info: 'معلومات',
-  default: 'افتراضي',
 };
 
 export default ar;

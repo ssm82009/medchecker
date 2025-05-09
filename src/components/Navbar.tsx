@@ -1,42 +1,18 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Pill, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
-import { supabase } from '@/integrations/supabase/client';
 
 const Navbar: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const { user, logout } = useAuth();
-  const [logoText, setLogoText] = useState('دواء آمن');
+  const [logoText] = useLocalStorage<string>('logoText', 'دواء آمن');
   const [open, setOpen] = React.useState(false);
-
-  useEffect(() => {
-    const fetchLogoSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('type', 'logo_text')
-          .maybeSingle();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching logo text:', error);
-        } else if (data?.value) {
-          const text = typeof data.value === 'string' ? data.value : 'دواء آمن';
-          setLogoText(text);
-        }
-      } catch (error) {
-        console.error('Error in fetchLogoSettings:', error);
-      }
-    };
-
-    fetchLogoSettings();
-  }, []);
 
   const handleLinkClick = () => {
     setOpen(false);
@@ -76,22 +52,22 @@ const Navbar: React.FC = () => {
               
               {/* Page Links */}
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/" onClick={handleLinkClick}>{t('appTitle')}</Link>
+                <Link to="/" onClick={handleLinkClick}>{t('appTitle' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/about" onClick={handleLinkClick}>{t('about')}</Link>
+                <Link to="/about" onClick={handleLinkClick}>{t('about' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse')}</Link>
+                <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy')}</Link>
+                <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/copyright" onClick={handleLinkClick}>{t('copyright')}</Link>
+                <Link to="/copyright" onClick={handleLinkClick}>{t('copyright' as any)}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/contact" onClick={handleLinkClick}>{t('contactUs')}</Link>
+                <Link to="/contact" onClick={handleLinkClick}>{t('contactUs' as any)}</Link>
               </Button>
               
               {/* Admin and Logout Buttons */}
@@ -99,7 +75,7 @@ const Navbar: React.FC = () => {
                 <>
                   {user.role === 'admin' && (
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard')}</Link>
+                      <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard' as any)}</Link>
                     </Button>
                   )}
                   <Button variant="outline" asChild className="w-full justify-start">
@@ -113,7 +89,7 @@ const Navbar: React.FC = () => {
                     }} 
                     className="w-full justify-start"
                   >
-                    {t('logout')}
+                    {t('logout' as any)}
                   </Button>
                 </>
               ) : (

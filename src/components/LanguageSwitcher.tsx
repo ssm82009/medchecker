@@ -1,12 +1,12 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Globe } from 'lucide-react';
+import { Globe, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { translations, TranslationKey } from '@/i18n';
 
 const LanguageSwitcher: React.FC = () => {
-  const { t, language, changeLanguage } = useTranslation();
+  const { t, toggleLanguage, language } = useTranslation();
   const { toast } = useToast();
   
   const handleLanguageChange = () => {
@@ -15,9 +15,8 @@ const LanguageSwitcher: React.FC = () => {
     
     // Short delay before actually changing the language to allow transition to start
     setTimeout(() => {
-      // Change the language
-      const newLanguage = language === 'en' ? 'ar' : 'en';
-      changeLanguage(newLanguage);
+      // Change the language in localStorage
+      toggleLanguage();
       
       // Show notification for language change
       toast({
@@ -30,12 +29,42 @@ const LanguageSwitcher: React.FC = () => {
       document.body.classList.remove('language-changing');
       document.body.classList.add('language-changed');
       
-      // Force page reload after a short delay
+      // Force page reload - adding a clearer implementation
       setTimeout(() => {
-        window.location.href = window.location.pathname;
+        // Ensure we reload the page after language change
+        window.location.href = window.location.pathname; // Force a clean reload of the current page
       }, 300);
     }, 50);
   };
+  
+  // Helper function to update content without page reload - keeping for backup
+  const updatePageContent = (newLanguage: 'en' | 'ar') => {
+    // Apply data-i18n attributes to elements that need translation
+    const applyDataI18nAttributes = () => {
+      // Find elements with text that matches translation keys and add data-i18n attribute
+      Object.keys(translations[newLanguage]).forEach(key => {
+        document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, button, a, label').forEach(element => {
+          if (element.textContent?.trim() === translations[language === 'en' ? 'en' : 'ar'][key as TranslationKey]) {
+            element.setAttribute('data-i18n', key);
+          }
+        });
+      });
+    };
+    
+    // Apply data-i18n attributes if they don't exist yet
+    applyDataI18nAttributes();
+    
+    // Force re-render by triggering a small state change in the document
+    document.body.style.opacity = '0.99';
+    setTimeout(() => {
+      document.body.style.opacity = '1';
+    }, 10);
+  };
+  
+  // Apply data-i18n attributes on initial load
+  useEffect(() => {
+    updatePageContent(language);
+  }, []);
   
   return (
     <Button 
@@ -44,6 +73,7 @@ const LanguageSwitcher: React.FC = () => {
       size="sm"
     >
       <Globe className="h-3 w-3" />
+      <RefreshCw className="h-3 w-3" />
       <span>{language === 'en' ? 'العربية' : 'English'}</span>
     </Button>
   );

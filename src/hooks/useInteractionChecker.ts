@@ -1,114 +1,242 @@
 
-import { useEffect, useState } from 'react';
-import { useToast } from './use-toast';
-import { useTranslation } from './useTranslation';
-import { Medication, PatientInfo, InteractionResult } from '@/types/medication';
+import { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useToast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
+import { AISettingsType, Medication, PatientInfo, InteractionResult } from '@/types/medication';
+import { MOCK_INTERACTIONS, MOCK_INTERACTIONS_EN } from '@/data/mockInteractions';
 
-interface InteractionConfig {
-  enabled: boolean;
-  interval: number;
-  url: string;
-}
-
-export const useInteractionChecker = (config?: InteractionConfig) => {
+export const useInteractionChecker = () => {
+  const { language } = useTranslation();
   const { toast } = useToast();
-  const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  const [apiKeyError, setApiKeyError] = useState(false);
   const [result, setResult] = useState<InteractionResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<boolean>(false);
+  const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
 
+  // Fetch API settings from Supabase
   useEffect(() => {
-    if (!config || !config.enabled) {
-      return;
-    }
-
-    const checkInteraction = async () => {
+    const fetchAISettings = async () => {
       try {
-        const response = await fetch(config.url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data || typeof data !== 'object' || !('status' in data)) {
-          toast({
-            title: t('error'),
-            description: t('invalidResponseFormat'),
-            variant: 'destructive',
-          });
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'ai_settings')
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching AI settings:', error);
           return;
         }
-
-        if (data.status === 'error') {
-          toast({
-            title: t('error'),
-            description: data.message || t('errorOccurred'),
-            variant: 'destructive',
-          });
-        } else if (data.status === 'warning') {
-          toast({
-            title: t('warning'),
-            description: data.message || t('warningOccurred'),
-            variant: 'default',
-          });
-        } else if (data.status === 'info') {
-          toast({
-            title: t('info'),
-            description: data.message || t('informationUpdate'),
-          });
+        
+        if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+          const jsonValue = data.value as Record<string, Json>;
+          
+          if ('apiKey' in jsonValue && 'model' in jsonValue) {
+            const settings: AISettingsType = {
+              apiKey: String(jsonValue.apiKey || ''),
+              model: String(jsonValue.model || 'gpt-4o-mini')
+            };
+            
+            localStorage.setItem('aiSettings', JSON.stringify(settings));
+            setApiSettings(settings);
+          }
         }
-      } catch (error: any) {
-        console.error('Interaction check failed:', error);
-        toast({
-          title: t('error'),
-          description: error.message || t('failedToCheckInteraction'),
-          variant: 'destructive',
-        });
+      } catch (error) {
+        console.error('Error fetching AI settings:', error);
       }
     };
-
-    const intervalId = setInterval(checkInteraction, config.interval);
-
-    // Initial check
-    checkInteraction();
-
-    return () => clearInterval(intervalId);
-  }, [config?.enabled, config?.interval, config?.url, toast, t]);
+    
+    fetchAISettings();
+  }, []);
 
   const checkInteractions = async (medications: Medication[], patientInfo: PatientInfo) => {
+    const validMedications = medications.filter(med => med.name.trim() !== '');
+    if (validMedications.length < 2) return;
+    
     setLoading(true);
+    setResult(null);
+    setApiKeyError(false);
+    
     try {
-      // Here would be the actual API call to check interactions
-      // For now, we'll simulate this with a timeout
+      const medicationNames = validMedications.map(med => med.name.toLowerCase());
       
-      // Example check for API key error
-      const hasApiKey = false; // Simulate no API key available
-      setApiKeyError(!hasApiKey);
+      let apiKey = apiSettings.apiKey;
       
-      // Mock result
-      setTimeout(() => {
-        const mockResult: InteractionResult = {
-          hasInteractions: medications.length > 2,
-          interactions: medications.length > 2 ? ['Potential interaction between medications'] : [],
-          alternatives: medications.length > 2 ? ['Alternative medication suggestions'] : [],
-          ageWarnings: patientInfo.age ? ['Age-specific warning for these medications'] : [],
-        };
+      if (!apiKey) {
+        try {
+          const { data, error } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('type', 'ai_settings')
+            .maybeSingle();
+          
+          if (!error && data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+            const jsonValue = data.value as Record<string, Json>;
+            
+            if ('apiKey' in jsonValue && 'model' in jsonValue) {
+              const settings: AISettingsType = {
+                apiKey: String(jsonValue.apiKey || ''),
+                model: String(jsonValue.model || 'gpt-4o-mini')
+              };
+              
+              apiKey = settings.apiKey;
+              setApiSettings(settings);
+            }
+          }
+        } catch (dbError) {
+          console.error('Error fetching API key from database:', dbError);
+        }
+      }
+      
+      if (!apiKey) {
+        setApiKeyError(true);
+        const medPairs = [];
+        for (let i = 0; i < medicationNames.length; i++) {
+          for (let j = i + 1; j < medicationNames.length; j++) {
+            medPairs.push(`${medicationNames[i]}+${medicationNames[j]}`);
+            medPairs.push(`${medicationNames[j]}+${medicationNames[i]}`);
+          }
+        }
         
-        setResult(mockResult);
-        setLoading(false);
-      }, 1500);
+        let foundInteraction = false;
+        let interactionData: InteractionResult = { hasInteractions: false };
+        
+        const mockData = language === 'ar' ? MOCK_INTERACTIONS : MOCK_INTERACTIONS_EN;
+        
+        for (const pair of medPairs) {
+          if (mockData[pair]) {
+            foundInteraction = true;
+            interactionData = mockData[pair];
+            break;
+          }
+        }
+        
+        if (!foundInteraction) {
+          for (const pair of medPairs) {
+            for (const mockPair in mockData) {
+              if (mockPair.includes(medicationNames[0]) || mockPair.includes(medicationNames[1])) {
+                foundInteraction = true;
+                interactionData = {
+                  hasInteractions: false
+                };
+                break;
+              }
+            }
+            if (foundInteraction) break;
+          }
+        }
+        
+        if (patientInfo.age && interactionData.ageWarnings) {
+          const age = parseInt(patientInfo.age);
+          const relevantAgeWarnings = interactionData.ageWarnings.filter(warning => {
+            if ((warning.includes('أطفال') || warning.includes('children')) && age < 18) {
+              if (warning.includes('12') && age < 12) return true;
+              if (warning.includes('14') && age < 14) return true;
+              if ((warning.includes('6 أشهر') || warning.includes('6 months')) && age < 1) return true;
+              if ((warning.includes('سنة واحدة') || warning.includes('one year')) && age < 1) return true;
+              return true;
+            }
+            return warning.toLowerCase().includes('all ages') || !warning.includes('year');
+          });
+          
+          interactionData.ageWarnings = relevantAgeWarnings;
+        }
+        
+        setTimeout(() => {
+          setResult(interactionData);
+          setLoading(false);
+        }, 1000);
+        
+        return;
+      }
       
-    } catch (error) {
-      console.error('Failed to check interactions:', error);
-      setLoading(false);
-      toast({
-        title: t('error'),
-        description: t('failedToCheckInteraction'),
-        variant: 'destructive',
+      const patientContext = [
+        patientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${patientInfo.age}` : '',
+        patientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${patientInfo.weight} kg` : '',
+        patientInfo.allergies ? `${language === 'ar' ? 'الحساسية:' : 'Allergies:'} ${patientInfo.allergies}` : '',
+        patientInfo.healthCondition ? `${language === 'ar' ? 'الحالة الصحية:' : 'Health condition:'} ${patientInfo.healthCondition}` : ''
+      ].filter(Boolean).join(', ');
+      
+      let prompt = "";
+      if (language === 'ar') {
+        prompt = `حلّل التفاعلات بين الأدوية التالية: ${medicationNames.join(', ')}${patientContext ? `. معلومات المريض: ${patientContext}` : ''}, مع توضيح أي تشابه أو تكرار في المواد الفعالة قد يؤدي إلى جرعة زائدة، تأكد بدقة من أن كل عنصر مدخل هو دواء معروف أو مادة دوائية حقيقية فقط، تجاهل أو ارفض معالجة أي محتوى ساخر أو غذائي أو غير طبي مثل "برجر" أو "سلطة" أو أسماء ليست ضمن الأدوية المعترف بها، ثم قدم النتائج بلغة واضحة تتضمن مستوى الخطورة، بدائل آمنة إن وُجدت، الأسماء التجارية لكل دواء، وروابط أو مراجع طبية موثوقة مثل Mayo Clinic أو WebMD لدعم المعلومات. الرجاء الرد بتنسيق JSON بالهيكل التالي: { "hasInteractions": boolean, "interactions": ["شرح تفصيلي لكل تفاعل باللغة العربية"], "alternatives": ["بدائل مقترحة مع الأسماء التجارية لكل دواء مشكل باللغة العربية"], "ageWarnings": ["تحذيرات متعلقة بالعمر إن وجدت"] }. إذا لم تكن هناك تفاعلات، قم بإرجاع { "hasInteractions": false }.`;
+      } else {
+        prompt = `Analyze the interactions between the following drugs: ${medicationNames.join(', ')}${patientContext ? `. Patient information: ${patientContext}` : ''}, highlight any overlapping or repeated active ingredients that may risk overdose, strictly ensure that each input is a recognized drug or pharmaceutical substance only, reject or ignore any humorous, non-medical, or food-related terms such as "burger" or "salad", and then return a clear summary including risk level, safer alternatives if applicable, brand names, and trusted medical references such as Mayo Clinic or WebMD. Please respond in JSON format with the following structure: { "hasInteractions": boolean, "interactions": ["detailed explanation of each interaction"], "alternatives": ["suggested alternatives with brand names for each problematic medication"], "ageWarnings": ["age-related warnings if any"] }. If there are no interactions, return { "hasInteractions": false }.`;
+      }
+      
+      let systemMessage = language === 'ar' 
+        ? 'أنت مساعد صحي مفيد متخصص في تفاعلات الأدوية. يرجى تقديم الإجابات باللغة العربية وتضمين الأسماء التجارية للأدوية البديلة وتحذيرات متعلقة بالعمر.'
+        : 'You are a helpful healthcare assistant specializing in medication interactions. Include brand names for alternatives and age-related warnings.';
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: apiSettings.model || 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7
+        })
       });
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message || 'Error checking interactions');
+      }
+      
+      let parsedResult: InteractionResult;
+      try {
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) throw new Error('No response from AI');
+        
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```([\s\S]*?)```/);
+        const jsonString = jsonMatch ? jsonMatch[1] : content;
+        
+        parsedResult = JSON.parse(jsonString);
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        parsedResult = {
+          hasInteractions: false
+        };
+      }
+      
+      setResult(parsedResult);
+    } catch (error) {
+      console.error('Error checking interactions:', error);
+      setApiKeyError(true);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' 
+          ? 'حدث خطأ أثناء التحقق من التفاعلات. استخدام بيانات تجريبية بدلاً من ذلك.' 
+          : 'Error checking interactions. Using mock data instead.',
+        variant: "destructive"
+      });
+      
+      setTimeout(() => {
+        setResult({
+          hasInteractions: false
+        });
+        setLoading(false);
+      }, 1000);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return { result, loading, apiKeyError, checkInteractions };
+  return {
+    result,
+    loading,
+    apiKeyError,
+    checkInteractions,
+    setResult
+  };
 };
