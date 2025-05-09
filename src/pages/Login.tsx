@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -146,7 +147,7 @@ const Login: React.FC = () => {
                 )}
               </Button>
               <Link to="/simple-signup" className="text-center text-primary hover:underline text-sm mt-2">
-                {t('noAccount') || 'إنشاء حساب جديد'}
+                {t('noAccount')}
               </Link>
             </CardFooter>
           </form>

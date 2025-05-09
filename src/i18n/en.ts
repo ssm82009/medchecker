@@ -1,3 +1,4 @@
+
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -59,6 +60,9 @@ export const en = {
   invalidCredentials: 'Invalid email or password',
   email: 'Email',
   password: 'Password',
+  register: 'Register',
+  continue: 'Continue',
+  andText: 'and',
   
   // Admin settings
   saveSuccess: 'Success',
@@ -91,6 +95,41 @@ export const en = {
   pageIdMissing: 'Page ID is missing, cannot save content.',
   updatePermissionError: 'You don\'t have permission to update this content.',
   noAccount: "Don't have an account? Create a new one",
+  
+  // Adding missing translation keys for error messages
+  invalidResponseFormat: 'Invalid response format',
+  errorOccurred: 'An error occurred',
+  warning: 'Warning',
+  warningOccurred: 'A warning occurred',
+  info: 'Information',
+  informationUpdate: 'Information update',
+  failedToCheckInteraction: 'Failed to check interactions',
+  
+  // Admin page translations
+  failedToFetchUsers: 'Failed to fetch users',
+  success: 'Success',
+  userActivated: 'User activated successfully',
+  userDeactivated: 'User deactivated successfully',
+  errorUpdatingUser: 'Error updating user',
+  adminDashboard: 'Admin Dashboard',
+  filterUsers: 'Filter Users',
+  searchAndFilterUsers: 'Search and filter users',
+  search: 'Search',
+  searchByEmail: 'Search by email',
+  filterByRole: 'Filter by role',
+  selectRole: 'Select role',
+  allRoles: 'All roles',
+  user: 'User',
+  admin: 'Admin',
+  userManagement: 'User Management',
+  id: 'ID',
+  role: 'Role',
+  active: 'Active',
+  deactivate: 'Deactivate',
+  activate: 'Activate',
+  delete: 'Delete',
+  actions: 'Actions',
+  adminAccessRequired: 'Admin access required'
 };
 
 export default en;

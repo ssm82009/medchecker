@@ -9,7 +9,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import { useAuth } from "./hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -52,64 +52,54 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-function AppWrapper() {
+function AppRoutes() {
   const { dir, language } = useTranslation();
   
-  useEffect(() => {
-    document.documentElement.dir = dir;
-    document.documentElement.lang = language;
-    document.body.className = language === 'ar' ? 'rtl' : 'ltr';
-
-    if (language === 'ar') {
-      document.querySelector('html')?.setAttribute('dir', 'rtl');
-    } else {
-      document.querySelector('html')?.setAttribute('dir', 'ltr');
-    }
-  }, [dir, language]);
-  
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
-            <Navbar />
-            <div className="container mx-auto px-4 flex-grow pt-8"> 
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Admin />
-                  </ProtectedRoute>
-                } />
-                <Route path="/about" element={<StaticPage pageKey="about" />} />
-                <Route path="/terms" element={<StaticPage pageKey="terms" />} />
-                <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
-                <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
-                <Route path="/contact" element={<StaticPage pageKey="contact" />} />
-                <Route path="/subscribe" element={<Subscribe />} />
-                <Route path="/my-account" element={<MyAccount />} />
-                <Route path="/simple-signup" element={<SimpleSignup />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-            <Footer />
-          </div>
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
+        <Navbar />
+        <div className="container mx-auto px-4 flex-grow pt-8"> 
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/about" element={<StaticPage pageKey="about" />} />
+            <Route path="/terms" element={<StaticPage pageKey="terms" />} />
+            <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
+            <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
+            <Route path="/contact" element={<StaticPage pageKey="contact" />} />
+            <Route path="/subscribe" element={<Subscribe />} />
+            <Route path="/my-account" element={<MyAccount />} />
+            <Route path="/simple-signup" element={<SimpleSignup />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+      <Toaster />
+      <Sonner />
+    </BrowserRouter>
   );
 }
 
 function App() {
-  return <AppWrapper />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AppRoutes />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;

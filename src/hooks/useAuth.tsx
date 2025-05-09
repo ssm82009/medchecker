@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the User interface here instead of importing it
 export interface User {
   id?: string;
   email: string;
   role: string;
   plan_code?: string;
+  is_active?: boolean; // Add is_active property
 }
 
 export const useAuth = () => {
@@ -37,7 +39,7 @@ export const useAuth = () => {
       // Query to find the user with matching email and password
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, role, password, plan_code')
+        .select('id, email, role, password, plan_code, is_active')
         .eq('email', email)
         .eq('password', password)
         .maybeSingle();
@@ -57,6 +59,7 @@ export const useAuth = () => {
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',
+        is_active: data.is_active !== false, // Ensure is_active is included
       };
       
       setUser(userData);
