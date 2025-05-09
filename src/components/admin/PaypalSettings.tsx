@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const PaypalSettings = () => {
   const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
   const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
   const [sandboxClientId, setSandboxClientId] = useState('');
   const [sandboxSecret, setSandboxSecret] = useState('');
@@ -47,10 +49,18 @@ const PaypalSettings = () => {
 
   // حفظ الإعدادات
   const savePaypalSettings = async () => {
+    if (!isAdmin()) {
+      toast({ 
+        title: 'غير مسموح',
+        description: 'فقط المشرفون يمكنهم حفظ الإعدادات',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     setSavingPaypal(true);
     try {
       const toSave = {
-        id: paypalSettingsId,
         mode: paypalMode,
         sandbox_client_id: sandboxClientId,
         sandbox_secret: sandboxSecret,
