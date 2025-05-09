@@ -11,11 +11,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { useNavigate } from 'react-router-dom';
 
 const PaypalSettings = () => {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
   const [sandboxClientId, setSandboxClientId] = useState('');
   const [sandboxSecret, setSandboxSecret] = useState('');
@@ -25,12 +28,24 @@ const PaypalSettings = () => {
   const [paypalSettingsId, setPaypalSettingsId] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isPermissionError, setIsPermissionError] = useState(false);
+
+  // التحقق من صلاحيات المستخدم
+  useEffect(() => {
+    if (!user) {
+      console.log("No user logged in, redirecting to login");
+      navigate('/login');
+    } else if (!isAdmin()) {
+      console.log("User is not admin:", user);
+      setIsPermissionError(true);
+    }
+  }, [user, navigate, isAdmin]);
 
   // جلب الإعدادات من قاعدة البيانات
   const fetchPaypalSettings = async () => {
     try {
       console.log("Fetching PayPal settings...");
-      const { data, error } = await supabase.from('paypal_settings').select('*').single();
+      const { data, error } = await supabase.from('paypal_settings').select('*').maybeSingle();
       if (error) {
         console.error('Error fetching PayPal settings:', error);
         return;
@@ -39,10 +54,10 @@ const PaypalSettings = () => {
       if (data) {
         console.log("PayPal settings found:", data);
         setPaypalSettingsId(data.id);
-        // Fix the type issue by validating the value before setting it
+        // التحقق من القيمة قبل تعيينها للتأكد من سلامة النوع
         const modeValue = data.mode || 'sandbox';
         if (modeValue === 'sandbox' || modeValue === 'live') {
-          setPaypalMode(modeValue);
+          setPaypalMode(modeValue as 'sandbox' | 'live');
         }
         setSandboxClientId(data.sandbox_client_id || '');
         setSandboxSecret(data.sandbox_secret || '');
@@ -57,17 +72,26 @@ const PaypalSettings = () => {
   };
   
   useEffect(() => { 
-    fetchPaypalSettings(); 
-  }, []);
+    if (user) fetchPaypalSettings(); 
+  }, [user]);
 
   // حفظ الإعدادات
   const savePaypalSettings = async () => {
+    // التحقق من صلاحيات المستخدم
+    if (!user) {
+      console.log("No user logged in");
+      navigate('/login');
+      return;
+    }
+    
     if (!isAdmin()) {
+      console.log("User is not admin:", user);
       toast({ 
         title: 'غير مسموح',
         description: 'فقط المشرفون يمكنهم حفظ الإعدادات',
         variant: 'destructive' 
       });
+      setIsPermissionError(true);
       return;
     }
 
@@ -88,6 +112,7 @@ const PaypalSettings = () => {
       };
 
       console.log("Saving PayPal settings:", paypalSettingsId ? "UPDATE" : "INSERT", toSave);
+      console.log("Current user:", user, "isAdmin:", isAdmin());
 
       let error;
       if (paypalSettingsId) {
@@ -110,7 +135,15 @@ const PaypalSettings = () => {
       if (error) {
         console.error('Error saving PayPal settings:', error);
         setIsError(true);
-        setErrorMessage(error.message || 'حدث خطأ أثناء حفظ الإعدادات');
+        
+        // التحقق مما إذا كانت المشكلة متعلقة بالصلاحيات
+        if (error.message.includes('permission') || error.message.includes('policy')) {
+          setErrorMessage('ليس لديك الصلاحية الكافية لحفظ إعدادات PayPal. تأكد من أن حسابك له صلاحيات المشرف.');
+          setIsPermissionError(true);
+        } else {
+          setErrorMessage(error.message || 'حدث خطأ أثناء حفظ الإعدادات');
+        }
+        
         toast({ 
           title: 'خطأ في حفظ الإعدادات',
           description: error.message,
@@ -136,17 +169,38 @@ const PaypalSettings = () => {
     }
   };
 
-  // Fix the type assignment issue with a more robust type check
+  // التعامل مع تغيير وضع بايبال مع التحقق القوي من النوع
   const handlePaypalModeChange = (value: string) => {
-    // Type guard: only set state when value matches one of our allowed types
+    // فقط تعيين الحالة عندما تكون القيمة من الأنواع المسموح بها
     if (value === 'sandbox' || value === 'live') {
-      // Now TypeScript knows value can only be 'sandbox' or 'live'
-      setPaypalMode(value);
+      // الآن تعرف TypeScript أن القيمة يمكن أن تكون فقط 'sandbox' أو 'live'
+      setPaypalMode(value as 'sandbox' | 'live');
     } else {
-      // Log an error if an invalid value is passed
-      console.error(`Invalid PayPal mode: ${value}. Expected 'sandbox' or 'live'.`);
+      // تسجيل خطأ إذا تم تمرير قيمة غير صالحة
+      console.error(`قيمة وضع PayPal غير صالحة: ${value}. يجب أن تكون 'sandbox' أو 'live'.`);
     }
   };
+
+  // إذا كان هناك خطأ في الصلاحيات، عرض رسالة مناسبة
+  if (isPermissionError) {
+    return (
+      <Card className="mb-8 max-w-xl mx-auto">
+        <CardHeader><CardTitle>إعدادات بوابة الدفع بايبال</CardTitle></CardHeader>
+        <CardContent>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-center">
+            <h3 className="text-lg font-bold text-red-700 mb-2">خطأ في الصلاحيات</h3>
+            <p className="text-red-600">يجب أن تكون مسجلًا كمشرف للوصول إلى هذه الإعدادات.</p>
+            <Button 
+              className="mt-4 bg-red-600 hover:bg-red-700"
+              onClick={() => navigate('/login')}
+            >
+              إعادة تسجيل الدخول
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mb-8 max-w-xl mx-auto">
@@ -213,6 +267,9 @@ const PaypalSettings = () => {
               </div>
             </DialogDescription>
           </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsError(false)}>إغلاق</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>

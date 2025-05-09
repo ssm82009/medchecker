@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define the User interface here instead of importing it
+// تعريف واجهة المستخدم هنا بدلاً من استيرادها
 export interface User {
   id?: string;
   email: string;
   role: string;
   plan_code?: string;
-  is_active?: boolean; // Add is_active property
+  is_active?: boolean;
+  auth_uid?: string; // إضافة معرف المصادقة للتحقق من سياسات الوصول
 }
 
 export const useAuth = () => {
@@ -17,15 +18,15 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check for user on page load
+  // التحقق من المستخدم عند تحميل الصفحة
   useEffect(() => {
-    // Initialize auth state from localStorage
+    // تهيئة حالة المصادقة من localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (e) {
-        console.error('Error parsing stored user:', e);
+        console.error('خطأ في تحليل بيانات المستخدم المخزنة:', e);
         localStorage.removeItem('user');
       }
     }
@@ -36,37 +37,39 @@ export const useAuth = () => {
     setError(null);
     
     try {
-      // Query to find the user with matching email and password
+      // استعلام للعثور على المستخدم بالبريد الإلكتروني وكلمة المرور المتطابقين
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, role, password, plan_code')
+        .select('id, auth_uid, email, role, password, plan_code')
         .eq('email', email)
         .eq('password', password)
         .maybeSingle();
       
       if (error) {
-        console.error('Login query error:', error);
-        throw new Error('Error checking credentials');
+        console.error('خطأ في استعلام تسجيل الدخول:', error);
+        throw new Error('خطأ في التحقق من بيانات الاعتماد');
       }
       
       if (!data) {
-        throw new Error('Invalid email or password');
+        throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
       
-      // Save user data in localStorage
+      // حفظ بيانات المستخدم في localStorage
       const userData: User = {
-        id: String(data.id), // Convert id to string to match the User interface
+        id: String(data.id), // تحويل المعرف إلى نص ليتوافق مع واجهة المستخدم
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',
-        is_active: true, // Set a default value since the column doesn't exist yet
+        is_active: true, // تعيين قيمة افتراضية لأن العمود غير موجود حاليًا
+        auth_uid: data.auth_uid || null,
       };
       
+      console.log("تم تسجيل الدخول بنجاح:", userData);
       setUser(userData);
       return true;
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err instanceof Error ? err.message : 'Login failed');
+      console.error('خطأ في تسجيل الدخول:', err);
+      setError(err instanceof Error ? err.message : 'فشل تسجيل الدخول');
       return false;
     } finally {
       setLoading(false);
@@ -79,6 +82,7 @@ export const useAuth = () => {
   };
 
   const isAdmin = () => {
+    console.log("التحقق من صلاحيات المشرف للمستخدم:", user);
     return user?.role === 'admin';
   };
 
