@@ -733,7 +733,7 @@ const Admin: React.FC = () => {
                   <label className="block mb-1 font-medium">وضع التشغيل</label>
                   <select
                     value={paypalMode}
-                    onChange={e => setPaypalMode(e.target.value === 'sandbox' ? 'sandbox' : 'live')}
+                    onChange={(e) => setPaypalMode(e.target.value === 'sandbox' ? 'sandbox' : 'live')}
                     className="w-full p-2 border rounded"
                   >
                     <option value="sandbox">Sandbox (اختبار)</option>

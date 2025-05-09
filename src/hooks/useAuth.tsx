@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface User {
+  id?: string;
   email: string;
   role: string;
   plan_code?: string;
@@ -35,7 +37,7 @@ export const useAuth = () => {
       // Query to find the user with matching email and password
       const { data, error } = await supabase
         .from('users')
-        .select('email, role, password, plan_code')
+        .select('id, email, role, password, plan_code')
         .eq('email', email)
         .eq('password', password)
         .maybeSingle();
@@ -51,6 +53,7 @@ export const useAuth = () => {
       
       // Save user data in localStorage
       const userData: User = {
+        id: data.id,
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',

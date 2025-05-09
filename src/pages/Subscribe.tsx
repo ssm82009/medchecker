@@ -46,11 +46,13 @@ const Subscribe: React.FC = () => {
 
   const handlePaymentSuccess = async (details: any) => {
     try {
+      if (!user?.id) return; // Ensure we have a user ID
+      
       // تسجيل المعاملة في قاعدة البيانات
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
-          user_id: user?.id,
+          user_id: user.id,
           amount: proPlan.price,
           currency: 'USD',
           status: 'completed',
@@ -69,8 +71,11 @@ const Subscribe: React.FC = () => {
       // تحديث خطة المستخدم
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ plan_code: proPlan.code })
-        .eq('id', user?.id);
+        .update({ 
+          // Only include fields that exist on the profiles table
+          plan_code: proPlan.code 
+        })
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
@@ -140,6 +145,7 @@ const Subscribe: React.FC = () => {
                   'enable-funding': 'paypal',
                   'data-sdk-integration-source': 'button',
                   ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {}),
+                  clientId: paypalSettings.clientId, // Add the required clientId property
                 }}
               >
                 <PayPalButtons
