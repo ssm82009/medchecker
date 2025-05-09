@@ -5,6 +5,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const PaypalSettings = () => {
   const { toast } = useToast();
@@ -16,10 +23,13 @@ const PaypalSettings = () => {
   const [liveSecret, setLiveSecret] = useState('');
   const [savingPaypal, setSavingPaypal] = useState(false);
   const [paypalSettingsId, setPaypalSettingsId] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // جلب الإعدادات من قاعدة البيانات
   const fetchPaypalSettings = async () => {
     try {
+      console.log("Fetching PayPal settings...");
       const { data, error } = await supabase.from('paypal_settings').select('*').single();
       if (error) {
         console.error('Error fetching PayPal settings:', error);
@@ -27,6 +37,7 @@ const PaypalSettings = () => {
       }
       
       if (data) {
+        console.log("PayPal settings found:", data);
         setPaypalSettingsId(data.id);
         // Fix the type issue by validating the value before setting it
         const modeValue = data.mode || 'sandbox';
@@ -37,6 +48,8 @@ const PaypalSettings = () => {
         setSandboxSecret(data.sandbox_secret || '');
         setLiveClientId(data.live_client_id || '');
         setLiveSecret(data.live_secret || '');
+      } else {
+        console.log("No PayPal settings found");
       }
     } catch (error) {
       console.error('Error in fetchPaypalSettings:', error);
@@ -59,6 +72,9 @@ const PaypalSettings = () => {
     }
 
     setSavingPaypal(true);
+    setIsError(false);
+    setErrorMessage('');
+    
     try {
       const toSave = {
         mode: paypalMode,
@@ -71,15 +87,19 @@ const PaypalSettings = () => {
         updated_at: new Date().toISOString()
       };
 
+      console.log("Saving PayPal settings:", paypalSettingsId ? "UPDATE" : "INSERT", toSave);
+
       let error;
       if (paypalSettingsId) {
         // تحديث الإعدادات الموجودة
         const result = await supabase.from('paypal_settings').update(toSave).eq('id', paypalSettingsId);
         error = result.error;
+        console.log("Update result:", result);
       } else {
         // إدراج إعدادات جديدة
         const result = await supabase.from('paypal_settings').insert(toSave);
         error = result.error;
+        console.log("Insert result:", result);
         
         // إعادة استرداد المعرف الجديد
         if (!error) {
@@ -89,6 +109,8 @@ const PaypalSettings = () => {
 
       if (error) {
         console.error('Error saving PayPal settings:', error);
+        setIsError(true);
+        setErrorMessage(error.message || 'حدث خطأ أثناء حفظ الإعدادات');
         toast({ 
           title: 'خطأ في حفظ الإعدادات',
           description: error.message,
@@ -102,6 +124,8 @@ const PaypalSettings = () => {
       }
     } catch (error: any) {
       console.error('Exception in savePaypalSettings:', error);
+      setIsError(true);
+      setErrorMessage(error.message || 'حدث خطأ غير متوقع');
       toast({ 
         title: 'خطأ في حفظ الإعدادات',
         description: error.message,
@@ -176,6 +200,21 @@ const PaypalSettings = () => {
           </button>
         </div>
       </CardContent>
+
+      {/* عرض تفاصيل الخطأ */}
+      <Dialog open={isError} onOpenChange={setIsError}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>خطأ في حفظ الإعدادات</DialogTitle>
+            <DialogDescription>
+              <div className="mt-2">
+                <p>{errorMessage}</p>
+                <p className="mt-2">تأكد من تسجيل الدخول كمشرف وأن لديك الصلاحيات المناسبة.</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
