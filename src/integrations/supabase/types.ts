@@ -87,6 +87,87 @@ export type Database = {
         }
         Relationships: []
       }
+      paypal_settings: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          live_client_id: string | null
+          live_secret: string | null
+          mode: string
+          payment_type: Database["public"]["Enums"]["payment_type"]
+          sandbox_client_id: string | null
+          sandbox_secret: string | null
+          subscription_plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          live_client_id?: string | null
+          live_secret?: string | null
+          mode?: string
+          payment_type?: Database["public"]["Enums"]["payment_type"]
+          sandbox_client_id?: string | null
+          sandbox_secret?: string | null
+          subscription_plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          live_client_id?: string | null
+          live_secret?: string | null
+          mode?: string
+          payment_type?: Database["public"]["Enums"]["payment_type"]
+          sandbox_client_id?: string | null
+          sandbox_secret?: string | null
+          subscription_plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          code: string
+          description: string | null
+          description_ar: string | null
+          features: string[] | null
+          features_ar: string[] | null
+          id: string
+          is_default: boolean | null
+          name: string
+          name_ar: string
+          price: number
+        }
+        Insert: {
+          code: string
+          description?: string | null
+          description_ar?: string | null
+          features?: string[] | null
+          features_ar?: string[] | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          name_ar: string
+          price?: number
+        }
+        Update: {
+          code?: string
+          description?: string | null
+          description_ar?: string | null
+          features?: string[] | null
+          features_ar?: string[] | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          name_ar?: string
+          price?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -126,69 +207,86 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
+      transactions: {
         Row: {
-          email: string
-          id: number
-          password: string
-          role: string
-          plan_code: string | null
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_provider: Database["public"]["Enums"]["payment_provider"]
+          payment_type: Database["public"]["Enums"]["payment_type"]
+          plan_code: string
+          provider_transaction_id: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
-          email: string
-          id?: number
-          password: string
-          role?: string
-          plan_code?: string | null
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_provider: Database["public"]["Enums"]["payment_provider"]
+          payment_type: Database["public"]["Enums"]["payment_type"]
+          plan_code: string
+          provider_transaction_id?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          email?: string
-          id?: number
-          password?: string
-          role?: string
-          plan_code?: string | null
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_provider?: Database["public"]["Enums"]["payment_provider"]
+          payment_type?: Database["public"]["Enums"]["payment_type"]
+          plan_code?: string
+          provider_transaction_id?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
-      plans: {
+      users: {
         Row: {
-          id: string; // uuid
-          code: string;
-          name: string;
-          name_ar: string;
-          description: string | null;
-          description_ar: string | null;
-          price: number;
-          features: string[] | null;
-          features_ar: string[] | null;
-          is_default: boolean | null;
-        };
+          auth_uid: string | null
+          email: string
+          id: number
+          password: string
+          plan_code: string | null
+          role: string
+        }
         Insert: {
-          id?: string;
-          code: string;
-          name: string;
-          name_ar: string;
-          description?: string | null;
-          description_ar?: string | null;
-          price?: number;
-          features?: string[] | null;
-          features_ar?: string[] | null;
-          is_default?: boolean | null;
-        };
+          auth_uid?: string | null
+          email: string
+          id?: number
+          password: string
+          plan_code?: string | null
+          role?: string
+        }
         Update: {
-          id?: string;
-          code?: string;
-          name?: string;
-          name_ar?: string;
-          description?: string | null;
-          description_ar?: string | null;
-          price?: number;
-          features?: string[] | null;
-          features_ar?: string[] | null;
-          is_default?: boolean | null;
-        };
-        Relationships: [];
-      },
+          auth_uid?: string | null
+          email?: string
+          id?: number
+          password?: string
+          plan_code?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -218,7 +316,10 @@ export type Database = {
       }
     }
     Enums: {
+      payment_provider: "paypal" | "stripe"
+      payment_type: "one_time" | "recurring"
       theme_type: "light" | "dark" | "purple" | "blue" | "green"
+      transaction_status: "pending" | "completed" | "failed" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -334,7 +435,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      payment_provider: ["paypal", "stripe"],
+      payment_type: ["one_time", "recurring"],
       theme_type: ["light", "dark", "purple", "blue", "green"],
+      transaction_status: ["pending", "completed", "failed", "refunded"],
     },
   },
 } as const

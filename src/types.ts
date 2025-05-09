@@ -1,3 +1,4 @@
+
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type PaymentType = 'one_time' | 'recurring';
 export type PaymentProvider = 'paypal' | 'stripe';
@@ -20,9 +21,11 @@ export interface Transaction {
 export interface PayPalSettings {
     id: string;
     mode: 'sandbox' | 'live';
-    client_id: string;
-    secret: string;
-    webhook_url?: string;
+    // تحديث الحقول لتطابق هيكل قاعدة البيانات
+    sandbox_client_id?: string;
+    sandbox_secret?: string;
+    live_client_id?: string;
+    live_secret?: string;
     currency: string;
     payment_type: PaymentType;
     subscription_plan_id?: string;

@@ -82,6 +82,7 @@ const Admin: React.FC = () => {
   const [liveClientId, setLiveClientId] = useState('');
   const [liveSecret, setLiveSecret] = useState('');
   const [savingPaypal, setSavingPaypal] = useState(false);
+  const [paypalSettingsId, setPaypalSettingsId] = useState<string | null>(null);
   
   const fetchPlans = useCallback(async () => {
     setLoadingPlans(true);
@@ -475,37 +476,85 @@ const Admin: React.FC = () => {
   
   // جلب الإعدادات من قاعدة البيانات
   const fetchPaypalSettings = async () => {
-    const { data, error } = await supabase.from('paypal_settings').select('*').single();
-    if (data) {
-      setPaypalMode(data.mode || 'sandbox');
-      setSandboxClientId(data.sandbox_client_id || '');
-      setSandboxSecret(data.sandbox_secret || '');
-      setLiveClientId(data.live_client_id || '');
-      setLiveSecret(data.live_secret || '');
+    try {
+      const { data, error } = await supabase.from('paypal_settings').select('*').single();
+      if (error) {
+        console.error('Error fetching PayPal settings:', error);
+        return;
+      }
+      
+      if (data) {
+        setPaypalSettingsId(data.id);
+        setPaypalMode(data.mode || 'sandbox');
+        setSandboxClientId(data.sandbox_client_id || '');
+        setSandboxSecret(data.sandbox_secret || '');
+        setLiveClientId(data.live_client_id || '');
+        setLiveSecret(data.live_secret || '');
+      }
+    } catch (error) {
+      console.error('Error in fetchPaypalSettings:', error);
     }
   };
-  useEffect(() => { fetchPaypalSettings(); }, []);
+  
+  useEffect(() => { 
+    fetchPaypalSettings(); 
+  }, []);
 
   // حفظ الإعدادات
   const savePaypalSettings = async () => {
     setSavingPaypal(true);
     try {
       const toSave = {
+        id: paypalSettingsId,
         mode: paypalMode,
         sandbox_client_id: sandboxClientId,
         sandbox_secret: sandboxSecret,
         live_client_id: liveClientId,
         live_secret: liveSecret,
         currency: 'USD',
+        payment_type: 'one_time' as const,
         updated_at: new Date().toISOString()
       };
-      const { error } = await supabase.from('paypal_settings').upsert(toSave);
-      if (error) throw error;
-      toast({ title: 'تم حفظ الإعدادات بنجاح', variant: 'default' });
+
+      let error;
+      if (paypalSettingsId) {
+        // تحديث الإعدادات الموجودة
+        const result = await supabase.from('paypal_settings').update(toSave).eq('id', paypalSettingsId);
+        error = result.error;
+      } else {
+        // إدراج إعدادات جديدة
+        const result = await supabase.from('paypal_settings').insert(toSave);
+        error = result.error;
+        
+        // إعادة استرداد المعرف الجديد
+        if (!error) {
+          fetchPaypalSettings();
+        }
+      }
+
+      if (error) {
+        console.error('Error saving PayPal settings:', error);
+        toast({ 
+          title: 'خطأ في حفظ الإعدادات',
+          description: error.message,
+          variant: 'destructive' 
+        });
+      } else {
+        toast({ 
+          title: 'تم حفظ الإعدادات بنجاح',
+          variant: 'default'
+        });
+      }
     } catch (error: any) {
-      toast({ title: 'خطأ في حفظ الإعدادات', description: error.message, variant: 'destructive' });
+      console.error('Exception in savePaypalSettings:', error);
+      toast({ 
+        title: 'خطأ في حفظ الإعدادات',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setSavingPaypal(false);
     }
-    setSavingPaypal(false);
   };
   
   return (
