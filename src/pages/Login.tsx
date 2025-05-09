@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,25 +29,22 @@ const Login: React.FC = () => {
   });
 
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
+    // If user is already logged in, redirect to home
     if (user) {
-      navigate('/dashboard');
+      navigate('/');
     }
   }, [user, navigate]);
 
   const handleSubmit = async (values: LoginFormValues) => {
     try {
       const success = await login(values.email, values.password);
-      
       if (success) {
         toast({
           title: t('loginSuccess'),
           description: t('welcomeBack'),
         });
-        
-        // Important: Navigate to dashboard after successful login
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/');
         }, 500);
       } else {
         toast({
@@ -130,7 +126,7 @@ const Login: React.FC = () => {
                 <div className="text-destructive text-sm">{t('invalidCredentials')}</div>
               )}
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-2">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -149,6 +145,9 @@ const Login: React.FC = () => {
                   </span>
                 )}
               </Button>
+              <Link to="/simple-signup" className="text-center text-primary hover:underline text-sm mt-2">
+                {t('noAccount') || 'إنشاء حساب جديد'}
+              </Link>
             </CardFooter>
           </form>
         </Form>

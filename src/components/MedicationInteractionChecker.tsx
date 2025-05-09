@@ -11,6 +11,10 @@ import PatientInfoForm from './medication/PatientInfoForm';
 import InteractionResults from './medication/InteractionResults';
 import { useInteractionChecker } from '@/hooks/useInteractionChecker';
 import ImageToTextScanner from './medication/ImageToTextScanner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
@@ -31,11 +35,37 @@ const MedicationInteractionChecker: React.FC = () => {
   
   const { result, loading, apiKeyError, checkInteractions } = useInteractionChecker();
   
+  const { user } = useAuth();
+  const [userPlan, setUserPlan] = useState<'visitor' | 'basic' | 'pro'>('visitor');
+  const [maxMedications, setMaxMedications] = useState(2);
+
+  const navigate = useNavigate();
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      let planCode = user?.plan_code || 'visitor';
+      // جلب الخطة من Supabase للتأكد من وجودها
+      const { data, error } = await supabase.from('plans').select('code').eq('code', planCode).maybeSingle();
+      if (data && data.code) planCode = data.code;
+      setUserPlan(planCode as 'visitor' | 'basic' | 'pro');
+      if (planCode === 'pro') setMaxMedications(10);
+      else if (planCode === 'basic') setMaxMedications(5);
+      else setMaxMedications(2);
+    };
+    fetchPlan();
+  }, [user]);
+
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
   };
 
   const addMedication = () => {
+    if (medications.length >= maxMedications) {
+      setShowLimitDialog(true);
+      return;
+    }
     setMedications([...medications, { id: Date.now().toString(), name: '' }]);
   };
 
@@ -101,6 +131,14 @@ const MedicationInteractionChecker: React.FC = () => {
     checkInteractions(medications, patientInfo);
   };
 
+  const handleImageScanClick = () => {
+    if (userPlan !== 'pro') {
+      setShowUpgradeDialog(true);
+      return;
+    }
+    // trigger image scan (ImageToTextScanner will handle it)
+  };
+
   return (
     <div className={`w-full px-4 ${isMobile ? 'max-w-full' : 'max-w-5xl'} mx-auto ${dir === 'rtl' ? 'text-right' : 'text-left'} bg-transparent flex flex-col items-center justify-center`} dir={dir}>
       <Advertisement />
@@ -144,7 +182,9 @@ const MedicationInteractionChecker: React.FC = () => {
                 <p className="text-sm font-medium mb-2 flex items-center text-gray-700">
                   {t('scanMedicationsFromImage')}
                 </p>
-                <ImageToTextScanner onTextDetected={handleMedicationsDetected} />
+                <div onClick={handleImageScanClick} style={{ cursor: userPlan === 'pro' ? 'pointer' : 'not-allowed', opacity: userPlan === 'pro' ? 1 : 0.7 }}>
+                  <ImageToTextScanner onTextDetected={handleMedicationsDetected} canUse={userPlan === 'pro'} />
+                </div>
               </div>
 
               <PatientInfoForm 
@@ -189,6 +229,65 @@ const MedicationInteractionChecker: React.FC = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {user
+                ? (language === 'ar' ? 'تحتاج إلى ترقية الباقة' : 'Upgrade Required')
+                : (language === 'ar' ? 'تحتاج إلى تسجيل حساب' : 'You need to register')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-center text-red-500">
+            {user
+              ? (language === 'ar'
+                ? `لا يمكنك إضافة أكثر من ${maxMedications} أدوية في هذه الباقة. للترقية إلى الباقة الاحترافية اضغط زر الترقية.`
+                : `You can't add more than ${maxMedications} medications in this plan. To upgrade, click the upgrade button.`)
+              : (language === 'ar'
+                ? `لا يمكنك إضافة أكثر من ${maxMedications} أدوية في هذه الباقة. لإضافة المزيد يرجى تسجيل حساب أو الترقية إلى باقة أعلى.`
+                : `You can't add more than ${maxMedications} medications in this plan. To add more, please register or upgrade your plan.`)
+            }
+          </div>
+          <DialogFooter>
+            {user ? (
+              <Button onClick={() => { setShowLimitDialog(false); navigate('/subscribe'); }}>
+                {language === 'ar' ? 'ترقية الباقة' : 'Upgrade Plan'}
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/login')}>
+                {language === 'ar' ? 'تسجيل الدخول / إنشاء حساب' : 'Login / Register'}
+              </Button>
+            )}
+            <Button variant="secondary" onClick={() => setShowLimitDialog(false)}>{language === 'ar' ? 'إغلاق' : 'Close'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === 'ar' ? 'هذه الميزة متاحة في الباقة الاحترافية فقط' : 'Pro Feature Only'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-center">
+            {language === 'ar'
+              ? 'للاستفادة من البحث بالصور، يرجى الترقية إلى الباقة الاحترافية.'
+              : 'To use image search, please upgrade to the Pro plan.'}
+          </div>
+          <DialogFooter>
+            {user ? (
+              <Button onClick={() => { setShowUpgradeDialog(false); navigate('/subscribe'); }}>
+                {language === 'ar' ? 'ترقية الباقة' : 'Upgrade Plan'}
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/login')}>
+                {language === 'ar' ? 'تسجيل الدخول / إنشاء حساب' : 'Login / Register'}
+              </Button>
+            )}
+            <Button variant="secondary" onClick={() => setShowUpgradeDialog(false)}>{language === 'ar' ? 'إغلاق' : 'Close'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

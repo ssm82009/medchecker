@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -72,13 +71,16 @@ const Navbar: React.FC = () => {
               </Button>
               
               {/* Admin and Logout Buttons */}
-              {user && (
+              {user ? (
                 <>
                   {user.role === 'admin' && (
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard' as any)}</Link>
                     </Button>
                   )}
+                  <Button variant="outline" asChild className="w-full justify-start">
+                    <Link to="/my-account" onClick={handleLinkClick}>{language === 'ar' ? 'حسابي' : 'My Account'}</Link>
+                  </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => {
@@ -90,6 +92,10 @@ const Navbar: React.FC = () => {
                     {t('logout' as any)}
                   </Button>
                 </>
+              ) : (
+                <Button variant="outline" asChild className="w-full justify-start">
+                  <Link to="/login" onClick={handleLinkClick}>{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</Link>
+                </Button>
               )}
             </div>
           </SheetContent>

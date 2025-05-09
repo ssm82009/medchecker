@@ -13,6 +13,10 @@ import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import StaticPage from './components/StaticPage';
+import Signup from "./pages/Signup";
+import Subscribe from "./pages/Subscribe";
+import MyAccount from "./pages/MyAccount";
+import SimpleSignup from "./pages/SimpleSignup";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +92,10 @@ function AppWrapper() {
                 <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
                 <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
                 <Route path="/contact" element={<StaticPage pageKey="contact" />} />
+                <Route path="/subscribe" element={<Subscribe />} />
+                <Route path="/my-account" element={<MyAccount />} />
+                <Route path="/simple-signup" element={<SimpleSignup />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

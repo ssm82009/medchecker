@@ -1,4 +1,3 @@
-
 import { en } from './en';
 
 const ar = {
@@ -88,6 +87,7 @@ const ar = {
   contentFetchError: 'فشل في جلب المحتوى. يرجى المحاولة مرة أخرى لاحقًا.',
   pageIdMissing: 'معرف الصفحة مفقود، لا يمكن حفظ المحتوى.',
   updatePermissionError: 'ليس لديك صلاحية لتحديث هذا المحتوى.',
+  noAccount: 'ليس لديك حساب؟ إنشاء حساب جديد',
 };
 
 export default ar;

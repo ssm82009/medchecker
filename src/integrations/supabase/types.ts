@@ -132,21 +132,63 @@ export type Database = {
           id: number
           password: string
           role: string
+          plan_code: string | null
         }
         Insert: {
           email: string
           id?: number
           password: string
           role?: string
+          plan_code?: string | null
         }
         Update: {
           email?: string
           id?: number
           password?: string
           role?: string
+          plan_code?: string | null
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          id: string; // uuid
+          code: string;
+          name: string;
+          name_ar: string;
+          description: string | null;
+          description_ar: string | null;
+          price: number;
+          features: string[] | null;
+          features_ar: string[] | null;
+          is_default: boolean | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          name_ar: string;
+          description?: string | null;
+          description_ar?: string | null;
+          price?: number;
+          features?: string[] | null;
+          features_ar?: string[] | null;
+          is_default?: boolean | null;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          name_ar?: string;
+          description?: string | null;
+          description_ar?: string | null;
+          price?: number;
+          features?: string[] | null;
+          features_ar?: string[] | null;
+          is_default?: boolean | null;
+        };
+        Relationships: [];
+      },
     }
     Views: {
       [_ in never]: never

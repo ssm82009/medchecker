@@ -1,4 +1,3 @@
-
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -91,6 +90,7 @@ export const en = {
   contentFetchError: 'Failed to fetch content. Please try again later.',
   pageIdMissing: 'Page ID is missing, cannot save content.',
   updatePermissionError: 'You don\'t have permission to update this content.',
+  noAccount: "Don't have an account? Create a new one",
 };
 
 export default en;

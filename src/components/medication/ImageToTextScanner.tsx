@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
 import { Camera, Image as ImageIcon, ArrowDown } from 'lucide-react';
@@ -9,9 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ImageToTextScannerProps {
   onTextDetected: (text: string) => void;
+  canUse?: boolean;
 }
 
-const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected }) => {
+const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected, canUse = true }) => {
   const { t, language, dir } = useTranslation();
   const { toast } = useToast();
   const [progress, setProgress] = useState<number>(0);
@@ -93,12 +93,14 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected 
   };
 
   const openCamera = () => {
+    if (!canUse) return;
     if (cameraInputRef.current) {
       cameraInputRef.current.click();
     }
   };
 
   const selectImage = () => {
+    if (!canUse) return;
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
