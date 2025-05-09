@@ -689,4 +689,12 @@ const handleDeleteUser = async (userId: string) => {
   }
 };
 
+// تحديث دالة handlePaypalModeChange لمعالجة نوع البيانات بشكل صحيح
+const handlePaypalModeChange = (value: string) => {
+  // نتحقق من أن القيمة هي إما "sandbox" أو "live" قبل تعيينها
+  if (value === "sandbox" || value === "live") {
+    setPaypalMode(value);
+  }
+};
+
 export default Admin;

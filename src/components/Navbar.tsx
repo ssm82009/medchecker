@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Pill, Menu } from 'lucide-react';
+import { Pill, Menu, LogIn } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +55,16 @@ const Navbar: React.FC = () => {
             <span>{logoText}</span>
           </Link>
         </div>
+
+        {/* Login Button for non-authenticated users */}
+        {!user && (
+          <Link to="/login" className={`mx-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
+            <Button variant="outline" className="text-white border-white hover:bg-white/10">
+              <LogIn className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+            </Button>
+          </Link>
+        )}
 
         {/* Menu Button and Sheet */}
         <Sheet open={open} onOpenChange={setOpen}>
