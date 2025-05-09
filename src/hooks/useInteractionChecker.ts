@@ -1,26 +1,14 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { useTranslation } from './useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { Medication, PatientInfo, InteractionResult } from '@/types/medication';
 
 interface AISettingsType {
   apiKey: string;
   model: string;
-}
-
-interface PatientInfo {
-  age?: string;
-  weight?: string;
-  allergies?: string;
-  healthCondition?: string;
-}
-
-interface InteractionResult {
-  hasInteractions: boolean;
-  interactions?: string[];
-  alternatives?: string[];
-  ageWarnings?: string[];
 }
 
 export const useInteractionChecker = () => {
@@ -28,6 +16,8 @@ export const useInteractionChecker = () => {
   const { t, language } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [apiSettings, setApiSettings] = useState<AISettingsType>({ apiKey: '', model: 'gpt-4o-mini' });
+  const [apiKeyError, setApiKeyError] = useState(false);
+  const [result, setResult] = useState<InteractionResult | null>(null);
 
   const fetchAISettings = useCallback(async () => {
     try {
@@ -62,6 +52,7 @@ export const useInteractionChecker = () => {
       await fetchAISettings();
       
       if (!apiSettings.apiKey) {
+        setApiKeyError(true);
         throw new Error('API key is not configured');
       }
 
@@ -119,8 +110,40 @@ export const useInteractionChecker = () => {
     }
   }, [apiSettings, fetchAISettings, t, language, toast]);
 
+  const checkInteractions = async (medications: Medication[], patientInfo: PatientInfo) => {
+    setLoading(true);
+    try {
+      const medicationNames = medications.filter(med => med.name.trim() !== '').map(med => med.name);
+      const response = await checkInteraction(medicationNames, patientInfo);
+      
+      if (response) {
+        try {
+          const parsedResult = JSON.parse(response);
+          setResult(parsedResult);
+          return parsedResult;
+        } catch (error) {
+          console.error('Error parsing JSON from API:', error);
+          setApiKeyError(true);
+          toast({
+            title: t('error'),
+            description: t('invalidResponseFormat'),
+            variant: 'destructive',
+            duration: 5000,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in checkInteractions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     checkInteraction,
+    checkInteractions,
+    apiKeyError,
+    result,
     loading
   };
 };

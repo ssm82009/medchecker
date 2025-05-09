@@ -30,7 +30,6 @@ export interface Transaction {
 export interface PayPalSettings {
     id: string;
     mode: 'sandbox' | 'live';
-    // تحديث الحقول لتطابق هيكل قاعدة البيانات
     sandbox_client_id?: string;
     sandbox_secret?: string;
     live_client_id?: string;

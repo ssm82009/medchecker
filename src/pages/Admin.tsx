@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { PlanType } from '../types/plan';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { User } from '@/types';
+import { User, PaymentType } from '@/types';
 
 const adminSections = [
   { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },

@@ -25,9 +25,9 @@ const Login = () => {
     setErrorMessage(null);
 
     try {
-      const { error } = await login(email, password);
-      if (error) {
-        throw new Error(error.message);
+      const result = await login(email, password);
+      if (result.error) {
+        throw new Error(result.error.message);
       }
       toast({
         title: t('loginSuccess'),
@@ -52,7 +52,7 @@ const Login = () => {
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl">
         <CardHeader className="text-center pb-2">
           <CardTitle className="text-2xl font-bold">{t('login')}</CardTitle>
-          <CardDescription>{t('enterCredentials')}</CardDescription>
+          <CardDescription>{t('loginDescription')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-4">
@@ -77,7 +77,7 @@ const Login = () => {
               <div className="flex justify-between items-center">
                 <Label htmlFor="password">{t('password')}</Label>
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  {t('forgotPassword')}
+                  {t('forgot')}
                 </Link>
               </div>
               <Input 
@@ -92,20 +92,20 @@ const Login = () => {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t('loggingIn') : t('login')}
+              {loading ? t('loading') : t('login')}
             </Button>
             <p className="text-sm text-center text-gray-600">
               {t('noAccount')}{' '}
               <Link to="/signup" className="font-medium text-primary hover:underline">
-                {t('createAccount')}
+                {t('register')}
               </Link>
             </p>
             <p className="text-xs text-center text-gray-500">
-              {t('byContinuing')}{' '}
+              {t('continue')}{' '}
               <Link to="/terms" className="hover:underline">
                 {t('termsOfUse')}
               </Link>{' '}
-              {t('and')}{' '}
+              {t('andText')}{' '}
               <Link to="/privacy" className="hover:underline">
                 {t('privacyPolicy')}
               </Link>
