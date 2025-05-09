@@ -4,9 +4,8 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/lib/utils"
 
-const TooltipProvider = ({ children }: { children: React.ReactNode }) => {
-  return <TooltipPrimitive.Provider>{children}</TooltipPrimitive.Provider>
-}
+// Use the Provider directly and properly as per Radix UI documentation
+const TooltipProvider = TooltipPrimitive.Provider
 
 const Tooltip = TooltipPrimitive.Root
 
