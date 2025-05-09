@@ -1,8 +1,9 @@
+
 import { PlanType } from '../types/plan';
 
 export const defaultPlans: PlanType[] = [
   {
-    id: 'visitor',
+    code: 'visitor',
     name: 'Visitor',
     nameAr: 'زائر',
     description: 'Free plan for unregistered users. Limited features.',
@@ -21,7 +22,7 @@ export const defaultPlans: PlanType[] = [
     isDefault: true,
   },
   {
-    id: 'basic',
+    code: 'basic',
     name: 'Basic',
     nameAr: 'الأساسية',
     description: 'Basic plan for registered users. More features and history.',
@@ -39,7 +40,7 @@ export const defaultPlans: PlanType[] = [
     ],
   },
   {
-    id: 'pro',
+    code: 'pro',
     name: 'Pro',
     nameAr: 'الاحترافية',
     description: 'Professional plan with all features, including AI image search.',

@@ -1,4 +1,6 @@
+
 export type PlanType = {
+  id?: string; // إضافة معرف يمكن أن يكون اختيارياً
   code: string; // visitor, basic, pro
   name: string;
   nameAr: string;

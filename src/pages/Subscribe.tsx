@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Subscribe: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { language } = useTranslation();
   const [paypalSettings, setPaypalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [proPlan, setProPlan] = useState<any>(null);
@@ -71,11 +74,17 @@ const Subscribe: React.FC = () => {
 
       if (updateError) throw updateError;
 
-      toast.success(language === 'ar' ? 'تم الاشتراك بنجاح!' : 'Subscription successful!');
+      toast({
+        title: language === 'ar' ? 'تم الاشتراك بنجاح!' : 'Subscription successful!',
+        variant: 'default'
+      });
       navigate('/my-account');
     } catch (error) {
       console.error('Error processing payment:', error);
-      toast.error(language === 'ar' ? 'حدث خطأ أثناء معالجة الدفع' : 'Error processing payment');
+      toast({
+        title: language === 'ar' ? 'حدث خطأ أثناء معالجة الدفع' : 'Error processing payment',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -164,7 +173,16 @@ const Subscribe: React.FC = () => {
                   } : undefined}
                   onApprove={async (data, actions) => {
                     if (!user) return;
-                    await handlePaymentSuccess(data.order.purchase_units[0].payments.captures[0].id);
+                    if (actions.order) {
+                      const details = await actions.order.capture();
+                      await handlePaymentSuccess(details);
+                    } else if (data.orderID) {
+                      // التعامل مع حالة الاشتراك
+                      await handlePaymentSuccess({
+                        id: data.orderID,
+                        payer: { email_address: "subscriber@example.com" }
+                      });
+                    }
                   }}
                   onError={(err) => {
                     setPaymentStatus('error');
@@ -190,4 +208,4 @@ const Subscribe: React.FC = () => {
   );
 };
 
-export default Subscribe; 
+export default Subscribe;
