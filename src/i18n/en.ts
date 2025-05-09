@@ -1,3 +1,4 @@
+
 // Define the base English translations
 export const en = {
   // Original modified keys
@@ -59,6 +60,13 @@ export const en = {
   invalidCredentials: 'Invalid email or password',
   email: 'Email',
   password: 'Password',
+  forgot: 'Forgot password?',
+  enterCredentials: 'Enter your credentials',
+  forgotPassword: 'Forgot password?',
+  loggingIn: 'Logging in...',
+  createAccount: 'Create a new account',
+  byContinuing: 'By continuing',
+  and: 'and',
   
   // Admin settings
   saveSuccess: 'Success',
@@ -94,6 +102,42 @@ export const en = {
   retry: 'Retry',
   unauthorized: 'Unauthorized',
   adminAccessRequired: 'This page requires admin access.',
+  
+  // Added toast messages
+  invalidResponseFormat: 'Invalid response format received',
+  errorOccurred: 'An error occurred',
+  warningOccurred: 'A warning occurred',
+  informationUpdate: 'Information update',
+  failedToCheckInteraction: 'Failed to check interaction',
+  
+  // Admin page translations
+  adminDashboard: 'Admin Dashboard',
+  filterUsers: 'Filter Users',
+  searchAndFilterUsers: 'Search and filter users',
+  search: 'Search',
+  searchByEmail: 'Search by email',
+  filterByRole: 'Filter by Role',
+  selectRole: 'Select Role',
+  allRoles: 'All Roles',
+  user: 'User',
+  admin: 'Admin',
+  userManagement: 'User Management',
+  id: 'ID',
+  role: 'Role',
+  active: 'Active',
+  deactivate: 'Deactivate',
+  activate: 'Activate',
+  totalUsers: 'Total Users',
+  success: 'Success',
+  userActivated: 'User activated',
+  userDeactivated: 'User deactivated',
+  failedToFetchUsers: 'Failed to fetch users',
+  errorUpdatingUser: 'Error updating user',
+  
+  // Warning variants
+  warning: 'Warning',
+  info: 'Info',
+  default: 'Default',
 };
 
 export default en;

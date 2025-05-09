@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,12 +26,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { User } from '@/types';
+
+interface AdminUser extends User {
+  is_active: boolean;
+}
 
 const Admin = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -83,7 +89,7 @@ const Admin = () => {
       const { error } = await supabase
         .from('users')
         .update({ is_active: isActive })
-        .eq('id', parseInt(userId));
+        .eq('id', parseInt(userId, 10));
       
       if (error) throw error;
       
@@ -166,7 +172,7 @@ const Admin = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredUsers.map((user: any) => (
+          {filteredUsers.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.id}</TableCell>
               <TableCell>{user.email}</TableCell>

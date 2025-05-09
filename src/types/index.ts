@@ -6,6 +6,7 @@ export interface User {
   plan_code?: string;
   auth_uid?: string;
   password?: string;
+  is_active?: boolean;
 } 
 
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded';

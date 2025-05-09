@@ -26,7 +26,8 @@ export const useAuth = () => {
             email: userData.email,
             role: userData.role || 'user',
             plan_code: userData.plan_code,
-            auth_uid: userData.auth_uid
+            auth_uid: userData.auth_uid,
+            is_active: userData.is_active
           });
         }
       } else {
@@ -53,7 +54,8 @@ export const useAuth = () => {
             email: userData.email,
             role: userData.role || 'user',
             plan_code: userData.plan_code,
-            auth_uid: userData.auth_uid
+            auth_uid: userData.auth_uid,
+            is_active: userData.is_active
           });
         }
       } else {
@@ -92,7 +94,8 @@ export const useAuth = () => {
             email: userData.email,
             role: userData.role || 'user',
             plan_code: userData.plan_code,
-            auth_uid: userData.auth_uid
+            auth_uid: userData.auth_uid,
+            is_active: userData.is_active
           });
         }
       }
@@ -121,7 +124,8 @@ export const useAuth = () => {
             email: data.user.email,
             role: 'user',
             plan_code: 'basic',
-            password: ''
+            password: '',
+            is_active: true
           });
 
         if (userError) {
