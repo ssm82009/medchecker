@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { Json, Tables } from '@/integrations/supabase/types';
+import { Json } from '@/integrations/supabase/types';
 import { PlanType } from '../types/plan';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
@@ -118,6 +118,274 @@ const Admin: React.FC = () => {
   const [liveSecret, setLiveSecret] = useState('');
   const [savingPaypal, setSavingPaypal] = useState(false);
   const [paypalSettingsId, setPaypalSettingsId] = useState<string | null>(null);
+  
+  // حفظ إعدادات الذكاء الاصطناعي
+  const saveAISettings = async () => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          type: 'ai_settings',
+          value: { apiKey, model } as Json
+        }, { onConflict: 'type' });
+      if (error) throw error;
+      toast({ title: t('saveSuccess'), description: t('settingsSaved'), duration: 3000 });
+    } catch (error) {
+      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+    }
+  };
+
+  // حفظ نص الشعار
+  const saveLogo = async () => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ type: 'logo_text', value: logoTextInput as Json }, { onConflict: 'type' });
+      if (error) throw error;
+      setLogoText(logoTextInput);
+      toast({ title: t('saveSuccess'), description: t('logoSaved'), duration: 3000 });
+    } catch (error) {
+      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+    }
+  };
+
+  // حفظ الإعلان الرئيسي
+  const saveAd = async () => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ type: 'advertisement', value: adHTML as Json }, { onConflict: 'type' });
+      if (error) throw error;
+      toast({ title: t('saveSuccess'), description: t('adSaved'), duration: 3000 });
+    } catch (error) {
+      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+    }
+  };
+
+  // حفظ الإعلان الثانوي
+  const saveSecondaryAd = async () => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ type: 'secondary_advertisement', value: secondaryAdHTML as Json }, { onConflict: 'type' });
+      if (error) throw error;
+      toast({ title: t('saveSuccess'), description: t('secondaryAdSaved'), duration: 3000 });
+    } catch (error) {
+      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
+    }
+  };
+
+  // Save PayPal settings
+  const savePaypalSettings = async () => {
+    setSavingPaypal(true);
+    try {
+      const paypalData = {
+        id: paypalSettingsId || undefined,
+        mode: paypalMode,
+        sandbox_client_id: sandboxClientId,
+        sandbox_secret: sandboxSecret,
+        live_client_id: liveClientId,
+        live_secret: liveSecret,
+        currency: 'USD',
+        payment_type: 'one_time' as PaymentType
+      };
+
+      if (paypalSettingsId) {
+        await supabase.from('paypal_settings').update(paypalData).eq('id', paypalSettingsId);
+      } else {
+        await supabase.from('paypal_settings').insert(paypalData);
+      }
+      
+      toast({ title: 'تم الحفظ', description: 'تم حفظ إعدادات PayPal بنجاح', duration: 3000 });
+    } catch (error) {
+      toast({ title: 'خطأ', description: String(error), variant: 'destructive', duration: 5000 });
+    } finally {
+      setSavingPaypal(false);
+    }
+  };
+
+  // تحديث هيكل الخطط
+  const updatePlansToNewStructure = async () => {
+    try {
+      await supabase.from('plans').update({ is_default: false }).neq('code', 'basic');
+      await supabase.from('plans').upsert(planTypeToDb({
+        code: 'visitor',
+        name: 'Visitor Plan',
+        nameAr: 'باقة الزائر',
+        description: 'Basic features for unregistered users',
+        descriptionAr: 'ميزات أساسية للمستخدمين غير المسجلين',
+        price: 0,
+        features: ['Check up to 2 medications', 'Basic interaction analysis'],
+        featuresAr: ['فحص حتى دوائين', 'تحليل أساسي للتفاعلات'],
+        isDefault: false
+      }));
+      await supabase.from('plans').upsert(planTypeToDb({
+        code: 'basic',
+        name: 'Basic Plan',
+        nameAr: 'الباقة الأساسية',
+        description: 'Free basic plan for registered users',
+        descriptionAr: 'الباقة الأساسية المجانية للمستخدمين المسجلين',
+        price: 0,
+        features: ['Check up to 5 medications', 'Basic interaction analysis'],
+        featuresAr: ['فحص حتى 5 أدوية', 'تحليل أساسي للتفاعلات'],
+        isDefault: true
+      }));
+      await supabase.from('plans').upsert(planTypeToDb({
+        code: 'pro',
+        name: 'Professional Plan',
+        nameAr: 'الباقة الاحترافية',
+        description: 'Advanced features for healthcare professionals',
+        descriptionAr: 'مميزات متقدمة للمهنيين الصحيين',
+        price: 9.99,
+        features: ['Check up to 10 medications', 'Advanced interaction analysis', 'Image-based medication search', 'Patient medication history'],
+        featuresAr: ['فحص حتى 10 أدوية', 'تحليل متقدم للتفاعلات', 'البحث عن الأدوية بالصور', 'سجل أدوية المريض'],
+        isDefault: false
+      }));
+      toast({ title: 'تم التحديث', description: 'تم تحديث الخطط بنجاح', duration: 3000 });
+      fetchPlans();
+    } catch (error) {
+      toast({ title: 'خطأ', description: 'حدث خطأ أثناء تحديث الخطط', variant: 'destructive', duration: 5000 });
+    }
+  };
+
+  // حذف خطة
+  const handleDeletePlan = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
+    const { error } = await supabase.from('plans').delete().eq('id', id);
+    if (!error) {
+      toast({ title: 'تم الحذف', description: 'تم حذف الخطة' });
+      fetchPlans();
+    } else {
+      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // تغيير باقة المستخدم
+  const handleChangePlan = async (userId: string, newPlan: string) => {
+    const { error } = await supabase.from('users').update({ plan_code: newPlan }).eq('id', userId);
+    if (!error) {
+      toast({ title: 'تم التحديث', description: 'تم تغيير الباقة للمستخدم' });
+      fetchUsers();
+    } else {
+      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // حذف مستخدم
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (!error) {
+      toast({ title: 'تم الحذف', description: 'تم حذف المستخدم' });
+      fetchUsers();
+    } else {
+      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // تحديث دالة handlePaypalModeChange لمعالجة نوع البيانات بشكل صحيح
+  const handlePaypalModeChange = (value: string) => {
+    // نتحقق من أن القيمة هي إما "sandbox" أو "live" قبل تعيينها
+    if (value === "sandbox" || value === "live") {
+      setPaypalMode(value);
+    }
+  };
+
+  // Handle adding a plan
+  const handleAddPlan = async () => {
+    try {
+      const featuresArray = addPlanData.features.split('\n').filter(Boolean);
+      const featuresArArray = addPlanData.featuresAr.split('\n').filter(Boolean);
+      
+      const newPlan = {
+        code: addPlanData.code,
+        name: addPlanData.name,
+        name_ar: addPlanData.nameAr,
+        description: addPlanData.description,
+        description_ar: addPlanData.descriptionAr,
+        price: Number(addPlanData.price),
+        features: featuresArray,
+        features_ar: featuresArArray,
+        is_default: addPlanData.isDefault
+      };
+      
+      const { error } = await supabase.from('plans').insert(newPlan);
+      
+      if (error) throw error;
+      
+      setShowAddModal(false);
+      fetchPlans();
+      
+      toast({ 
+        title: 'تمت الإضافة', 
+        description: 'تمت إضافة الخطة بنجاح',
+        duration: 3000
+      });
+    } catch (error) {
+      toast({ 
+        title: 'خطأ', 
+        description: String(error), 
+        variant: 'destructive',
+        duration: 5000
+      });
+    }
+  };
+
+  // Handle editing a plan
+  const openEditModal = (plan: PlanType) => {
+    setEditPlanData({
+      ...plan,
+      features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
+      featuresAr: Array.isArray(plan.featuresAr) ? plan.featuresAr.join('\n') : ''
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle save edit plan
+  const handleEditPlan = async () => {
+    if (!editPlanData) return;
+    
+    try {
+      const featuresArray = editPlanData.features.split('\n').filter(Boolean);
+      const featuresArArray = editPlanData.featuresAr.split('\n').filter(Boolean);
+      
+      const updatedPlan = {
+        id: editPlanData.id,
+        code: editPlanData.code,
+        name: editPlanData.name,
+        name_ar: editPlanData.nameAr,
+        description: editPlanData.description,
+        description_ar: editPlanData.descriptionAr,
+        price: Number(editPlanData.price),
+        features: featuresArray,
+        features_ar: featuresArArray,
+        is_default: editPlanData.isDefault
+      };
+      
+      const { error } = await supabase
+        .from('plans')
+        .update(updatedPlan)
+        .eq('id', editPlanData.id);
+      
+      if (error) throw error;
+      
+      setShowEditModal(false);
+      fetchPlans();
+      
+      toast({ 
+        title: 'تم التحديث', 
+        description: 'تم تحديث الخطة بنجاح',
+        duration: 3000
+      });
+    } catch (error) {
+      toast({ 
+        title: 'خطأ', 
+        description: String(error), 
+        variant: 'destructive',
+        duration: 5000
+      });
+    }
+  };
   
   const fetchPlans = useCallback(async () => {
     setLoadingPlans(true);
@@ -552,149 +820,6 @@ const Admin: React.FC = () => {
       </main>
     </div>
   );
-};
-
-// حفظ إعدادات الذكاء الاصطناعي
-const saveAISettings = async () => {
-  try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert({
-        type: 'ai_settings',
-        value: { apiKey, model } as Json
-      }, { onConflict: 'type' });
-    if (error) throw error;
-    toast({ title: t('saveSuccess'), description: t('settingsSaved'), duration: 3000 });
-  } catch (error) {
-    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-  }
-};
-
-// حفظ نص الشعار
-const saveLogo = async () => {
-  try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ type: 'logo_text', value: logoTextInput as Json }, { onConflict: 'type' });
-    if (error) throw error;
-    setLogoText(logoTextInput);
-    toast({ title: t('saveSuccess'), description: t('logoSaved'), duration: 3000 });
-  } catch (error) {
-    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-  }
-};
-
-// حفظ الإعلان الرئيسي
-const saveAd = async () => {
-  try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ type: 'advertisement', value: adHTML as Json }, { onConflict: 'type' });
-    if (error) throw error;
-    toast({ title: t('saveSuccess'), description: t('adSaved'), duration: 3000 });
-  } catch (error) {
-    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-  }
-};
-
-// حفظ الإعلان الثانوي
-const saveSecondaryAd = async () => {
-  try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ type: 'secondary_advertisement', value: secondaryAdHTML as Json }, { onConflict: 'type' });
-    if (error) throw error;
-    toast({ title: t('saveSuccess'), description: t('secondaryAdSaved'), duration: 3000 });
-  } catch (error) {
-    toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-  }
-};
-
-// تحديث هيكل الخطط
-const updatePlansToNewStructure = async () => {
-  try {
-    await supabase.from('plans').update({ is_default: false }).neq('code', 'basic');
-    await supabase.from('plans').upsert(planTypeToDb({
-      code: 'visitor',
-      name: 'Visitor Plan',
-      nameAr: 'باقة الزائر',
-      description: 'Basic features for unregistered users',
-      descriptionAr: 'ميزات أساسية للمستخدمين غير المسجلين',
-      price: 0,
-      features: ['Check up to 2 medications', 'Basic interaction analysis'],
-      featuresAr: ['فحص حتى دوائين', 'تحليل أساسي للتفاعلات'],
-      isDefault: false
-    }));
-    await supabase.from('plans').upsert(planTypeToDb({
-      code: 'basic',
-      name: 'Basic Plan',
-      nameAr: 'الباقة الأساسية',
-      description: 'Free basic plan for registered users',
-      descriptionAr: 'الباقة الأساسية المجانية للمستخدمين المسجلين',
-      price: 0,
-      features: ['Check up to 5 medications', 'Basic interaction analysis'],
-      featuresAr: ['فحص حتى 5 أدوية', 'تحليل أساسي للتفاعلات'],
-      isDefault: true
-    }));
-    await supabase.from('plans').upsert(planTypeToDb({
-      code: 'pro',
-      name: 'Professional Plan',
-      nameAr: 'الباقة الاحترافية',
-      description: 'Advanced features for healthcare professionals',
-      descriptionAr: 'مميزات متقدمة للمهنيين الصحيين',
-      price: 9.99,
-      features: ['Check up to 10 medications', 'Advanced interaction analysis', 'Image-based medication search', 'Patient medication history'],
-      featuresAr: ['فحص حتى 10 أدوية', 'تحليل متقدم للتفاعلات', 'البحث عن الأدوية بالصور', 'سجل أدوية المريض'],
-      isDefault: false
-    }));
-    toast({ title: 'تم التحديث', description: 'تم تحديث الخطط بنجاح', duration: 3000 });
-    fetchPlans();
-  } catch (error) {
-    toast({ title: 'خطأ', description: 'حدث خطأ أثناء تحديث الخطط', variant: 'destructive', duration: 5000 });
-  }
-};
-
-// حذف خطة
-const handleDeletePlan = async (id: string) => {
-  if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
-  const { error } = await supabase.from('plans').delete().eq('id', id);
-  if (!error) {
-    toast({ title: 'تم الحذف', description: 'تم حذف الخطة' });
-    fetchPlans();
-  } else {
-    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-  }
-};
-
-// تغيير باقة المستخدم
-const handleChangePlan = async (userId: string, newPlan: string) => {
-  const { error } = await supabase.from('users').update({ plan_code: newPlan }).eq('id', userId);
-  if (!error) {
-    toast({ title: 'تم التحديث', description: 'تم تغيير الباقة للمستخدم' });
-    fetchUsers();
-  } else {
-    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-  }
-};
-
-// حذف مستخدم
-const handleDeleteUser = async (userId: string) => {
-  if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-  const { error } = await supabase.from('users').delete().eq('id', userId);
-  if (!error) {
-    toast({ title: 'تم الحذف', description: 'تم حذف المستخدم' });
-    fetchUsers();
-  } else {
-    toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-  }
-};
-
-// تحديث دالة handlePaypalModeChange لمعالجة نوع البيانات بشكل صحيح
-const handlePaypalModeChange = (value: string) => {
-  // نتحقق من أن القيمة هي إما "sandbox" أو "live" قبل تعيينها
-  if (value === "sandbox" || value === "live") {
-    setPaypalMode(value);
-  }
 };
 
 export default Admin;

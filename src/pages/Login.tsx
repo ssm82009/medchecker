@@ -1,156 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { toast } from '@/hooks/use-toast';
-import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 
-interface LoginFormValues {
-  email: string;
-  password: string;
-}
-
-const Login: React.FC = () => {
-  const { t, dir } = useTranslation();
+const Login = () => {
+  const { t, language } = useTranslation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const { login, error, loading, user } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const form = useForm<LoginFormValues>({
-    defaultValues: {
-      email: '',
-      password: ''
-    }
-  });
+  const { toast } = useToast();
 
-  useEffect(() => {
-    // If user is already logged in, redirect to home
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage(null);
 
-  const handleSubmit = async (values: LoginFormValues) => {
     try {
-      const success = await login(values.email, values.password);
-      if (success) {
-        toast({
-          title: t('loginSuccess'),
-          description: t('welcomeBack'),
-        });
-        setTimeout(() => {
-          navigate('/');
-        }, 500);
-      } else {
-        toast({
-          title: t('loginFailed'),
-          description: t('invalidCredentials'),
-          variant: 'destructive',
-        });
+      const { error } = await login(email, password);
+      if (error) {
+        throw new Error(error.message);
       }
-    } catch (err) {
-      console.error('Login error:', err);
+      toast({
+        title: t('loginSuccess'),
+        description: t('welcomeBack'),
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'حدث خطأ غير معروف أثناء تسجيل الدخول');
       toast({
         title: t('loginFailed'),
-        description: t('invalidCredentials'),
+        description: error instanceof Error ? error.message : 'حدث خطأ غير معروف أثناء تسجيل الدخول',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir={dir}>
-      <Card className="w-full max-w-md border-primary/10 shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">{t('login')}</CardTitle>
-          <CardDescription className="text-center">{t('adminPanel')}</CardDescription>
+    <div className={`flex justify-center items-center min-h-[70vh] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-2xl font-bold">{t('login')}</CardTitle>
+          <CardDescription>{t('enterCredentials')}</CardDescription>
         </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel>{t('email')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="admin@example.com"
-                        className="w-full"
-                        required
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4 pt-4">
+            {errorMessage && (
+              <div className="bg-red-50 p-3 mb-4 border border-red-200 text-red-600 rounded text-center text-sm">
+                {errorMessage}
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label htmlFor="email">{t('email')}</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="example@email.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required
+                className="bg-white"
               />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel>{t('password')}</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          className="w-full pr-10"
-                          required
-                        />
-                      </FormControl>
-                      <button 
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">{t('password')}</Label>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  {t('forgotPassword')}
+                </Link>
+              </div>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required
+                className="bg-white"
               />
-              {error && (
-                <div className="text-destructive text-sm">{t('invalidCredentials')}</div>
-              )}
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loading}
-                size="lg"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                    {t('loading')}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    {t('loginButton')}
-                  </span>
-                )}
-              </Button>
-              <Link to="/simple-signup" className="text-center text-primary hover:underline text-sm mt-2">
-                {t('noAccount') || 'إنشاء حساب جديد'}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? t('loggingIn') : t('login')}
+            </Button>
+            <p className="text-sm text-center text-gray-600">
+              {t('noAccount')}{' '}
+              <Link to="/signup" className="font-medium text-primary hover:underline">
+                {t('createAccount')}
               </Link>
-            </CardFooter>
-          </form>
-        </Form>
+            </p>
+            <p className="text-xs text-center text-gray-500">
+              {t('byContinuing')}{' '}
+              <Link to="/terms" className="hover:underline">
+                {t('termsOfUse')}
+              </Link>{' '}
+              {t('and')}{' '}
+              <Link to="/privacy" className="hover:underline">
+                {t('privacyPolicy')}
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
