@@ -26,7 +26,7 @@ const Login = () => {
 
     try {
       const result = await login(email, password);
-      if (result.error) {
+      if (result && 'error' in result && result.error) {
         throw new Error(result.error.message);
       }
       toast({
@@ -52,7 +52,7 @@ const Login = () => {
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl">
         <CardHeader className="text-center pb-2">
           <CardTitle className="text-2xl font-bold">{t('login')}</CardTitle>
-          <CardDescription>{t('loginDescription')}</CardDescription>
+          <CardDescription>{t('login')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-4">

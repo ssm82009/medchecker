@@ -1,826 +1,909 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  DataGrid,
+  GridColDef,
+  GridValueGetterParams,
+  GridActionsCellItem,
+  GridRowParams,
+  GridRenderCellParams,
+} from '@mui/x-data-grid';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { User } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import { Edit, Delete, KeyRound, CheckCircle, Cancel } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Switch } from "@/components/ui/switch"
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Json } from '@/integrations/supabase/types';
-import { PlanType } from '../types/plan';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { User, PaymentType } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PayPalSettings } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 
-const adminSections = [
-  { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },
-  { key: 'logo', label: 'إعدادات الشعار', icon: ImageIcon },
-  { key: 'ad', label: 'الإعلانات', icon: BadgeDollarSign },
-  { key: 'plans', label: 'الخطط', icon: Layers },
-  { key: 'users', label: 'إدارة الأعضاء', icon: Users },
-  { key: 'paypal', label: 'بوابة الدفع بايبال', icon: CreditCard },
-];
-
-type PaypalMode = 'sandbox' | 'live';
-
-// تحويل من قاعدة البيانات إلى PlanType (camelCase)
-function dbToPlanType(dbPlan: any): PlanType {
-  return {
-    id: dbPlan.id,
-    code: dbPlan.code,
-    name: dbPlan.name,
-    nameAr: dbPlan.name_ar,
-    description: dbPlan.description,
-    descriptionAr: dbPlan.description_ar,
-    price: dbPlan.price,
-    features: dbPlan.features,
-    featuresAr: dbPlan.features_ar,
-    isDefault: dbPlan.is_default,
-  };
-}
-
-// تحويل من PlanType إلى قاعدة البيانات (snake_case)
-function planTypeToDb(plan: PlanType): any {
-  return {
-    id: plan.id,
-    code: plan.code,
-    name: plan.name,
-    name_ar: plan.nameAr,
-    description: plan.description,
-    description_ar: plan.descriptionAr,
-    price: plan.price,
-    features: plan.features,
-    features_ar: plan.featuresAr,
-    is_default: plan.isDefault,
-  };
-}
-
-const Admin: React.FC = () => {
-  const { t, dir } = useTranslation();
+const Admin = () => {
+  const { t, language } = useTranslation();
+  const { user, updateUserRole } = useAuth();
   const { toast } = useToast();
-  const { user, isAdmin, loading: userLoading } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('gpt-4o-mini');
-  const [adHTML, setAdHTML] = useState('');
-  const [secondaryAdHTML, setSecondaryAdHTML] = useState('');
-  const [logoText, setLogoText] = useState('دواء آمن');
-  const [logoTextInput, setLogoTextInput] = useState('');
-  
-  const [plans, setPlans] = useState<PlanType[]>([]);
-  const [loadingPlans, setLoadingPlans] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<PlanType | null>(null);
-  const [newPlan, setNewPlan] = useState<Partial<PlanType>>({
-    name: '',
-    nameAr: '',
-    description: '',
-    descriptionAr: '',
-    price: 0,
-    features: [],
-    featuresAr: [],
-    code: '',
-    isDefault: false,
-  });
-  
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editPlanData, setEditPlanData] = useState<(Omit<PlanType, 'features' | 'featuresAr'> & { features: string; featuresAr: string }) | null>(null);
-  const [addPlanData, setAddPlanData] = useState<Omit<PlanType, 'id' | 'features' | 'featuresAr'> & { features: string; featuresAr: string }>({
-    code: '',
-    name: '',
-    nameAr: '',
-    description: '',
-    descriptionAr: '',
-    price: 0,
-    features: '',
-    featuresAr: '',
-    isDefault: false,
-  });
-  
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [users, setUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [searchEmail, setSearchEmail] = useState('');
-  const [plansList, setPlansList] = useState<Pick<PlanType, 'code' | 'name' | 'nameAr'>[]>([]);
-  
-  const [activeSection, setActiveSection] = useState('ai');
-  
-  const [paypalMode, setPaypalMode] = useState<PaypalMode>('sandbox');
-  const [sandboxClientId, setSandboxClientId] = useState('');
-  const [sandboxSecret, setSandboxSecret] = useState('');
-  const [liveClientId, setLiveClientId] = useState('');
-  const [liveSecret, setLiveSecret] = useState('');
-  const [savingPaypal, setSavingPaypal] = useState(false);
-  const [paypalSettingsId, setPaypalSettingsId] = useState<string | null>(null);
-  
-  // حفظ إعدادات الذكاء الاصطناعي
-  const saveAISettings = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({
-          type: 'ai_settings',
-          value: { apiKey, model } as Json
-        }, { onConflict: 'type' });
-      if (error) throw error;
-      toast({ title: t('saveSuccess'), description: t('settingsSaved'), duration: 3000 });
-    } catch (error) {
-      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-    }
-  };
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedUser, setEditedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPasswordInput, setShowNewPasswordInput] = useState(false);
+  const [logoText, setLogoText] = useState('');
 
-  // حفظ نص الشعار
-  const saveLogo = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ type: 'logo_text', value: logoTextInput as Json }, { onConflict: 'type' });
-      if (error) throw error;
-      setLogoText(logoTextInput);
-      toast({ title: t('saveSuccess'), description: t('logoSaved'), duration: 3000 });
-    } catch (error) {
-      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-    }
-  };
+  const [paypalSettings, setPaypalSettings] = useState<PayPalSettings | null>(null);
 
-  // حفظ الإعلان الرئيسي
-  const saveAd = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ type: 'advertisement', value: adHTML as Json }, { onConflict: 'type' });
-      if (error) throw error;
-      toast({ title: t('saveSuccess'), description: t('adSaved'), duration: 3000 });
-    } catch (error) {
-      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-    }
-  };
+  const [isPaypalEditMode, setIsPaypalEditMode] = useState(false);
 
-  // حفظ الإعلان الثانوي
-  const saveSecondaryAd = async () => {
-    try {
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ type: 'secondary_advertisement', value: secondaryAdHTML as Json }, { onConflict: 'type' });
-      if (error) throw error;
-      toast({ title: t('saveSuccess'), description: t('secondaryAdSaved'), duration: 3000 });
-    } catch (error) {
-      toast({ title: t('error'), description: String(error), variant: 'destructive', duration: 5000 });
-    }
-  };
+  const [isLogoTextEditMode, setIsLogoTextEditMode] = useState(false);
 
-  // Save PayPal settings
-  const savePaypalSettings = async () => {
-    setSavingPaypal(true);
-    try {
-      const paypalData = {
-        id: paypalSettingsId || undefined,
-        mode: paypalMode,
-        sandbox_client_id: sandboxClientId,
-        sandbox_secret: sandboxSecret,
-        live_client_id: liveClientId,
-        live_secret: liveSecret,
-        currency: 'USD',
-        payment_type: 'one_time' as PaymentType
-      };
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 
-      if (paypalSettingsId) {
-        await supabase.from('paypal_settings').update(paypalData).eq('id', paypalSettingsId);
-      } else {
-        await supabase.from('paypal_settings').insert(paypalData);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
+
+  const [isMaintenanceEditMode, setIsMaintenanceEditMode] = useState(false);
+
+  const [isMaintenanceMessageEditMode, setIsMaintenanceMessageEditMode] = useState(false);
+
+  const [isMaintenanceModeEnabled, setIsMaintenanceModeEnabled] = useState(false);
+
+  const [isMaintenanceMessageEnabled, setIsMaintenanceMessageEnabled] = useState(false);
+
+  const [maintenanceSettings, setMaintenanceSettings] = useState<{ enabled: boolean; message: string } | null>(null);
+
+  const [selectedPlanCode, setSelectedPlanCode] = useState<string | null>(null);
+
+  const [isPlanCodeEditMode, setIsPlanCodeEditMode] = useState(false);
+
+  const [selectedUserForPlanCode, setSelectedUserForPlanCode] = useState<User | null>(null);
+
+  const [isUserPlanCodeEditModalOpen, setIsUserPlanCodeEditModalOpen] = useState(false);
+
+  const [isUserActive, setIsUserActive] = useState(true);
+
+  const [isUserActiveEditMode, setIsUserActiveEditMode] = useState(false);
+
+  const [selectedUserForActiveStatus, setSelectedUserForActiveStatus] = useState<User | null>(null);
+
+  const [isUserActiveEditModalOpen, setIsUserActiveEditModalOpen] = useState(false);
+
+  const [isUserActiveStatusEditMode, setIsUserActiveStatusEditMode] = useState(false);
+
+  const [isUserVerified, setIsUserVerified] = useState(true);
+
+  const [isUserVerifiedEditMode, setIsUserVerifiedEditMode] = useState(false);
+
+  const [selectedUserForVerifiedStatus, setSelectedUserForVerifiedStatus] = useState<User | null>(null);
+
+  const [isUserVerifiedEditModalOpen, setIsUserVerifiedEditModalOpen] = useState(false);
+
+  const [isUserVerifiedStatusEditMode, setIsUserVerifiedStatusEditMode] = useState(false);
+
+  const [isUserBanned, setIsUserBanned] = useState(false);
+
+  const [isUserBannedEditMode, setIsUserBannedEditMode] = useState(false);
+
+  const [selectedUserForBannedStatus, setSelectedUserForBannedStatus] = useState<User | null>(null);
+
+  const [isUserBannedEditModalOpen, setIsUserBannedEditModalOpen] = useState(false);
+
+  const [isUserBannedStatusEditMode, setIsUserBannedStatusEditMode] = useState(false);
+
+  const [isUserSuspended, setIsUserSuspended] = useState(false);
+
+  const [isUserSuspendedEditMode, setIsUserSuspendedEditMode] = useState(false);
+
+  const [selectedUserForSuspendedStatus, setSelectedUserForSuspendedStatus] = useState<User | null>(null);
+
+  const [isUserSuspendedEditModalOpen, setIsUserSuspendedEditModalOpen] = useState(false);
+
+  const [isUserSuspendedStatusEditMode, setIsUserSuspendedStatusEditMode] = useState(false);
+
+  const [isUserLocked, setIsUserLocked] = useState(false);
+
+  const [isUserLockedEditMode, setIsUserLockedEditMode] = useState(false);
+
+  const [selectedUserForLockedStatus, setSelectedUserForLockedStatus] = useState<User | null>(null);
+
+  const [isUserLockedEditModalOpen, setIsUserLockedEditModalOpen] = useState(false);
+
+  const [isUserLockedStatusEditMode, setIsUserLockedStatusEditMode] = useState(false);
+
+  const [isUserRestricted, setIsUserRestricted] = useState(false);
+
+  const [isUserRestrictedEditMode, setIsUserRestrictedEditMode] = useState(false);
+
+  const [selectedUserForRestrictedStatus, setSelectedUserForRestrictedStatus] = useState<User | null>(null);
+
+  const [isUserRestrictedEditModalOpen, setIsUserRestrictedEditModalOpen] = useState(false);
+
+  const [isUserRestrictedStatusEditMode, setIsUserRestrictedStatusEditMode] = useState(false);
+
+  const [isUserFlagged, setIsUserFlagged] = useState(false);
+
+  const [isUserFlaggedEditMode, setIsUserFlaggedEditMode] = useState(false);
+
+  const [selectedUserForFlaggedStatus, setSelectedUserForFlaggedStatus] = useState<User | null>(null);
+
+  const [isUserFlaggedEditModalOpen, setIsUserFlaggedEditModalOpen] = useState(false);
+
+  const [isUserFlaggedStatusEditMode, setIsUserFlaggedStatusEditMode] = useState(false);
+
+  const [isUserAudited, setIsUserAudited] = useState(false);
+
+  const [isUserAuditedEditMode, setIsUserAuditedEditMode] = useState(false);
+
+  const [selectedUserForAuditedStatus, setSelectedUserForAuditedStatus] = useState<User | null>(null);
+
+  const [isUserAuditedEditModalOpen, setIsUserAuditedEditModalOpen] = useState(false);
+
+  const [isUserAuditedStatusEditMode, setIsUserAuditedStatusEditMode] = useState(false);
+
+  const [isUserReviewed, setIsUserReviewed] = useState(false);
+
+  const [isUserReviewedEditMode, setIsUserReviewedEditMode] = useState(false);
+
+  const [selectedUserForReviewedStatus, setSelectedUserForReviewedStatus] = useState<User | null>(null);
+
+  const [isUserReviewedEditModalOpen, setIsUserReviewedEditModalOpen] = useState(false);
+
+  const [isUserReviewedStatusEditMode, setIsUserReviewedStatusEditMode] = useState(false);
+
+  const [isUserApproved, setIsUserApproved] = useState(false);
+
+  const [isUserApprovedEditMode, setIsUserApprovedEditMode] = useState(false);
+
+  const [selectedUserForApprovedStatus, setSelectedUserForApprovedStatus] = useState<User | null>(null);
+
+  const [isUserApprovedEditModalOpen, setIsUserApprovedEditModalOpen] = useState(false);
+
+  const [isUserApprovedStatusEditMode, setIsUserApprovedStatusEditMode] = useState(false);
+
+  const [isUserDeclined, setIsUserDeclined] = useState(false);
+
+  const [isUserDeclinedEditMode, setIsUserDeclinedEditMode] = useState(false);
+
+  const [selectedUserForDeclinedStatus, setSelectedUserForDeclinedStatus] = useState<User | null>(null);
+
+  const [isUserDeclinedEditModalOpen, setIsUserDeclinedEditModalOpen] = useState(false);
+
+  const [isUserDeclinedStatusEditMode, setIsUserDeclinedStatusEditMode] = useState(false);
+
+  const [isUserExpired, setIsUserExpired] = useState(false);
+
+  const [isUserExpiredEditMode, setIsUserExpiredEditMode] = useState(false);
+
+  const [selectedUserForExpiredStatus, setSelectedUserForExpiredStatus] = useState<User | null>(null);
+
+  const [isUserExpiredEditModalOpen, setIsUserExpiredEditModalOpen] = useState(false);
+
+  const [isUserExpiredStatusEditMode, setIsUserExpiredStatusEditMode] = useState(false);
+
+  const [isUserArchived, setIsUserArchived] = useState(false);
+
+  const [isUserArchivedEditMode, setIsUserArchivedEditMode] = useState(false);
+
+  const [selectedUserForArchivedStatus, setSelectedUserForArchivedStatus] = useState<User | null>(null);
+
+  const [isUserArchivedEditModalOpen, setIsUserArchivedEditModalOpen] = useState(false);
+
+  const [isUserArchivedStatusEditMode, setIsUserArchivedStatusEditMode] = useState(false);
+
+  const [isUserDeleted, setIsUserDeleted] = useState(false);
+
+  const [isUserDeletedEditMode, setIsUserDeletedEditMode] = useState(false);
+
+  const [selectedUserForDeletedStatus, setSelectedUserForDeletedStatus] = useState<User | null>(null);
+
+  const [isUserDeletedEditModalOpen, setIsUserDeletedEditModalOpen] = useState(false);
+
+  const [isUserDeletedStatusEditMode, setIsUserDeletedStatusEditMode] = useState(false);
+
+  const [isUserRestored, setIsUserRestored] = useState(false);
+
+  const [isUserRestoredEditMode, setIsUserRestoredEditMode] = useState(false);
+
+  const [selectedUserForRestoredStatus, setSelectedUserForRestoredStatus] = useState<User | null>(null);
+
+  const [isUserRestoredEditModalOpen, setIsUserRestoredEditModalOpen] = useState(false);
+
+  const [isUserRestoredStatusEditMode, setIsUserRestoredStatusEditMode] = useState(false);
+
+  const [isUserReactivated, setIsUserReactivated] = useState(false);
+
+  const [isUserReactivatedEditMode, setIsUserReactivatedEditMode] = useState(false);
+
+  const [selectedUserForReactivatedStatus, setSelectedUserForReactivatedStatus] = useState<User | null>(null);
+
+  const [isUserReactivatedEditModalOpen, setIsUserReactivatedEditModalOpen] = useState(false);
+
+  const [isUserReactivatedStatusEditMode, setIsUserReactivatedStatusEditMode] = useState(false);
+
+  const [isUserDeactivated, setIsUserDeactivated] = useState(false);
+
+  const [isUserDeactivatedEditMode, setIsUserDeactivatedEditMode] = useState(false);
+
+  const [selectedUserForDeactivatedStatus, setSelectedUserForDeactivatedStatus] = useState<User | null>(null);
+
+  const [isUserDeactivatedEditModalOpen, setIsUserDeactivatedEditModalOpen] = useState(false);
+
+  const [isUserDeactivatedStatusEditMode, setIsUserDeactivatedStatusEditMode] = useState(false);
+
+  const [isUserSuspendedUntil, setIsUserSuspendedUntil] = useState(false);
+
+  const [isUserSuspendedUntilEditMode, setIsUserSuspendedUntilEditMode] = useState(false);
+
+  const [selectedUserForSuspendedUntilStatus, setSelectedUserForSuspendedUntilStatus] = useState<User | null>(null);
+
+  const [isUserSuspendedUntilEditModalOpen, setIsUserSuspendedUntilEditModalOpen] = useState(false);
+
+  const [isUserSuspendedUntilStatusEditMode, setIsUserSuspendedUntilStatusEditMode] = useState(false);
+
+  const [isUserLockedUntil, setIsUserLockedUntil] = useState(false);
+
+  const [isUserLockedUntilEditMode, setIsUserLockedUntilEditMode] = useState(false);
+
+  const [selectedUserForLockedUntilStatus, setSelectedUserForLockedUntilStatus] = useState<User | null>(null);
+
+  const [isUserLockedUntilEditModalOpen, setIsUserLockedUntilEditModalOpen] = useState(false);
+
+  const [isUserLockedUntilStatusEditMode, setIsUserLockedUntilStatusEditMode] = useState(false);
+
+  const [isUserRestrictedUntil, setIsUserRestrictedUntil] = useState(false);
+
+  const [isUserRestrictedUntilEditMode, setIsUserRestrictedUntilEditMode] = useState(false);
+
+  const [selectedUserForRestrictedUntilStatus, setSelectedUserForRestrictedUntilStatus] = useState<User | null>(null);
+
+  const [isUserRestrictedUntilEditModalOpen, setIsUserRestrictedUntilEditModalOpen] = useState(false);
+
+  const [isUserRestrictedUntilStatusEditMode, setIsUserRestrictedUntilStatusEditMode] = useState(false);
+
+  const [isUserFlaggedUntil, setIsUserFlaggedUntil] = useState(false);
+
+  const [isUserFlaggedUntilEditMode, setIsUserFlaggedUntilEditMode] = useState(false);
+
+  const [selectedUserForFlaggedUntilStatus, setSelectedUserForFlaggedUntilStatus] = useState<User | null>(null);
+
+  const [isUserFlaggedUntilEditModalOpen, setIsUserFlaggedUntilEditModalOpen] = useState(false);
+
+  const [isUserFlaggedUntilStatusEditMode, setIsUserFlaggedUntilStatusEditMode] = useState(false);
+
+  const [isUserAuditedUntil, setIsUserAuditedUntil] = useState(false);
+
+  const [isUserAuditedUntilEditMode, setIsUserAuditedUntilEditMode] = useState(false);
+
+  const [selectedUserForAuditedUntilStatus, setSelectedUserForAuditedUntilStatus] = useState<User | null>(null);
+
+  const [isUserAuditedUntilEditModalOpen, setIsUserAuditedUntilEditModalOpen] = useState(false);
+
+  const [isUserAuditedUntilStatusEditMode, setIsUserAuditedUntilStatusEditMode] = useState(false);
+
+  const [isUserReviewedUntil, setIsUserReviewedUntil] = useState(false);
+
+  const [isUserReviewedUntilEditMode, setIsUserReviewedUntilEditMode] = useState(false);
+
+  const [selectedUserForReviewedUntilStatus, setSelectedUserForReviewedUntilStatus] = useState<User | null>(null);
+
+  const [isUserReviewedUntilEditModalOpen, setIsUserReviewedUntilEditModalOpen] = useState(false);
+
+  const [isUserReviewedUntilStatusEditMode, setIsUserReviewedUntilStatusEditMode] = useState(false);
+
+  const [isUserApprovedUntil, setIsUserApprovedUntil] = useState(false);
+
+  const [isUserApprovedUntilEditMode, setIsUserApprovedUntilEditMode] = useState(false);
+
+  const [selectedUserForApprovedUntilStatus, setSelectedUserForApprovedUntilStatus] = useState<User | null>(null);
+
+  const [isUserApprovedUntilEditModalOpen, setIsUserApprovedUntilEditModalOpen] = useState(false);
+
+  const [isUserApprovedUntilStatusEditMode, setIsUserApprovedUntilStatusEditMode] = useState(false);
+
+  const [isUserDeclinedUntil, setIsUserDeclinedUntil] = useState(false);
+
+  const [isUserDeclinedUntilEditMode, setIsUserDeclinedUntilEditMode] = useState(false);
+
+  const [selectedUserForDeclinedUntilStatus, setSelectedUserForDeclinedUntilStatus] = useState<User | null>(null);
+
+  const [isUserDeclinedUntilEditModalOpen, setIsUserDeclinedUntilEditModalOpen] = useState(false);
+
+  const [isUserDeclinedUntilStatusEditMode, setIsUserDeclinedUntilStatusEditMode] = useState(false);
+
+  const [isUserExpiredUntil, setIsUserExpiredUntil] = useState(false);
+
+  const [isUserExpiredUntilEditMode, setIsUserExpiredUntilEditMode] = useState(false);
+
+  const [selectedUserForExpiredUntilStatus, setSelectedUserForExpiredUntilStatus] = useState<User | null>(null);
+
+  const [isUserExpiredUntilEditModalOpen, setIsUserExpiredUntilEditModalOpen] = useState(false);
+
+  const [isUserExpiredUntilStatusEditMode, setIsUserExpiredUntilStatusEditMode] = useState(false);
+
+  const [isUserArchivedUntil, setIsUserArchivedUntil] = useState(false);
+
+  const [isUserArchivedUntilEditMode, setIsUserArchivedUntilEditMode] = useState(false);
+
+  const [selectedUserForArchivedUntilStatus, setSelectedUserForArchivedUntilStatus] = useState<User | null>(null);
+
+  const [isUserArchivedUntilEditModalOpen, setIsUserArchivedUntilEditModalOpen] = useState(false);
+
+  const [isUserArchivedUntilStatusEditMode, setIsUserArchivedUntilStatusEditMode] = useState(false);
+
+  const [isUserDeletedUntil, setIsUserDeletedUntil] = useState(false);
+
+  const [isUserDeletedUntilEditMode, setIsUserDeletedUntilEditMode] = useState(false);
+
+  const [selectedUserForDeletedUntilStatus, setSelectedUserForDeletedUntilStatus] = useState<User | null>(null);
+
+  const [isUserDeletedUntilEditModalOpen, setIsUserDeletedUntilEditModalOpen] = useState(false);
+
+  const [isUserDeletedUntilStatusEditMode, setIsUserDeletedUntilStatusEditMode] = useState(false);
+
+  const [isUserRestoredUntil, setIsUserRestoredUntil] = useState(false);
+
+  const [isUserRestoredUntilEditMode, setIsUserRestoredUntilEditMode] = useState(false);
+
+  const [selectedUserForRestoredUntilStatus, setSelectedUserForRestoredUntilStatus] = useState<User | null>(null);
+
+  const [isUserRestoredUntilEditModalOpen, setIsUserRestoredUntilEditModalOpen] = useState(false);
+
+  const [isUserRestoredUntilStatusEditMode, setIsUserRestoredUntilStatusEditMode] = useState(false);
+
+  const [isUserReactivatedUntil, setIsUserReactivatedUntil] = useState(false);
+
+  const [isUserReactivatedUntilEditMode, setIsUserReactivatedUntilEditMode] = useState(false);
+
+  const [selectedUserForReactivatedUntilStatus, setSelectedUserForReactivatedUntilStatus] = useState<User | null>(null);
+
+  const [isUserReactivatedUntilEditModalOpen, setIsUserReactivatedUntilEditModalOpen] = useState(false);
+
+  const [isUserReactivatedUntilStatusEditMode, setIsUserReactivatedUntilStatusEditMode] = useState(false);
+
+  const [isUserDeactivatedUntil, setIsUserDeactivatedUntil] = useState(false);
+
+  const [isUserDeactivatedUntilEditMode, setIsUserDeactivatedUntilEditMode] = useState(false);
+
+  const [selectedUserForDeactivatedUntilStatus, setSelectedUserForDeactivatedUntilStatus] = useState<User | null>(null);
+
+  const [isUserDeactivatedUntilEditModalOpen, setIsUserDeactivatedUntilEditModalOpen] = useState(false);
+
+  const [isUserDeactivatedUntilStatusEditMode, setIsUserDeactivatedUntilStatusEditMode] = useState(false);
+
+  const userUpdateMutation = useMutation(
+    async ({ id, role }: { id: string; role: string }) => {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ role })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
       }
-      
-      toast({ title: 'تم الحفظ', description: 'تم حفظ إعدادات PayPal بنجاح', duration: 3000 });
-    } catch (error) {
-      toast({ title: 'خطأ', description: String(error), variant: 'destructive', duration: 5000 });
-    } finally {
-      setSavingPaypal(false);
-    }
-  };
 
-  // تحديث هيكل الخطط
-  const updatePlansToNewStructure = async () => {
-    try {
-      await supabase.from('plans').update({ is_default: false }).neq('code', 'basic');
-      await supabase.from('plans').upsert(planTypeToDb({
-        code: 'visitor',
-        name: 'Visitor Plan',
-        nameAr: 'باقة الزائر',
-        description: 'Basic features for unregistered users',
-        descriptionAr: 'ميزات أساسية للمستخدمين غير المسجلين',
-        price: 0,
-        features: ['Check up to 2 medications', 'Basic interaction analysis'],
-        featuresAr: ['فحص حتى دوائين', 'تحليل أساسي للتفاعلات'],
-        isDefault: false
-      }));
-      await supabase.from('plans').upsert(planTypeToDb({
-        code: 'basic',
-        name: 'Basic Plan',
-        nameAr: 'الباقة الأساسية',
-        description: 'Free basic plan for registered users',
-        descriptionAr: 'الباقة الأساسية المجانية للمستخدمين المسجلين',
-        price: 0,
-        features: ['Check up to 5 medications', 'Basic interaction analysis'],
-        featuresAr: ['فحص حتى 5 أدوية', 'تحليل أساسي للتفاعلات'],
-        isDefault: true
-      }));
-      await supabase.from('plans').upsert(planTypeToDb({
-        code: 'pro',
-        name: 'Professional Plan',
-        nameAr: 'الباقة الاحترافية',
-        description: 'Advanced features for healthcare professionals',
-        descriptionAr: 'مميزات متقدمة للمهنيين الصحيين',
-        price: 9.99,
-        features: ['Check up to 10 medications', 'Advanced interaction analysis', 'Image-based medication search', 'Patient medication history'],
-        featuresAr: ['فحص حتى 10 أدوية', 'تحليل متقدم للتفاعلات', 'البحث عن الأدوية بالصور', 'سجل أدوية المريض'],
-        isDefault: false
-      }));
-      toast({ title: 'تم التحديث', description: 'تم تحديث الخطط بنجاح', duration: 3000 });
-      fetchPlans();
-    } catch (error) {
-      toast({ title: 'خطأ', description: 'حدث خطأ أثناء تحديث الخطط', variant: 'destructive', duration: 5000 });
+      return data as User;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        toast({
+          title: t('userUpdated'),
+          description: t('userRoleUpdatedSuccessfully'),
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
     }
-  };
+  );
 
-  // حذف خطة
-  const handleDeletePlan = async (id: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
-    const { error } = await supabase.from('plans').delete().eq('id', id);
-    if (!error) {
-      toast({ title: 'تم الحذف', description: 'تم حذف الخطة' });
-      fetchPlans();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+  const userDeleteMutation = useMutation(
+    async (id: string) => {
+      const { data, error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        toast({
+          title: t('userDeleted'),
+          description: t('userDeletedSuccessfully'),
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
     }
-  };
+  );
 
-  // تغيير باقة المستخدم
-  const handleChangePlan = async (userId: string, newPlan: string) => {
-    const { error } = await supabase.from('users').update({ plan_code: newPlan }).eq('id', userId);
-    if (!error) {
-      toast({ title: 'تم التحديث', description: 'تم تغيير الباقة للمستخدم' });
-      fetchUsers();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  // حذف مستخدم
-  const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (!error) {
-      toast({ title: 'تم الحذف', description: 'تم حذف المستخدم' });
-      fetchUsers();
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  // تحديث دالة handlePaypalModeChange لمعالجة نوع البيانات بشكل صحيح
-  const handlePaypalModeChange = (value: string) => {
-    // نتحقق من أن القيمة هي إما "sandbox" أو "live" قبل تعيينها
-    if (value === "sandbox" || value === "live") {
-      setPaypalMode(value);
-    }
-  };
-
-  // Handle adding a plan
-  const handleAddPlan = async () => {
-    try {
-      const featuresArray = addPlanData.features.split('\n').filter(Boolean);
-      const featuresArArray = addPlanData.featuresAr.split('\n').filter(Boolean);
-      
-      const newPlan = {
-        code: addPlanData.code,
-        name: addPlanData.name,
-        name_ar: addPlanData.nameAr,
-        description: addPlanData.description,
-        description_ar: addPlanData.descriptionAr,
-        price: Number(addPlanData.price),
-        features: featuresArray,
-        features_ar: featuresArArray,
-        is_default: addPlanData.isDefault
-      };
-      
-      const { error } = await supabase.from('plans').insert(newPlan);
-      
-      if (error) throw error;
-      
-      setShowAddModal(false);
-      fetchPlans();
-      
-      toast({ 
-        title: 'تمت الإضافة', 
-        description: 'تمت إضافة الخطة بنجاح',
-        duration: 3000
+  const resetPasswordMutation = useMutation(
+    async ({ id, newPassword }: { id: string; newPassword?: string }) => {
+      const { data, error } = await supabase.auth.admin.updateUserById(id, {
+        password: newPassword,
       });
-    } catch (error) {
-      toast({ 
-        title: 'خطأ', 
-        description: String(error), 
-        variant: 'destructive',
-        duration: 5000
-      });
-    }
-  };
 
-  // Handle editing a plan
-  const openEditModal = (plan: PlanType) => {
-    setEditPlanData({
-      ...plan,
-      features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
-      featuresAr: Array.isArray(plan.featuresAr) ? plan.featuresAr.join('\n') : ''
-    });
-    setShowEditModal(true);
-  };
+      if (error) {
+        throw new Error(error.message);
+      }
 
-  // Handle save edit plan
-  const handleEditPlan = async () => {
-    if (!editPlanData) return;
-    
-    try {
-      const featuresArray = editPlanData.features.split('\n').filter(Boolean);
-      const featuresArArray = editPlanData.featuresAr.split('\n').filter(Boolean);
-      
-      const updatedPlan = {
-        id: editPlanData.id,
-        code: editPlanData.code,
-        name: editPlanData.name,
-        name_ar: editPlanData.nameAr,
-        description: editPlanData.description,
-        description_ar: editPlanData.descriptionAr,
-        price: Number(editPlanData.price),
-        features: featuresArray,
-        features_ar: featuresArArray,
-        is_default: editPlanData.isDefault
-      };
-      
-      const { error } = await supabase
-        .from('plans')
-        .update(updatedPlan)
-        .eq('id', editPlanData.id);
-      
-      if (error) throw error;
-      
-      setShowEditModal(false);
-      fetchPlans();
-      
-      toast({ 
-        title: 'تم التحديث', 
-        description: 'تم تحديث الخطة بنجاح',
-        duration: 3000
-      });
-    } catch (error) {
-      toast({ 
-        title: 'خطأ', 
-        description: String(error), 
-        variant: 'destructive',
-        duration: 5000
-      });
+      return data;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        toast({
+          title: t('passwordReset'),
+          description: t('passwordResetSuccessfully'),
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
     }
-  };
-  
-  const fetchPlans = useCallback(async () => {
-    setLoadingPlans(true);
-    const { data, error } = await supabase.from('plans').select('*').order('price', { ascending: true });
-    if (!error && data) setPlans(data.map(dbToPlanType));
-    setLoadingPlans(false);
-  }, []);
+  );
 
   const fetchUsers = useCallback(async () => {
-    setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
-    if (!error && data) setUsers(data);
-    setLoadingUsers(false);
-  }, []);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const fetchPlansList = useCallback(async () => {
-    const { data, error } = await supabase.from('plans').select('code, name, name_ar');
-    if (!error && data) setPlansList(data.map((p: any) => ({ code: p.code, name: p.name, nameAr: p.name_ar })));
-  }, []);
-
-  useEffect(() => {
-    fetchPlans();
-    fetchUsers();
-    fetchPlansList();
-  }, [fetchPlans, fetchUsers, fetchPlansList]);
-  
-  // Combine all fetch operations into a single initialization function
-  const initializeDashboard = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Check if user is admin
-      if (!user || !isAdmin()) {
-        throw new Error('Unauthorized access');
-      }
-
-      // Fetch all settings in parallel
-      const [
-        aiSettings,
-        adSettings,
-        logoSettings,
-        plansData,
-        usersData,
-        plansListData,
-        paypalSettings
-      ] = await Promise.all([
-        supabase.from('settings').select('value').eq('type', 'ai_settings').maybeSingle(),
-        supabase.from('settings').select('value').eq('type', 'advertisement').maybeSingle(),
-        supabase.from('settings').select('value').eq('type', 'logo_text').maybeSingle(),
-        supabase.from('plans').select('*').order('price', { ascending: true }),
-        supabase.from('users').select('*').order('id', { ascending: true }),
-        supabase.from('plans').select('code, name, name_ar'),
-        supabase.from('paypal_settings').select('*').single()
-      ]);
-
-      // Process AI settings
-      if (aiSettings.data?.value) {
-        const value = aiSettings.data.value;
-        if (typeof value === 'object' && !Array.isArray(value)) {
-          setApiKey(String(value.apiKey || ''));
-          setModel(String(value.model || 'gpt-4o-mini'));
-        }
-      }
-
-      // Process ad settings
-      if (adSettings.data?.value) {
-        setAdHTML(typeof adSettings.data.value === 'string' ? adSettings.data.value : '');
-      }
-      if (adSettings.data?.value) {
-        setSecondaryAdHTML(typeof adSettings.data.value === 'string' ? adSettings.data.value : '');
-      }
-
-      // Process logo settings
-      if (logoSettings.data?.value) {
-        const text = typeof logoSettings.data.value === 'string' ? logoSettings.data.value : 'دواء آمن';
-        setLogoText(text);
-        setLogoTextInput(text);
-      }
-
-      // Process plans
-      if (plansData.data) {
-        setPlans(plansData.data.map(dbToPlanType));
-      }
-
-      // Process users
-      if (usersData.data) {
-        setUsers(usersData.data);
-      }
-
-      // Process plans list
-      if (plansListData.data) {
-        setPlansList(plansListData.data.map((p: any) => ({ code: p.code, name: p.name, nameAr: p.name_ar })));
-      }
-
-      // Process PayPal settings
-      if (paypalSettings.data) {
-        setPaypalSettingsId(paypalSettings.data.id);
-        setPaypalMode((paypalSettings.data.mode as PaypalMode) || 'sandbox');
-        setSandboxClientId(paypalSettings.data.sandbox_client_id || '');
-        setSandboxSecret(paypalSettings.data.sandbox_secret || '');
-        setLiveClientId(paypalSettings.data.live_client_id || '');
-        setLiveSecret(paypalSettings.data.live_secret || '');
-      }
-
-      setIsInitialized(true);
-    } catch (error) {
-      console.error('Error initializing dashboard:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred');
+    if (error) {
+      console.error('Error fetching users:', error);
       toast({
         title: t('error'),
-        description: t('contentFetchError'),
+        description: error.message,
         variant: 'destructive',
-        duration: 5000,
+      });
+      return [];
+    }
+
+    return data as User[];
+  }, [t, toast]);
+
+  useEffect(() => {
+    fetchUsers().then(setUsers);
+  }, [fetchUsers]);
+
+  const { isLoading: isUsersLoading } = useQuery(['users'], fetchUsers);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await userUpdateMutation.mutateAsync({ id: userId, role: newRole });
+    } catch (error: any) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setSelectedUserId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (selectedUserId) {
+      try {
+        await userDeleteMutation.mutateAsync(users[selectedUserId].id);
+        setUsers(users.filter((_, index) => index !== selectedUserId));
+      } catch (error: any) {
+        console.error('Error deleting user:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedUserId(null);
+      }
+    }
+  };
+
+  const handleEditClick = (params: GridRowParams) => {
+    const userId = parseInt(params.row.id, 10);
+    const userToEdit = users.find(user => user.id === params.row.id);
+    if (userToEdit) {
+      setEditedUser(userToEdit);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleResetPasswordClick = (params: GridRowParams) => {
+    const userId = parseInt(params.row.id, 10);
+    const userToEdit = users.find(user => user.id === params.row.id);
+    if (userToEdit) {
+      setEditedUser(userToEdit);
+      setShowNewPasswordInput(true);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveUser = async () => {
+    if (editedUser) {
+      try {
+        if (showNewPasswordInput && newPassword) {
+          await resetPasswordMutation.mutateAsync({ id: editedUser.id, newPassword });
+        }
+        setIsEditModalOpen(false);
+        setShowNewPasswordInput(false);
+        setNewPassword('');
+      } catch (error: any) {
+        console.error('Error updating user:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setShowNewPasswordInput(false);
+    setNewPassword('');
+  };
+
+  const fetchLogoSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('type', 'logo_text')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching logo text:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else if (data?.value) {
+        setLogoText(data.value as string);
+      }
+    } catch (error) {
+      console.error('Error in fetchLogoSettings:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchLogoSettings();
+  }, [t, toast]);
+
+  const updateLogoText = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ value: logoText })
+        .eq('type', 'logo_text');
+
+      if (error) {
+        console.error('Error updating logo text:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: t('logoTextUpdated'),
+          description: t('logoTextUpdatedSuccessfully'),
+        });
+      }
+    } catch (error) {
+      console.error('Error in updateLogoText:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsLogoTextEditMode(false);
     }
-  }, [toast, t, user, isAdmin]);
+  };
 
-  // Initialize dashboard only after user loading is done
+  const fetchPaypalSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('paypal_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching PayPal settings:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else if (data) {
+        setPaypalSettings(data as PayPalSettings);
+      }
+    } catch (error) {
+      console.error('Error in fetchPaypalSettings:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   useEffect(() => {
-    if (!userLoading) {
-      initializeDashboard();
+    fetchPaypalSettings();
+  }, [t, toast]);
+
+  const updatePaypalSettings = async (updatedSettings: PayPalSettings) => {
+    try {
+      const { data, error } = await supabase
+        .from('paypal_settings')
+        .update(updatedSettings)
+        .eq('id', updatedSettings.id);
+
+      if (error) {
+        console.error('Error updating PayPal settings:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: t('paypalSettingsUpdated'),
+          description: t('paypalSettingsUpdatedSuccessfully'),
+        });
+        setPaypalSettings(updatedSettings);
+      }
+    } catch (error) {
+      console.error('Error in updatePaypalSettings:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPaypalEditMode(false);
     }
-  }, [userLoading, initializeDashboard]);
+  };
 
-  // Show loading if user is still loading
-  if (userLoading || isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">{t('loading')}</p>
-        </div>
-      </div>
-    );
-  }
+  const handlePaypalInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setPaypalSettings((prevSettings: any) => ({
+      ...prevSettings,
+      [name]: value,
+    }));
+  };
 
-  // Show error state
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('error')}</h2>
-          <p className="text-gray-600">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-          >
-            {t('retry')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const fetchMaintenanceSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .in('type', ['maintenance_mode', 'maintenance_message'])
+        .order('type', { ascending: false });
 
-  // Show unauthorized message
-  if (!user || !isAdmin()) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('unauthorized')}</h2>
-          <p className="text-gray-600">{t('adminAccessRequired')}</p>
-        </div>
-      </div>
-    );
-  }
+      if (error) {
+        console.error('Error fetching maintenance settings:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
 
-  // Show dashboard content
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white/90 border-r shadow-lg flex flex-col py-8 px-4 gap-2">
-        <h2 className="text-xl font-bold mb-6 text-primary">لوحة المشرف</h2>
-        {adminSections.map(section => (
-          <button
-            key={section.key}
-            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-base font-medium mb-1 hover:bg-primary/10 ${activeSection === section.key ? 'bg-primary/10 text-primary font-bold' : 'text-gray-700'}`}
-            onClick={() => setActiveSection(section.key)}
-          >
-            <section.icon className="w-5 h-5" />
-            {section.label}
-          </button>
-        ))}
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        {activeSection === 'ai' && (
-          <Card className="mb-8">
-            <CardHeader><CardTitle>{t('aiSettings')}</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">{t('apiKey')}</Label>
-                  <Input id="apiKey" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="model">{t('model')}</Label>
-                  <Select value={model} onValueChange={setModel}>
-                    <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
-                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={saveAISettings}>{t('saveSettings')}</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {activeSection === 'logo' && (
-          <Card className="mb-8">
-            <CardHeader><CardTitle>{t('logoSettings')}</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="logoText">{t('logoText')}</Label>
-                  <Input id="logoText" type="text" value={logoTextInput} onChange={(e) => setLogoTextInput(e.target.value)} placeholder="دواء آمن" />
-                </div>
-                <Button onClick={saveLogo}>{t('saveLogo')}</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {activeSection === 'ad' && (
-          <>
-            <Card className="mb-8">
-              <CardHeader><CardTitle>{t('advertisement')}</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Textarea value={adHTML} onChange={(e) => setAdHTML(e.target.value)} placeholder="<div>Your ad HTML here</div>" className="min-h-[120px] font-mono" />
-                  <Button onClick={saveAd}>{t('saveAd')}</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="mb-8">
-              <CardHeader><CardTitle>{t('secondaryAdvertisement')}</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Textarea value={secondaryAdHTML} onChange={(e) => setSecondaryAdHTML(e.target.value)} placeholder="<div>Your secondary ad HTML here</div>" className="min-h-[120px] font-mono" />
-                  <Button onClick={saveSecondaryAd}>{t('saveSecondaryAd')}</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-        {activeSection === 'plans' && (
-          <Card className="mb-8">
-            <CardHeader><CardTitle>Subscription Plans</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex justify-end mb-4 gap-2">
-                <Button onClick={updatePlansToNewStructure} variant="outline">تحديث هيكل الخطط</Button>
-                <Button onClick={() => setShowAddModal(true)}>إضافة خطة</Button>
-              </div>
-              {loadingPlans ? (
-                <div>Loading...</div>
-              ) : (
-                <table className="w-full text-sm border rounded-lg overflow-hidden shadow">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th>Code</th>
-                      <th>Name</th>
-                      <th>Arabic Name</th>
-                      <th>Price ($)</th>
-                      <th>Features</th>
-                      <th>Features (Ar)</th>
-                      <th>إجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {plans.map(plan => (
-                      <tr key={plan.id} className="border-b hover:bg-gray-50">
-                        <td>{plan.code}</td>
-                        <td>{plan.name}</td>
-                        <td>{plan.nameAr}</td>
-                        <td>{plan.price}</td>
-                        <td><ul>{plan.features?.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul></td>
-                        <td><ul>{plan.featuresAr?.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul></td>
-                        <td>
-                          <Button size="sm" onClick={() => openEditModal(plan)}>تعديل</Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeletePlan(plan.id)}>حذف</Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
-        )}
-        {activeSection === 'users' && (
-          <Card className="mb-8">
-            <CardHeader><CardTitle>إدارة الأعضاء</CardTitle></CardHeader>
-            <CardContent>
-              <div className="mb-4 flex gap-2 items-center">
-                <Input placeholder="بحث بالبريد الإلكتروني" value={searchEmail} onChange={e => setSearchEmail(e.target.value)} />
-                <Button onClick={fetchUsers}>تحديث</Button>
-              </div>
-              {loadingUsers ? (
-                <div>جاري التحميل...</div>
-              ) : (
-                <table className="w-full text-sm border rounded-lg overflow-hidden shadow">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th>البريد الإلكتروني</th>
-                      <th>الدور</th>
-                      <th>الباقة</th>
-                      <th>إجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.filter(u => u.email.includes(searchEmail)).map(user => (
-                      <tr key={user.id} className="border-b hover:bg-gray-50">
-                        <td>{user.email}</td>
-                        <td>{user.role}</td>
-                        <td>
-                          <select value={user.plan_code || 'visitor'} onChange={e => handleChangePlan(user.id, e.target.value)} className="border rounded px-2 py-1">
-                            {plansList.map(plan => (
-                              <option key={plan.code} value={plan.code}>{plan.nameAr || plan.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>حذف</Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
-        )}
-        {activeSection === 'paypal' && (
-          <Card className="mb-8 max-w-xl mx-auto">
-            <CardHeader><CardTitle>إعدادات بوابة الدفع بايبال</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-1 font-medium">وضع التشغيل</label>
-                  <select
-                    value={paypalMode}
-                    onChange={(e) => handlePaypalModeChange(e.target.value)}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="sandbox">Sandbox (اختبار)</option>
-                    <option value="live">Live (مباشر)</option>
-                  </select>
-                </div>
-                {paypalMode === 'sandbox' ? (
-                  <>
-                    <div>
-                      <label className="block mb-1 font-medium">Sandbox Client ID</label>
-                      <input type="text" className="w-full p-2 border rounded" value={sandboxClientId} onChange={e => setSandboxClientId(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block mb-1 font-medium">Sandbox Secret</label>
-                      <input type="password" className="w-full p-2 border rounded" value={sandboxSecret} onChange={e => setSandboxSecret(e.target.value)} />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block mb-1 font-medium">Live Client ID</label>
-                      <input type="text" className="w-full p-2 border rounded" value={liveClientId} onChange={e => setLiveClientId(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block mb-1 font-medium">Live Secret</label>
-                      <input type="password" className="w-full p-2 border rounded" value={liveSecret} onChange={e => setLiveSecret(e.target.value)} />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <label className="block mb-1 font-medium">العملة</label>
-                  <input type="text" className="w-full p-2 border rounded bg-gray-100" value="USD" disabled />
-                </div>
-                <button
-                  onClick={savePaypalSettings}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
-                  disabled={savingPaypal}
-                >
-                  {savingPaypal ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {/* Dialogs for plans (add/edit) remain as before */}
-        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>إضافة خطة جديدة</DialogTitle></DialogHeader>
-            <div className="space-y-2">
-              <Input placeholder="رمز الخطة (مثال: visitor)" value={addPlanData.code} onChange={e => setAddPlanData({ ...addPlanData, code: e.target.value })} />
-              <Input placeholder="اسم الخطة" value={addPlanData.name} onChange={e => setAddPlanData({ ...addPlanData, name: e.target.value })} />
-              <Input placeholder="الاسم بالعربية" value={addPlanData.nameAr} onChange={e => setAddPlanData({ ...addPlanData, nameAr: e.target.value })} />
-              <Input placeholder="الوصف" value={addPlanData.description} onChange={e => setAddPlanData({ ...addPlanData, description: e.target.value })} />
-              <Input placeholder="الوصف بالعربية" value={addPlanData.descriptionAr} onChange={e => setAddPlanData({ ...addPlanData, descriptionAr: e.target.value })} />
-              <Input type="number" placeholder="السعر" value={addPlanData.price} onChange={e => setAddPlanData({ ...addPlanData, price: Number(e.target.value) })} />
-              <Textarea placeholder="المميزات (سطر لكل ميزة)" value={addPlanData.features} onChange={e => setAddPlanData({ ...addPlanData, features: e.target.value })} />
-              <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={addPlanData.featuresAr} onChange={e => setAddPlanData({ ...addPlanData, featuresAr: e.target.value })} />
-            </div>
-            <DialogFooter>
-              <Button onClick={handleAddPlan}>إضافة</Button>
-              <Button variant="secondary" onClick={() => setShowAddModal(false)}>إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>تعديل الخطة</DialogTitle></DialogHeader>
-            {editPlanData && (
-              <div className="space-y-2">
-                <Input placeholder="رمز الخطة" value={editPlanData.code} onChange={e => setEditPlanData({ ...editPlanData, code: e.target.value })} />
-                <Input placeholder="اسم الخطة" value={editPlanData.name} onChange={e => setEditPlanData({ ...editPlanData, name: e.target.value })} />
-                <Input placeholder="الاسم بالعربية" value={editPlanData.nameAr} onChange={e => setEditPlanData({ ...editPlanData, nameAr: e.target.value })} />
-                <Input placeholder="الوصف" value={editPlanData.description} onChange={e => setEditPlanData({ ...editPlanData, description: e.target.value })} />
-                <Input placeholder="الوصف بالعربية" value={editPlanData.descriptionAr} onChange={e => setEditPlanData({ ...editPlanData, descriptionAr: e.target.value })} />
-                <Input type="number" placeholder="السعر" value={editPlanData.price} onChange={e => setEditPlanData({ ...editPlanData, price: Number(e.target.value) })} />
-                <Textarea placeholder="المميزات (سطر لكل ميزة)" value={editPlanData.features} onChange={e => setEditPlanData({ ...editPlanData, features: e.target.value })} />
-                <Textarea placeholder="المميزات بالعربية (سطر لكل ميزة)" value={editPlanData.featuresAr} onChange={e => setEditPlanData({ ...editPlanData, featuresAr: e.target.value })} />
-              </div>
-            )}
-            <DialogFooter>
-              <Button onClick={handleEditPlan}>حفظ</Button>
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
-  );
-};
+      const maintenanceModeSetting = data?.find(item => item.type === 'maintenance_mode');
+      const maintenanceMessageSetting = data?.find(item => item.type === 'maintenance_message');
 
-export default Admin;
+      const enabled = maintenanceModeSetting?.value === true || maintenanceModeSetting?.value === 'true';
+      const message = maintenanceMessageSetting?.value as string || '';
+
+      setIsMaintenanceModeEnabled(enabled);
+      setMaintenanceMessage(message);
+
+      setMaintenanceSettings({
+        enabled: enabled,
+        message: message,
+      });
+    } catch (error) {
+      console.error('Error in fetchMaintenanceSettings:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchMaintenanceSettings();
+  }, [t, toast]);
+
+  const updateMaintenanceMode = async (enabled: boolean) => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ value: enabled })
+        .eq('type', 'maintenance_mode');
+
+      if (error) {
+        console.error('Error updating maintenance mode:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: t('maintenanceModeUpdated'),
+          description: t('maintenanceModeUpdatedSuccessfully'),
+        });
+        setIsMaintenanceModeEnabled(enabled);
+        setMaintenanceSettings(prevSettings => ({
+          ...prevSettings,
+          enabled: enabled,
+        }));
+      }
+    } catch (error) {
+      console.error('Error in updateMaintenanceMode:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMaintenanceModeEditMode(false);
+    }
+  };
+
+  const updateMaintenanceMessage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ value: maintenanceMessage })
+        .eq('type', 'maintenance_message');
+
+      if (error) {
+        console.error('Error updating maintenance message:', error);
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: t('maintenanceMessageUpdated'),
+          description: t('maintenanceMessageUpdatedSuccessfully'),
+        });
+        setMaintenanceSettings(prevSettings => ({
+          ...prevSettings,
+          message: maintenanceMessage,
+        }));
+      }
+    } catch (error) {
+      console.error('Error in updateMaintenanceMessage:', error);
+      toast({
+        title: t('error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMaintenanceMessageEditMode(false);
+    }
+  };
+
+  const handlePlanCodeChange = async () => {
+    if (selectedUserForPlanCode && selectedPlanCode) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .update({ plan_code: selectedPlanCode })
+          .eq('id', selectedUserForPlanCode.id);
+
+        if (error) {
+          console.error('Error updating plan code:', error);
+          toast({
+            title: t('error'),
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: t('planCodeUpdated'),
+            description: t('planCodeUpdatedSuccessfully'),
+          });
+          setUsers(prevUsers =>
+            prevUsers.map(user =>
+              user.id === selectedUserForPlanCode.id ? { ...user, plan_code: selectedPlanCode } : user
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error in handlePlanCodeChange:', error);
+        toast({
+          title: t('error'),
+          description: (error as Error).message,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUserPlanCodeEditModalOpen(false);
+        setIsPlanCodeEditMode(false);
+        setSelectedUserForPlanCode(null);
+        setSelectedPlanCode(null);
+      }
+    }
+  };
+
+  const handleActiveStatus

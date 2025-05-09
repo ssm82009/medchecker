@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Pill, Menu, LogIn } from 'lucide-react';
+import { Pill, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,16 +56,6 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
 
-        {/* Login Button for non-authenticated users */}
-        {!user && (
-          <Link to="/login" className={`mx-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
-            <Button variant="outline" className="text-white border-white hover:bg-white/10">
-              <LogIn className="h-4 w-4 mr-2" />
-              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Button>
-          </Link>
-        )}
-
         {/* Menu Button and Sheet */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -86,22 +76,22 @@ const Navbar: React.FC = () => {
               
               {/* Page Links */}
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/" onClick={handleLinkClick}>{t('appTitle' as any)}</Link>
+                <Link to="/" onClick={handleLinkClick}>{t('appTitle')}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/about" onClick={handleLinkClick}>{t('about' as any)}</Link>
+                <Link to="/about" onClick={handleLinkClick}>{t('about')}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse' as any)}</Link>
+                <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse')}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy' as any)}</Link>
+                <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy')}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/copyright" onClick={handleLinkClick}>{t('copyright' as any)}</Link>
+                <Link to="/copyright" onClick={handleLinkClick}>{t('copyright')}</Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
-                <Link to="/contact" onClick={handleLinkClick}>{t('contactUs' as any)}</Link>
+                <Link to="/contact" onClick={handleLinkClick}>{t('contactUs')}</Link>
               </Button>
               
               {/* Admin and Logout Buttons */}
@@ -109,7 +99,7 @@ const Navbar: React.FC = () => {
                 <>
                   {user.role === 'admin' && (
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard' as any)}</Link>
+                      <Link to="/dashboard" onClick={handleLinkClick}>{t('dashboard')}</Link>
                     </Button>
                   )}
                   <Button variant="outline" asChild className="w-full justify-start">
@@ -123,7 +113,7 @@ const Navbar: React.FC = () => {
                     }} 
                     className="w-full justify-start"
                   >
-                    {t('logout' as any)}
+                    {t('logout')}
                   </Button>
                 </>
               ) : (
