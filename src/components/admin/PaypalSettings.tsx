@@ -26,7 +26,11 @@ const PaypalSettings = () => {
       
       if (data) {
         setPaypalSettingsId(data.id);
-        setPaypalMode(data.mode || 'sandbox');
+        // Fix the type issue by validating the value before setting it
+        const modeValue = data.mode || 'sandbox';
+        if (modeValue === 'sandbox' || modeValue === 'live') {
+          setPaypalMode(modeValue);
+        }
         setSandboxClientId(data.sandbox_client_id || '');
         setSandboxSecret(data.sandbox_secret || '');
         setLiveClientId(data.live_client_id || '');
