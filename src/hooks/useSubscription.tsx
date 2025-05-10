@@ -16,18 +16,49 @@ export const useSubscription = () => {
   // Default to monthly plan (pro)
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
   
-  // Check for active session when component mounts
+  // Track if we have a valid Supabase session
+  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
+  
+  // Check for active Supabase session when component mounts
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        console.log("No active Supabase session found in useSubscription");
-      } else {
-        console.log("Active Supabase session confirmed in useSubscription:", data.session.user.id);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Error getting Supabase session:", error);
+          setSupabaseUserId(null);
+          return;
+        }
+        
+        if (data.session) {
+          const userId = data.session.user.id;
+          console.log("Active Supabase session confirmed in useSubscription:", userId);
+          setSupabaseUserId(userId);
+        } else {
+          console.log("No active Supabase session found in useSubscription");
+          setSupabaseUserId(null);
+        }
+      } catch (e) {
+        console.error("Exception in Supabase auth check:", e);
+        setSupabaseUserId(null);
       }
     };
     
     checkAuth();
+    
+    // Also set up a listener for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in useSubscription:", event);
+      if (session) {
+        setSupabaseUserId(session.user.id);
+      } else {
+        setSupabaseUserId(null);
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   // Use our new hooks to fetch data and manage state
@@ -72,18 +103,25 @@ export const useSubscription = () => {
     console.log("Selected plan details:", selectedPlan);
   }, [plans, selectedPlanCode, selectedPlan]);
 
+  // Get the effective user ID (either from supabase session or auth hook)
+  const effectiveUserId = supabaseUserId || (user?.id ? String(user.id) : null);
+  
+  console.log("Effective user ID in useSubscription:", effectiveUserId);
+  console.log("User from auth hook:", user?.id ? `${user.id} (${typeof user.id})` : "not available");
+  console.log("User from Supabase session:", supabaseUserId || "not available");
+
   // Augment the payment success handler to include the plan details and user ID
   const enhancedPaymentSuccess = async (details: any) => {
     // Make sure we have a user ID
-    if (!user || !user.id) {
-      console.error("No user ID available in useSubscription");
+    if (!effectiveUserId) {
+      console.error("No effective user ID available in useSubscription");
       handlePaymentError(language === 'ar' 
         ? 'معرف المستخدم غير متوفر' 
         : 'User ID not available');
       return;
     }
     
-    console.log("Enhanced payment success with user ID:", user.id);
+    console.log("Enhanced payment success with effective user ID:", effectiveUserId);
     
     // Add price, plan code, and user ID to the details object
     const enhancedDetails = {
@@ -91,7 +129,7 @@ export const useSubscription = () => {
       price: selectedPlan?.price,
       planCode: selectedPlan?.code,
       currency: paypalSettings?.currency,
-      userId: String(user.id) // Ensure it's a string
+      userId: effectiveUserId // Use the effective user ID
     };
     
     await handlePaymentSuccess(enhancedDetails);
@@ -113,6 +151,6 @@ export const useSubscription = () => {
     handlePaymentSuccess: enhancedPaymentSuccess,
     handlePaymentError,
     resetPaymentStatus,
-    userId: user?.id ? String(user.id) : null // Ensure we return the user ID as a string
+    userId: effectiveUserId // Return the effective user ID
   };
 };

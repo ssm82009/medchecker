@@ -18,17 +18,19 @@ export const recordTransaction = async (
   console.log("Recording transaction for user:", userId);
   
   try {
-    // Make sure the session is active
-    const { data: { session } } = await supabase.auth.getSession();
+    // Get current session to verify
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (!session) {
+    if (!sessionData.session) {
       console.error("No active session found when recording transaction");
       throw new Error(language === 'ar' 
         ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
         : 'No active user session. Please login again.');
     }
     
-    // Store transaction in the database
+    console.log("Found active session for user:", sessionData.session.user.id);
+    
+    // Store transaction in the database - using the RLS policy which will check auth.uid()
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
@@ -38,7 +40,7 @@ export const recordTransaction = async (
         status: 'completed',
         payment_type: paymentType,
         payment_provider: 'paypal',
-        provider_transaction_id: details.id,
+        provider_transaction_id: details.id || uuidv4(), // Ensure we always have an ID
         plan_code: planCode,
         metadata: {
           payer: details.payer,
@@ -66,32 +68,41 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
   console.log("Updating user plan for user:", userId, "to plan:", planCode);
   
   try {
-    // إذا كان معرف المستخدم رقميًا، فنحتاج إلى البحث عن المستخدم بواسطة المعرف الرقمي
-    if (/^\d+$/.test(userId)) {
-      // تحويل معرف المستخدم إلى رقم لأن جدول المستخدمين يستخدم معرفات رقمية
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ 
-          plan_code: planCode 
-        })
-        .eq('id', Number(userId));
+    // Check for a valid Supabase session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      throw new Error("No active Supabase session when updating user plan");
+    }
+    
+    // Try to update by auth_uid first (most reliable way)
+    let { error: updateByAuthError, data: updateByAuthData } = await supabase
+      .from('users')
+      .update({ 
+        plan_code: planCode 
+      })
+      .eq('auth_uid', userId)
+      .select();
 
-      if (updateError) {
-        console.error("User update error:", updateError);
-        throw updateError;
-      }
-    } else {
-      // إذا كان معرف المستخدم يبدو كتنسيق UUID، قم بالتحديث بواسطة auth_uid
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ 
-          plan_code: planCode 
-        })
-        .eq('auth_uid', userId);
+    if (updateByAuthError || (updateByAuthData && updateByAuthData.length === 0)) {
+      console.log("Couldn't update by auth_uid, trying by numeric ID...");
+      
+      // Try by numeric ID if auth_uid didn't work
+      if (/^\d+$/.test(userId)) {
+        const { error: updateByIdError } = await supabase
+          .from('users')
+          .update({ 
+            plan_code: planCode 
+          })
+          .eq('id', Number(userId));
 
-      if (updateError) {
-        console.error("User update error:", updateError);
-        throw updateError;
+        if (updateByIdError) {
+          console.error("User update by ID error:", updateByIdError);
+          throw updateByIdError;
+        }
+      } else {
+        console.error("Couldn't update user plan: no matching user found");
+        throw new Error("No matching user found for plan update");
       }
     }
 

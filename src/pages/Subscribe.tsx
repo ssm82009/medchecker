@@ -36,35 +36,57 @@ const Subscribe: React.FC = () => {
     userId
   } = useSubscription();
 
-  // Initial check for active session without redirecting
+  // Debug logs
   useEffect(() => {
-    const checkSession = async () => {
-      console.log("Subscribe: Checking session...");
+    console.log("Subscribe component mounting with user state:", user);
+    
+    return () => {
+      console.log("Subscribe component unmounting");
+    };
+  }, []);
+
+  // Check for Supabase session directly on component mount
+  useEffect(() => {
+    const checkSupabaseSession = async () => {
       try {
+        console.log("Checking Supabase session...");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Session check error:", error);
+          console.error("Supabase session error:", error);
           setSessionValid(false);
         } else if (data.session) {
-          console.log("Active session found:", data.session.user.id);
+          console.log("Active Supabase session found:", data.session.user.id);
           setSessionValid(true);
         } else {
-          console.log("No active session");
+          console.log("No active Supabase session");
           setSessionValid(false);
         }
       } catch (e) {
-        console.error("Exception in session check:", e);
+        console.error("Exception in Supabase session check:", e);
         setSessionValid(false);
       } finally {
         setSessionChecked(true);
       }
     };
     
-    checkSession();
+    checkSupabaseSession();
   }, []);
 
-  // Only redirect to login if we've finished checking session and found no valid session
+  // Monitor Supabase session changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change event:", event, "Session:", session ? "exists" : "none");
+      setSessionValid(!!session);
+      setSessionChecked(true);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Only redirect to login if we've finished checking and found no valid session or user
   useEffect(() => {
     if (sessionChecked && !sessionValid && !user) {
       console.log("No valid session or user, redirecting to login");
@@ -72,23 +94,21 @@ const Subscribe: React.FC = () => {
     }
   }, [sessionChecked, sessionValid, user, navigate]);
 
-  // Debug logs
-  React.useEffect(() => {
-    console.log("Subscribe page rendering with state:", {
-      user: user ? "exists" : "none",
-      userId: user?.id || "none",
-      sessionChecked,
-      sessionValid,
-      path: location.pathname
-    });
-  }, [user, location, sessionChecked, sessionValid]);
+  // Debug logs for render
+  console.log("Subscribe page render state:", {
+    user: user ? `${user.id} (${typeof user.id})` : "none",
+    sessionChecked,
+    sessionValid,
+    path: location.pathname,
+    selectedPlan: selectedPlan?.code
+  });
 
   // Show loading state until session check completes
   if (!sessionChecked) {
     return <SubscriptionLoader language={language} />;
   }
 
-  // Don't show authentication error if we're still checking or redirecting
+  // Don't show authentication error if we're still checking
   if (!sessionValid && !user) {
     return <AuthenticationError language={language} user={user} />;
   }

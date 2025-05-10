@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import PlanSelector from '@/components/subscription/PlanSelector';
 import PaymentStatus from '@/components/subscription/PaymentStatus';
 import PayPalPaymentButtons from '@/components/subscription/PayPalPaymentButtons';
 import { PlanType } from '@/types/plan';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionCardProps {
   language: string;
@@ -44,10 +45,24 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 }) => {
   const navigate = useNavigate();
   
+  // Double-check Supabase session on component mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("[SubscriptionCard] Session check:", data.session ? "Active" : "None");
+      
+      if (data.session) {
+        console.log("[SubscriptionCard] Session user ID:", data.session.user.id);
+      }
+    };
+    
+    checkSession();
+  }, []);
+  
   // Extra validation for user ID - always ensure it's a string
   const safeUserId = userId ? String(userId) : '';
   
-  console.log("SubscriptionCard rendered with user ID:", safeUserId);
+  console.log("[SubscriptionCard] Rendered with user ID:", safeUserId, "Type:", typeof safeUserId);
   
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
@@ -60,7 +75,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         
         {selectedPlan && (
           <>
-            {/* إضافة منتقي الباقات */}
+            {/* Plan selector */}
             <div className="px-6 pt-6">
               <PlanSelector 
                 plans={plans} 
@@ -70,7 +85,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               />
             </div>
             
-            {/* عرض تفاصيل الباقة المحددة */}
+            {/* Selected plan details */}
             <PlanDetails plan={selectedPlan} paypalSettings={paypalSettings} />
           </>
         )}

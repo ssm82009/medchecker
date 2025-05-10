@@ -31,11 +31,11 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   const { language } = useTranslation();
   const { handlePayButtonClick, handlePayPalApprove } = usePayPalPayment(onPaymentSuccess, onPaymentError);
   
-  console.log("PayPal payment buttons component with userId:", userId);
+  console.log("[PayPalPaymentButtons] Rendering with userId:", userId, "Type:", typeof userId);
   
   // Strict validation of userId
   if (!userId) {
-    console.error("No userId provided to PayPalPaymentButtons component");
+    console.error("[PayPalPaymentButtons] No userId provided!");
     return <UserIdError language={language} />;
   }
   
@@ -68,7 +68,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
           onApprove={async (data, actions) => {
             // Always ensure the userId is in the data object
             const enhancedData = {...data, userId: safeUserId};
-            console.log("Enhanced PayPal approval data with userId:", enhancedData);
+            console.log("[PayPalPaymentButtons] Enhanced PayPal approval data with userId:", enhancedData);
             await handlePayPalApprove(enhancedData, actions);
           }}
           onError={onPaymentError}
