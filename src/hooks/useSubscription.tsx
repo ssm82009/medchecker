@@ -12,8 +12,8 @@ export const useSubscription = () => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   
-  // نحتاج إلى إضافة اختيار للباقة
-  const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro'); // الباقة الشهرية هي الافتراضية
+  // تعيين الباقة الشهرية كباقة افتراضية
+  const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
   
   // Use our new hooks to fetch data and manage state
   const { 

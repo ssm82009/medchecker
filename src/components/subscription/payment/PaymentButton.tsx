@@ -10,8 +10,7 @@ interface PaymentButtonProps {
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({ paymentType, language, onClick }) => {
-  // تم تغيير النص ليناسب الدفع لمرة واحدة فقط
-  const paymentText = language === 'ar' ? 'ادفع الآن' : 'Pay Now';
+  const paymentText = language === 'ar' ? 'اشترك الآن' : 'Subscribe Now';
 
   return (
     <Button 

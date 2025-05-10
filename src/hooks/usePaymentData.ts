@@ -35,10 +35,11 @@ export const usePaymentData = () => {
           console.log("Formatted PayPal settings:", formattedSettings);
         }
         
-        // Fetch all paid plans (pro and annual)
+        // Fetch only paid plans (pro and annual)
         const { data: plansData, error: plansError } = await supabase
           .from('plans')
           .select('*')
+          .in('code', ['pro', 'annual']) // فقط الباقات المدفوعة (شهرية وسنوية)
           .order('price', { ascending: true });
         
         if (plansError) {
