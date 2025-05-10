@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { supabase } from '@/integrations/supabase/client';
+import { verifyActiveSession } from '@/utils/paymentUtils';
 
 export const usePayPalPayment = (
   onPaymentSuccess: (details: any) => Promise<void>,
@@ -16,6 +18,16 @@ export const usePayPalPayment = (
         paypalButtonsElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
     }
+  }, []);
+
+  // Verify session is active on component mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const isSessionActive = await verifyActiveSession();
+      console.log("Initial session check in usePayPalPayment:", isSessionActive ? "Active" : "Inactive");
+    };
+    
+    checkSession();
   }, []);
 
   const handlePayButtonClick = () => {
@@ -35,6 +47,36 @@ export const usePayPalPayment = (
     console.log("Payment approved with data:", data);
     
     try {
+      // Verify active session before processing payment
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        onPaymentError(language === 'ar' 
+          ? 'حدث خطأ في جلسة المستخدم: ' + sessionError.message
+          : 'Session error: ' + sessionError.message);
+        return;
+      }
+      
+      if (!sessionData.session) {
+        console.error("No active session in handlePayPalApprove");
+        
+        // Try to refresh the session
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          console.error("Failed to refresh session:", refreshError);
+          onPaymentError(language === 'ar' 
+            ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.'
+            : 'No active user session. Please login again.');
+          return;
+        }
+        
+        console.log("Session refreshed successfully");
+      } else {
+        console.log("Active session confirmed in handlePayPalApprove:", sessionData.session.user.id);
+      }
+      
       // Verify that we have a userId in the data
       if (!data.userId) {
         console.error("No userId in PayPal approval data:", data);
@@ -51,7 +93,8 @@ export const usePayPalPayment = (
         // Add the user ID from data to details
         const enhancedDetails = {
           ...details,
-          userId: data.userId
+          userId: data.userId,
+          sessionId: sessionData.session?.id || data.sessionId
         };
         
         await onPaymentSuccess(enhancedDetails);
@@ -62,7 +105,8 @@ export const usePayPalPayment = (
         const subscriptionDetails = {
           id: data.orderID,
           payer: { email_address: 'subscription' },
-          userId: data.userId // Include user ID here
+          userId: data.userId, // Include user ID here
+          sessionId: sessionData.session?.id || data.sessionId
         };
         
         await onPaymentSuccess(subscriptionDetails);

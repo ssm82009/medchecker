@@ -19,16 +19,41 @@ export const recordTransaction = async (
   
   try {
     // Get current session to verify
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error when recording transaction:", sessionError);
+      throw new Error(language === 'ar' 
+        ? 'حدث خطأ في جلسة المستخدم. يرجى تسجيل الدخول مرة أخرى.' 
+        : 'Session error occurred. Please login again.');
+    }
     
     if (!sessionData.session) {
       console.error("No active session found when recording transaction");
-      throw new Error(language === 'ar' 
-        ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
-        : 'No active user session. Please login again.');
+      
+      // Try to refresh the session
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !refreshData.session) {
+        console.error("Failed to refresh session:", refreshError);
+        throw new Error(language === 'ar' 
+          ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
+          : 'No active user session. Please login again.');
+      }
+      
+      console.log("Session refreshed successfully for user:", refreshData.session.user.id);
+    } else {
+      console.log("Found active session for user:", sessionData.session.user.id);
     }
     
-    console.log("Found active session for user:", sessionData.session.user.id);
+    // One more session check to ensure we have a valid session before proceeding
+    const { data: finalSessionCheck } = await supabase.auth.getSession();
+    if (!finalSessionCheck.session) {
+      console.error("Session still not found after refresh attempt");
+      throw new Error(language === 'ar' 
+        ? 'لا يمكن تأكيد جلسة المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
+        : 'Unable to verify user session. Please logout and login again.');
+    }
     
     // Store transaction in the database - using the RLS policy which will check auth.uid()
     const { error: transactionError } = await supabase
@@ -44,7 +69,8 @@ export const recordTransaction = async (
         plan_code: planCode,
         metadata: {
           payer: details.payer,
-          payment_details: details
+          payment_details: details,
+          session_id: finalSessionCheck.session.id // Store session ID for debugging
         }
       });
 
@@ -69,10 +95,24 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
   
   try {
     // Check for a valid Supabase session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error when updating user plan:", sessionError);
+      throw new Error("Session error occurred when updating user plan");
+    }
     
     if (!sessionData.session) {
-      throw new Error("No active Supabase session when updating user plan");
+      console.error("No active session when updating user plan");
+      
+      // Try to refresh the session
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !refreshData.session) {
+        throw new Error("No active Supabase session when updating user plan");
+      }
+      
+      console.log("Session refreshed when updating user plan");
     }
     
     // Try to update by auth_uid first (most reliable way)
@@ -133,4 +173,36 @@ export const validatePrice = (price: number): boolean => {
     throw new Error('Invalid price value');
   }
   return true;
+};
+
+/**
+ * Verifies Supabase session is active
+ */
+export const verifyActiveSession = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Session verification error:", error);
+      return false;
+    }
+    
+    if (!data.session) {
+      console.log("No active session found in verification");
+      
+      // Try to refresh the session
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshData.session) {
+        console.error("Session refresh failed:", refreshError);
+        return false;
+      }
+      
+      console.log("Session refreshed successfully");
+      return true;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception in verifyActiveSession:", error);
+    return false;
+  }
 };
