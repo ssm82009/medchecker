@@ -1,7 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePayPalPayment } from '@/hooks/usePayPalPayment';
+import { checkAndGetSession } from '@/utils/paymentUtils';
 import PaymentSecurityMessage from './payment/PaymentSecurityMessage';
 import PaymentButton from './payment/PaymentButton';
 import PayPalButtonsContainer from './payment/PayPalButtonsContainer';
@@ -35,41 +36,82 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { handlePayButtonClick, handlePayPalApprove } = usePayPalPayment(onPaymentSuccess, onPaymentError);
+  const [sessionStatus, setSessionStatus] = useState<'checking' | 'active' | 'inactive'>('checking');
   
-  // Check for active session when component mounts
+  // التحقق من وجود جلسة نشطة عند تحميل المكون
   useEffect(() => {
     const verifySession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session) {
-        console.error("[PayPalPaymentButtons] No active Supabase session:", error || "session is null");
+      setSessionStatus('checking');
+      
+      const sessionCheck = await checkAndGetSession(language);
+      
+      if (!sessionCheck.success) {
+        console.error("[PayPalPaymentButtons] No active session:", sessionCheck.message);
+        setSessionStatus('inactive');
+        
         toast({
           title: language === 'ar' ? 'تحذير: جلسة غير نشطة' : 'Warning: Session not active',
           description: language === 'ar' 
-            ? 'قد تواجه مشاكل في إكمال الدفع. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
-            : 'You may have issues completing payment. Please logout and login again.',
+            ? 'يرجى تسجيل الدخول مرة أخرى لإكمال عملية الدفع' 
+            : 'Please login again to complete payment process',
           variant: 'destructive'
         });
       } else {
-        console.log("[PayPalPaymentButtons] Active session verified for user:", data.session.user.id);
+        console.log("[PayPalPaymentButtons] Active session verified for user:", 
+          sessionCheck.session?.user.id);
+        setSessionStatus('active');
       }
     };
     
     verifySession();
   }, [language, toast]);
   
-  console.log("[PayPalPaymentButtons] Rendering with userId:", userId, "Type:", typeof userId);
+  // توجيه المستخدم إلى صفحة تسجيل الدخول إذا لم تكن هناك جلسة نشطة
+  useEffect(() => {
+    if (sessionStatus === 'inactive') {
+      const redirectTimer = setTimeout(() => {
+        navigate('/login', { state: { returnUrl: '/subscribe' } });
+      }, 3000); // إعطاء المستخدم وقت لقراءة رسالة الخطأ
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [sessionStatus, navigate]);
   
-  // Strict validation of userId
+  console.log("[PayPalPaymentButtons] Rendering with userId:", userId, "Type:", typeof userId);
+  console.log("[PayPalPaymentButtons] Session status:", sessionStatus);
+  
+  // التحقق الدقيق من معرف المستخدم
   if (!userId) {
     console.error("[PayPalPaymentButtons] No userId provided!");
     return <UserIdError language={language} />;
+  }
+  
+  // عرض حالة التحميل إذا كانت عملية التحقق من الجلسة جارية
+  if (sessionStatus === 'checking') {
+    return <PayPalLoadingState language={language} />;
+  }
+  
+  // عرض رسالة خطأ إذا لم تكن هناك جلسة نشطة
+  if (sessionStatus === 'inactive') {
+    return (
+      <div className="bg-amber-50 p-4 rounded-md border border-amber-200 mb-4">
+        <div className="text-amber-700 font-medium mb-2">
+          {language === 'ar' ? 'جلسة غير نشطة' : 'Session not active'}
+        </div>
+        <div className="text-amber-600 text-sm">
+          {language === 'ar' 
+            ? 'جاري تحويلك إلى صفحة تسجيل الدخول...' 
+            : 'Redirecting to login page...'}
+        </div>
+      </div>
+    );
   }
   
   if (!paypalReady || !paypalSettings || !paypalSettings.clientId) {
     return <PayPalLoadingState language={language} />;
   }
 
-  // Ensure userId is a string
+  // التأكد من أن معرف المستخدم هو سلسلة نصية
   const safeUserId = String(userId);
 
   return (
@@ -93,21 +135,20 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
           language={language}
           onApprove={async (data, actions) => {
             try {
-              // Verify session is active before proceeding
-              const { data: sessionData } = await supabase.auth.getSession();
-              if (!sessionData.session) {
+              // التحقق من وجود جلسة نشطة قبل المتابعة
+              const sessionCheck = await checkAndGetSession(language);
+              if (!sessionCheck.success) {
                 console.error("[PayPalPaymentButtons] Session not active during payment approval");
-                throw new Error(language === 'ar' 
-                  ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
-                  : 'No active user session. Please login again.');
+                throw new Error(sessionCheck.message);
               }
               
-              // Always ensure the userId is in the data object
+              const activeSession = sessionCheck.session;
+              
+              // التأكد دائمًا من وجود معرف المستخدم في كائن البيانات
               const enhancedData = {
                 ...data, 
                 userId: safeUserId,
-                // Use session user ID instead of session.id which doesn't exist
-                sessionId: sessionData.session.user.id
+                sessionUserId: activeSession?.user?.id
               };
               console.log("[PayPalPaymentButtons] Enhanced PayPal approval data with userId:", enhancedData);
               await handlePayPalApprove(enhancedData, actions);

@@ -8,6 +8,7 @@ import { usePaymentState } from '@/hooks/usePaymentState';
 import { PlanType } from '@/types/plan';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { checkAndGetSession } from '@/utils/paymentUtils';
 
 export const useSubscription = () => {
   const { user } = useAuth();
@@ -22,47 +23,26 @@ export const useSubscription = () => {
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [sessionChecking, setSessionChecking] = useState<boolean>(true);
   
-  // Check for active Supabase session when component mounts
+  // استخدام الوظيفة المحسنة للتحقق من وجود جلسة نشطة
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeSession = async () => {
       try {
         setSessionChecking(true);
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("Error getting Supabase session:", error);
+        const sessionCheck = await checkAndGetSession(language);
+        
+        if (sessionCheck.success) {
+          console.log("Active Supabase session confirmed in useSubscription:", 
+            sessionCheck.session.user.id);
+          setSupabaseUserId(sessionCheck.session.user.id);
+        } else {
+          console.log("Session check failed:", sessionCheck.message);
           setSupabaseUserId(null);
+          
           toast({
-            title: language === 'ar' ? 'خطأ في الجلسة' : 'Session Error',
-            description: language === 'ar' 
-              ? 'حدث خطأ أثناء التحقق من جلستك. يرجى تسجيل الدخول مرة أخرى.' 
-              : 'Error verifying your session. Please login again.',
+            title: language === 'ar' ? 'تنبيه بخصوص الجلسة' : 'Session Alert',
+            description: sessionCheck.message,
             variant: 'destructive'
           });
-          return;
-        }
-        
-        if (data.session) {
-          const userId = data.session.user.id;
-          console.log("Active Supabase session confirmed in useSubscription:", userId);
-          setSupabaseUserId(userId);
-        } else {
-          console.log("No active Supabase session found in useSubscription");
-          
-          // Try refreshing the session
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          if (!refreshError && refreshData.session) {
-            console.log("Session refreshed successfully:", refreshData.session.user.id);
-            setSupabaseUserId(refreshData.session.user.id);
-          } else {
-            setSupabaseUserId(null);
-            toast({
-              title: language === 'ar' ? 'تحذير: جلسة غير نشطة' : 'Warning: Session not active',
-              description: language === 'ar' 
-                ? 'يرجى تسجيل الدخول مرة أخرى لإكمال عملية الدفع.' 
-                : 'Please log in again to complete payment.',
-              variant: 'destructive'
-            });
-          }
         }
       } catch (e) {
         console.error("Exception in Supabase auth check:", e);
@@ -72,15 +52,26 @@ export const useSubscription = () => {
       }
     };
     
-    checkAuth();
+    initializeSession();
     
-    // Also set up a listener for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // إعداد مستمع لتغييرات حالة المصادقة
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed in useSubscription:", event);
+      
       if (session) {
         setSupabaseUserId(session.user.id);
+        console.log("Session updated from auth state change:", session.user.id);
       } else {
         setSupabaseUserId(null);
+        console.log("No session from auth state change");
+        
+        // محاولة تحديث الجلسة
+        const refreshCheck = await checkAndGetSession(language);
+        if (refreshCheck.success) {
+          setSupabaseUserId(refreshCheck.session.user.id);
+          console.log("Session refreshed after auth state change:", 
+            refreshCheck.session.user.id);
+        }
       }
     });
     
@@ -141,46 +132,56 @@ export const useSubscription = () => {
           : 'Please login to complete payment process',
         variant: 'destructive'
       });
+      
+      // توجيه المستخدم إلى صفحة تسجيل الدخول بعد فترة قصيرة
+      const redirectTimer = setTimeout(() => {
+        navigate('/login', { state: { returnUrl: '/subscribe' } });
+      }, 3000);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [effectiveUserId, sessionChecking, loading, language, toast]);
+  }, [effectiveUserId, sessionChecking, loading, language, toast, navigate]);
 
-  // Augment the payment success handler to include the plan details and user ID
+  // تحسين معالج نجاح الدفع ليشمل تفاصيل الخطة ومعرف المستخدم
   const enhancedPaymentSuccess = async (details: any) => {
-    // Check session is active before proceeding
-    const { data } = await supabase.auth.getSession();
-    
-    // Make sure we have a user ID
-    if (!effectiveUserId) {
-      console.error("No effective user ID available in useSubscription");
-      handlePaymentError(language === 'ar' 
-        ? 'معرف المستخدم غير متوفر' 
-        : 'User ID not available');
-      return;
+    try {
+      // التحقق من وجود جلسة نشطة قبل المتابعة
+      const sessionCheck = await checkAndGetSession(language);
+      
+      if (!sessionCheck.success) {
+        console.error("No active session detected before payment processing");
+        handlePaymentError(sessionCheck.message);
+        return;
+      }
+      
+      // التأكد من وجود معرف مستخدم
+      if (!effectiveUserId) {
+        console.error("No effective user ID available in useSubscription");
+        handlePaymentError(language === 'ar' 
+          ? 'معرف المستخدم غير متوفر' 
+          : 'User ID not available');
+        return;
+      }
+      
+      const activeSession = sessionCheck.session;
+      console.log("Enhanced payment success with effective user ID:", effectiveUserId);
+      console.log("Active session confirmed before payment processing:", activeSession.user.id);
+      
+      // إضافة السعر ورمز الخطة ومعرف المستخدم إلى كائن التفاصيل
+      const enhancedDetails = {
+        ...details,
+        price: selectedPlan?.price,
+        planCode: selectedPlan?.code,
+        currency: paypalSettings?.currency,
+        userId: effectiveUserId,
+        sessionUserId: activeSession.user.id
+      };
+      
+      await handlePaymentSuccess(enhancedDetails);
+    } catch (error) {
+      console.error("Error in enhancedPaymentSuccess:", error);
+      handlePaymentError(String(error));
     }
-    
-    if (!data.session) {
-      console.error("No active session detected before payment processing");
-      handlePaymentError(language === 'ar' 
-        ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
-        : 'No active user session. Please login again.');
-      return;
-    }
-    
-    console.log("Enhanced payment success with effective user ID:", effectiveUserId);
-    console.log("Active session confirmed before payment processing:", data.session.user.id);
-    
-    // Add price, plan code, and user ID to the details object
-    const enhancedDetails = {
-      ...details,
-      price: selectedPlan?.price,
-      planCode: selectedPlan?.code,
-      currency: paypalSettings?.currency,
-      userId: effectiveUserId, // Use the effective user ID
-      // Use user.id instead of session.id which doesn't exist
-      sessionId: data.session.user.id
-    };
-    
-    await handlePaymentSuccess(enhancedDetails);
   };
 
   return {
@@ -199,6 +200,6 @@ export const useSubscription = () => {
     handlePaymentSuccess: enhancedPaymentSuccess,
     handlePaymentError,
     resetPaymentStatus,
-    userId: effectiveUserId // Return the effective user ID
+    userId: effectiveUserId // إرجاع معرف المستخدم الفعلي
   };
 };

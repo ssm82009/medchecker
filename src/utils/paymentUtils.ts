@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,48 +17,19 @@ export const recordTransaction = async (
   console.log("Recording transaction for user:", userId);
   
   try {
-    // Get current session to verify
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error("Session error when recording transaction:", sessionError);
-      throw new Error(language === 'ar' 
-        ? 'حدث خطأ في جلسة المستخدم. يرجى تسجيل الدخول مرة أخرى.' 
-        : 'Session error occurred. Please login again.');
+    // التحقق من الجلسة بطريقة موثوقة
+    const sessionCheck = await checkAndGetSession(language);
+    if (!sessionCheck.success) {
+      throw new Error(sessionCheck.message);
     }
     
-    if (!sessionData.session) {
-      console.error("No active session found when recording transaction");
-      
-      // Try to refresh the session
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError || !refreshData.session) {
-        console.error("Failed to refresh session:", refreshError);
-        throw new Error(language === 'ar' 
-          ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
-          : 'No active user session. Please login again.');
-      }
-      
-      console.log("Session refreshed successfully for user:", refreshData.session.user.id);
-    } else {
-      console.log("Found active session for user:", sessionData.session.user.id);
-    }
-    
-    // One more session check to ensure we have a valid session before proceeding
-    const { data: finalSessionCheck } = await supabase.auth.getSession();
-    if (!finalSessionCheck.session) {
-      console.error("Session still not found after refresh attempt");
-      throw new Error(language === 'ar' 
-        ? 'لا يمكن تأكيد جلسة المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
-        : 'Unable to verify user session. Please logout and login again.');
-    }
+    const activeSession = sessionCheck.session;
     
     // Store transaction in the database - using the RLS policy which will check auth.uid()
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
-        user_id: userId, // Use user_id as string
+        user_id: userId,
         amount: price,
         currency: currency || 'USD',
         status: 'completed',
@@ -68,8 +40,7 @@ export const recordTransaction = async (
         metadata: {
           payer: details.payer,
           payment_details: details,
-          // Use user.id instead of session.id which doesn't exist
-          session_id: finalSessionCheck.session.user.id
+          session_uid: activeSession?.user?.id
         }
       });
 
@@ -93,25 +64,10 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
   console.log("Updating user plan for user:", userId, "to plan:", planCode);
   
   try {
-    // Check for a valid Supabase session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error("Session error when updating user plan:", sessionError);
-      throw new Error("Session error occurred when updating user plan");
-    }
-    
-    if (!sessionData.session) {
-      console.error("No active session when updating user plan");
-      
-      // Try to refresh the session
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError || !refreshData.session) {
-        throw new Error("No active Supabase session when updating user plan");
-      }
-      
-      console.log("Session refreshed when updating user plan");
+    // التحقق من الجلسة بطريقة موثوقة
+    const sessionCheck = await checkAndGetSession();
+    if (!sessionCheck.success) {
+      throw new Error(sessionCheck.message);
     }
     
     // Try to update by auth_uid first (most reliable way)
@@ -175,33 +131,93 @@ export const validatePrice = (price: number): boolean => {
 };
 
 /**
- * Verifies Supabase session is active
+ * وظيفة محسنة للتحقق من وجود جلسة نشطة
+ * تقوم بإجراء ثلاث محاولات للحصول على الجلسة
+ */
+export const checkAndGetSession = async (language: string = 'en') => {
+  try {
+    // المحاولة الأولى - جلب الجلسة الحالية
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    // التحقق من وجود خطأ
+    if (sessionError) {
+      console.error("Session error in checkAndGetSession:", sessionError);
+      return {
+        success: false,
+        message: language === 'ar' 
+          ? 'خطأ في جلسة المستخدم، يرجى تسجيل الدخول مرة أخرى' 
+          : 'Session error, please login again',
+        session: null
+      };
+    }
+    
+    // التحقق من وجود جلسة
+    if (sessionData.session) {
+      console.log("Active session found:", sessionData.session.user.id);
+      return {
+        success: true,
+        session: sessionData.session,
+        message: ''
+      };
+    }
+    
+    // المحاولة الثانية - تحديث الجلسة
+    console.log("No active session found, attempting to refresh...");
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    // التحقق من نجاح تحديث الجلسة
+    if (!refreshError && refreshData.session) {
+      console.log("Session refreshed successfully:", refreshData.session.user.id);
+      return {
+        success: true,
+        session: refreshData.session,
+        message: ''
+      };
+    }
+    
+    // فشل تحديث الجلسة
+    if (refreshError) {
+      console.error("Session refresh failed:", refreshError);
+    } else {
+      console.error("Session refresh returned no session");
+    }
+
+    // المحاولة الأخيرة - التحقق مرة أخرى من الجلسة
+    const { data: finalCheck } = await supabase.auth.getSession();
+    if (finalCheck.session) {
+      console.log("Session found after final check:", finalCheck.session.user.id);
+      return {
+        success: true,
+        session: finalCheck.session,
+        message: ''
+      };
+    }
+    
+    // لا توجد جلسة نشطة
+    return {
+      success: false,
+      message: language === 'ar' 
+        ? 'لا توجد جلسة نشطة للمستخدم، يرجى تسجيل الدخول' 
+        : 'No active user session, please login',
+      session: null
+    };
+  } catch (error) {
+    console.error("Exception in checkAndGetSession:", error);
+    return {
+      success: false,
+      message: language === 'ar' 
+        ? 'حدث خطأ غير متوقع أثناء التحقق من الجلسة' 
+        : 'Unexpected error checking session',
+      session: null
+    };
+  }
+};
+
+/**
+ * وظيفة مساعدة لاستدعاء الوظيفة القديمة للتوافق مع الكود القديم
+ * ستعمل كجسر بين الكود القديم والجديد
  */
 export const verifyActiveSession = async (): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error("Session verification error:", error);
-      return false;
-    }
-    
-    if (!data.session) {
-      console.log("No active session found in verification");
-      
-      // Try to refresh the session
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError || !refreshData.session) {
-        console.error("Session refresh failed:", refreshError);
-        return false;
-      }
-      
-      console.log("Session refreshed successfully");
-      return true;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Exception in verifyActiveSession:", error);
-    return false;
-  }
+  const result = await checkAndGetSession();
+  return result.success;
 };
