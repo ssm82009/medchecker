@@ -18,61 +18,27 @@ export const recordTransaction = async (
   console.log("Recording transaction for user:", userId);
   
   try {
-    // Check if userId is a valid UUID or try to convert it
-    let validUserId = userId;
-    
-    // If userId is a numeric string and not a valid UUID, generate a new UUID
-    if (/^\d+$/.test(userId)) {
-      console.log("UserId appears to be numeric, not a valid UUID format. Using a generated UUID");
-      // Store the original ID in metadata
-      const metadata = {
-        original_user_id: userId,
-        payer: details.payer,
-        payment_details: details
-      };
-      
-      // Record the transaction in the database with the numeric ID as a reference
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          // Don't specify user_id if it's not a valid UUID
-          amount: price,
-          currency: currency || 'USD',
-          status: 'completed',
-          payment_type: paymentType,
-          payment_provider: 'paypal',
-          provider_transaction_id: details.id,
-          plan_code: planCode,
-          metadata: metadata
-        });
+    // تخزين المعاملة في قاعدة البيانات
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId, // الآن يمكن استخدام user_id مباشرة كنص
+        amount: price,
+        currency: currency || 'USD',
+        status: 'completed',
+        payment_type: paymentType,
+        payment_provider: 'paypal',
+        provider_transaction_id: details.id,
+        plan_code: planCode,
+        metadata: {
+          payer: details.payer,
+          payment_details: details
+        }
+      });
 
-      if (transactionError) {
-        console.error("Transaction error:", transactionError);
-        throw transactionError;
-      }
-    } else {
-      // If userId looks like a valid UUID, use it directly
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: validUserId,
-          amount: price,
-          currency: currency || 'USD',
-          status: 'completed',
-          payment_type: paymentType,
-          payment_provider: 'paypal',
-          provider_transaction_id: details.id,
-          plan_code: planCode,
-          metadata: {
-            payer: details.payer,
-            payment_details: details
-          }
-        });
-
-      if (transactionError) {
-        console.error("Transaction error:", transactionError);
-        throw transactionError;
-      }
+    if (transactionError) {
+      console.error("Transaction error:", transactionError);
+      throw transactionError;
     }
 
     console.log("Transaction recorded successfully");
@@ -90,9 +56,9 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
   console.log("Updating user plan for user:", userId, "to plan:", planCode);
   
   try {
-    // If the userId is numeric (not UUID), we need to find the user by numeric ID
+    // إذا كان معرف المستخدم رقميًا، فنحتاج إلى البحث عن المستخدم بواسطة المعرف الرقمي
     if (/^\d+$/.test(userId)) {
-      // Convert user ID to number since users table uses numeric IDs
+      // تحويل معرف المستخدم إلى رقم لأن جدول المستخدمين يستخدم معرفات رقمية
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
@@ -105,7 +71,7 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
         throw updateError;
       }
     } else {
-      // If userId appears to be UUID format, update by auth_uid
+      // إذا كان معرف المستخدم يبدو كتنسيق UUID، قم بالتحديث بواسطة auth_uid
       const { error: updateError } = await supabase
         .from('users')
         .update({ 

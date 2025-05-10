@@ -21,7 +21,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
   onApprove,
   onError
 }) => {
-  // Extra validation to ensure userId is always available and is a string
+  // تأكد إضافي من توفر معرف المستخدم وأنه نص
   const safeUserId = userId ? String(userId) : '';
   
   if (!safeUserId) {
@@ -67,7 +67,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                     currency_code: paypalSettings.currency || 'USD',
                   },
                   description: proPlan.name,
-                  custom_id: safeUserId // This is valid in purchase_units
+                  custom_id: safeUserId // هذا صالح في purchase_units
                 },
               ],
               application_context: {
@@ -95,7 +95,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                   custom_id: safeUserId,
                   application_context: {
                     user_action: "SUBSCRIBE_NOW",
-                    // Add required properties per PayPal API types
+                    // إضافة الخصائص المطلوبة وفقًا لأنواع API PayPal
                     return_url: window.location.href,
                     cancel_url: window.location.href
                   }
@@ -104,7 +104,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
             : undefined
         }
         onApprove={async (data, actions) => {
-          // Always include the user ID in the data we send to the approval handler
+          // تأكد دائمًا من وجود معرف المستخدم في بيانات المرسلة إلى معالج الموافقة
           const enhancedData = { ...data, userId: safeUserId };
           console.log("Payment approved with enhanced data:", enhancedData);
           await onApprove(enhancedData, actions);
