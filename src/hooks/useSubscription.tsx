@@ -25,9 +25,14 @@ export const useSubscription = () => {
       setLoading(true);
       try {
         // Fetch paypal settings
-        const { data: paypalData } = await supabase.from('paypal_settings').select('*').maybeSingle();
+        const { data: paypalData, error: paypalError } = await supabase.from('paypal_settings').select('*').maybeSingle();
+        
+        if (paypalError) {
+          console.error("Error fetching PayPal settings:", paypalError);
+        }
         
         if (paypalData) {
+          console.log("PayPal settings fetched:", paypalData);
           // Format settings with the correct property names for PayPal SDK
           const formattedSettings = {
             mode: paypalData.mode || 'sandbox',
@@ -37,13 +42,24 @@ export const useSubscription = () => {
             subscriptionPlanId: paypalData.subscription_plan_id,
           };
           setPaypalSettings(formattedSettings);
+          console.log("Formatted PayPal settings:", formattedSettings);
         }
         
         // Fetch pro plan
-        const { data: plans } = await supabase.from('plans').select('*').eq('code', 'pro').maybeSingle();
-        setProPlan(plans || null);
+        const { data: plans, error: plansError } = await supabase.from('plans').select('*').eq('code', 'pro').maybeSingle();
+        
+        if (plansError) {
+          console.error("Error fetching pro plan:", plansError);
+        }
+        
+        if (plans) {
+          console.log("Pro plan fetched:", plans);
+          setProPlan(plans);
+        } else {
+          console.warn("No pro plan found in database");
+        }
       } catch (error) {
-        console.error("Error fetching subscription data:", error);
+        console.error("Error in fetchData:", error);
       } finally {
         setLoading(false);
       }
@@ -52,12 +68,23 @@ export const useSubscription = () => {
   }, []);
 
   useEffect(() => {
-    if (paypalSettings && paypalSettings.clientId) setPaypalReady(true);
+    if (paypalSettings && paypalSettings.clientId) {
+      console.log("PayPal is ready with client ID:", paypalSettings.clientId);
+      setPaypalReady(true);
+    } else {
+      console.log("PayPal is not ready yet. Settings:", paypalSettings);
+    }
   }, [paypalSettings]);
 
   const handlePaymentSuccess = async (details: any) => {
+    console.log("Payment success handler called with details:", details);
     try {
-      if (!user?.id) return; // Ensure we have a user ID
+      if (!user?.id) {
+        console.error("No user ID found");
+        return; 
+      }
+      
+      console.log("Recording transaction for user:", user.id);
       
       // تسجيل المعاملة في قاعدة البيانات
       const { error: transactionError } = await supabase
@@ -77,7 +104,12 @@ export const useSubscription = () => {
           }
         });
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error("Transaction error:", transactionError);
+        throw transactionError;
+      }
+
+      console.log("Transaction recorded successfully, updating user plan");
 
       // تحديث خطة المستخدم
       const { error: updateError } = await supabase
@@ -87,7 +119,12 @@ export const useSubscription = () => {
         })
         .eq('id', parseInt(user.id)); // Convert string ID to number for users table
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("User update error:", updateError);
+        throw updateError;
+      }
+
+      console.log("User plan updated successfully to:", proPlan.code);
 
       toast({
         title: language === 'ar' ? 'تم الاشتراك بنجاح!' : 'Subscription successful!',
@@ -107,6 +144,7 @@ export const useSubscription = () => {
   };
 
   const handlePaymentError = (errorMessage: string) => {
+    console.error("Payment error:", errorMessage);
     setPaymentStatus('error');
     setPaymentMessage(errorMessage);
   };
