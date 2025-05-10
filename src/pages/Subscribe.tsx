@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client'; // Added missing import
 import AuthenticationError from '@/components/subscription/AuthenticationError';
 import SubscriptionLoader from '@/components/subscription/SubscriptionLoader';
 import PlanError from '@/components/subscription/PlanError';
