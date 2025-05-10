@@ -67,13 +67,12 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                     currency_code: paypalSettings.currency || 'USD',
                   },
                   description: proPlan.name,
-                  custom_id: safeUserId
+                  custom_id: safeUserId // This is valid in purchase_units
                 },
               ],
               application_context: {
-                user_action: "PAY_NOW",
+                user_action: "PAY_NOW"
               }
-              // Note: removed custom_id from here as it's not a valid property at this level
             });
           }
           return '';
