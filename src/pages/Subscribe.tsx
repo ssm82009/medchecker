@@ -11,11 +11,13 @@ import PaymentStatus from '@/components/subscription/PaymentStatus';
 import PayPalPaymentButtons from '@/components/subscription/PayPalPaymentButtons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Subscribe: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   const { user } = useAuth();
+  const { toast } = useToast();
   const {
     paypalSettings,
     loading,
@@ -30,13 +32,25 @@ const Subscribe: React.FC = () => {
     resetPaymentStatus
   } = useSubscription();
 
-  // التحقق من تسجيل الدخول وتوجيه المستخدم إلى صفحة تسجيل الدخول إذا لم يكن مسجلاً
+  // Check if user is logged in and has ID
   useEffect(() => {
     if (!user) {
       console.log("No user found, redirecting to login page");
       navigate('/login', { state: { returnUrl: '/subscribe' } });
+      return;
     }
-  }, [user, navigate]);
+
+    if (!user.id) {
+      console.error("User found but no ID available:", user);
+      toast({
+        title: language === 'ar' ? 'خطأ في بيانات المستخدم' : 'User data error',
+        description: language === 'ar' 
+          ? 'تعذر العثور على معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
+          : 'User ID not found. Please log out and log in again.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, navigate, toast, language]);
 
   // Debug logs to help identify issues
   React.useEffect(() => {
@@ -49,7 +63,7 @@ const Subscribe: React.FC = () => {
     }
   }, [paypalSettings, paypalReady, proPlan, user]);
 
-  if (!user) {
+  if (!user || !user.id) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
         <Card className="w-full max-w-lg shadow-xl border-primary/10">
@@ -63,12 +77,18 @@ const Subscribe: React.FC = () => {
               <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-medium text-amber-800 mb-1">
-                  {language === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first'}
+                  {language === 'ar' 
+                    ? user ? 'بيانات المستخدم غير مكتملة' : 'يرجى تسجيل الدخول أولاً'
+                    : user ? 'Incomplete user data' : 'Please login first'}
                 </h3>
                 <p className="text-amber-700 text-sm">
                   {language === 'ar' 
-                    ? 'يجب عليك تسجيل الدخول أو إنشاء حساب جديد للاشتراك في الباقة الاحترافية.' 
-                    : 'You need to login or create an account to subscribe to the professional plan.'}
+                    ? user 
+                      ? 'تعذر العثور على معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
+                      : 'يجب عليك تسجيل الدخول أو إنشاء حساب جديد للاشتراك في الباقة الاحترافية.'
+                    : user 
+                      ? 'User ID is missing. Please log out and log in again.' 
+                      : 'You need to login or create an account to subscribe to the professional plan.'}
                 </p>
               </div>
             </div>
@@ -133,6 +153,7 @@ const Subscribe: React.FC = () => {
               proPlan={proPlan}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
+              userId={user.id}
             />
           )}
           

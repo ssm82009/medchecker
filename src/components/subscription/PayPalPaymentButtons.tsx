@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuth } from '@/hooks/useAuth';
 import { CreditCard, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface PayPalPaymentButtonsProps {
@@ -11,6 +10,7 @@ interface PayPalPaymentButtonsProps {
   paypalReady: boolean;
   paymentType: 'one_time' | 'recurring';
   proPlan: any;
+  userId: string;
   onPaymentSuccess: (details: any) => Promise<void>;
   onPaymentError: (error: any) => void;
 }
@@ -20,11 +20,11 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   paypalReady,
   paymentType,
   proPlan,
+  userId,
   onPaymentSuccess,
   onPaymentError,
 }) => {
   const { language } = useTranslation();
-  const { user } = useAuth();
   
   // Scroll to PayPal buttons on component mount
   useEffect(() => {
@@ -38,16 +38,16 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
 
   console.log("PayPal settings in component:", paypalSettings);
   console.log("Payment type:", paymentType);
-  console.log("Current user:", user);
+  console.log("User ID received in component:", userId);
   
-  if (!user) {
+  if (!userId) {
     return (
       <div className="space-y-4">
         <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4">
           <div className="flex items-center gap-2 text-amber-700">
             <AlertTriangle className="h-5 w-5" />
             <span className="font-medium">
-              {language === 'ar' ? 'يرجى تسجيل الدخول أولاً للاشتراك' : 'Please log in first to subscribe'}
+              {language === 'ar' ? 'معرف المستخدم غير متوفر' : 'User ID not available'}
             </span>
           </div>
         </div>
@@ -87,9 +87,6 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
       }, 2000);
     }
   };
-
-  // Make sure we have a user ID to use in PayPal operations
-  const userId = user?.id?.toString() || '';
 
   return (
     <div className="space-y-4">
@@ -143,7 +140,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                         currency_code: paypalSettings.currency || 'USD',
                       },
                       description: proPlan.name,
-                      custom_id: userId // Use userId instead of user?.id
+                      custom_id: userId
                     },
                   ],
                 });
@@ -165,7 +162,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                     
                     return actions.subscription.create({ 
                       plan_id: planId,
-                      custom_id: userId // Use userId instead of user?.id
+                      custom_id: userId
                     });
                   }
                 : undefined
@@ -182,7 +179,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                   // Create enhanced details object with user ID explicitly added
                   const enhancedDetails = {
                     ...details,
-                    userId: userId // Add userId as a property
+                    userId: userId
                   };
                   
                   await onPaymentSuccess(enhancedDetails);
@@ -193,7 +190,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                   const subscriptionDetails = {
                     id: data.orderID,
                     userId: userId,
-                    payer: { email_address: user?.email || "subscriber@example.com" }
+                    payer: { email_address: userId }
                   };
                   
                   await onPaymentSuccess(subscriptionDetails);

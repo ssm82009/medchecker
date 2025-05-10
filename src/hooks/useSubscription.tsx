@@ -20,7 +20,7 @@ export const useSubscription = () => {
   const [paymentMessage, setPaymentMessage] = useState<string>('');
 
   useEffect(() => {
-    // جلب إعدادات بايبال وخطة pro
+    // Fetch PayPal settings and pro plan
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -87,32 +87,21 @@ export const useSubscription = () => {
   const handlePaymentSuccess = async (details: any) => {
     console.log("Payment success handler called with details:", details);
     try {
-      // التحقق من وجود المستخدم وإظهار رسالة خطأ واضحة إذا لم يكن موجود
-      if (!user) {
-        console.error("No user found in auth context");
+      // Check if userId is available in the details
+      const userId = details.userId;
+      
+      if (!userId) {
+        console.error("No user ID available in payment details:", details);
         setPaymentStatus('error');
         setPaymentMessage(language === 'ar' 
-          ? 'لم يتم العثور على بيانات المستخدم. يرجى تسجيل الدخول وإعادة المحاولة.' 
-          : 'User data not found. Please log in and try again.');
+          ? 'لم يتم العثور على معرف المستخدم في تفاصيل الدفع.' 
+          : 'User ID not found in payment details.');
         return;
       }
       
-      if (!user.id) {
-        console.error("User found but no user ID available:", user);
-        setPaymentStatus('error');
-        setPaymentMessage(language === 'ar' 
-          ? 'تعذر تحديد معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
-          : 'User ID could not be determined. Please log out and log in again.');
-        return; 
-      }
-      
-      // Get the user ID either from details.userId (where we explicitly set it)
-      // or try to get it from the user object
-      const userId = details.userId || user.id;
-      
       console.log("Recording transaction for user:", userId);
       
-      // تسجيل المعاملة في قاعدة البيانات
+      // Record the transaction in the database
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
@@ -137,15 +126,9 @@ export const useSubscription = () => {
 
       console.log("Transaction recorded successfully, updating user plan");
 
-      // تحديث خطة المستخدم - ensure userId is the appropriate format
-      const userIdForUpdate = userId;
-      
-      // Only try to convert to number if it's actually a string that looks like a number
-      const userIdForQuery = typeof userIdForUpdate === 'string' && /^\d+$/.test(userIdForUpdate) 
-        ? parseInt(userIdForUpdate, 10) 
-        : userIdForUpdate;
-      
-      console.log("Using user ID for update:", userIdForQuery, "Type:", typeof userIdForQuery);
+      // Update user plan
+      // For string user IDs that look like numbers, try to ensure correct format for the query
+      let userIdForQuery = userId;
       
       const { error: updateError } = await supabase
         .from('users')
