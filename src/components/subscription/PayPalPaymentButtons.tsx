@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePayPalPayment } from '@/hooks/usePayPalPayment';
 import PaymentSecurityMessage from './payment/PaymentSecurityMessage';
@@ -34,139 +34,30 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   const { language } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isSessionValid, setIsSessionValid] = useState<boolean>(false);
-  const [isCheckingSession, setIsCheckingSession] = useState<boolean>(true);
   const { handlePayButtonClick, handlePayPalApprove } = usePayPalPayment(onPaymentSuccess, onPaymentError);
   
-  // Enhanced session check when component mounts
+  // Check for active session when component mounts
   useEffect(() => {
     const verifySession = async () => {
-      setIsCheckingSession(true);
-      try {
-        // Try to get the session
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("[PayPalPaymentButtons] Supabase session error:", error);
-          setIsSessionValid(false);
-          toast({
-            title: language === 'ar' ? 'خطأ في الجلسة' : 'Session Error',
-            description: language === 'ar' 
-              ? 'حدث خطأ في جلسة المستخدم. يرجى إعادة تسجيل الدخول.' 
-              : 'Session error occurred. Please login again.',
-            variant: 'destructive'
-          });
-          
-          // Redirect to login
-          setTimeout(() => navigate('/login', { state: { returnUrl: '/subscribe' } }), 2000);
-        } else if (!data.session) {
-          console.error("[PayPalPaymentButtons] No active Supabase session: session is null");
-          setIsSessionValid(false);
-          
-          // Try to refresh the session
-          try {
-            console.log("[PayPalPaymentButtons] Attempting to refresh session...");
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            
-            if (refreshError) {
-              console.error("[PayPalPaymentButtons] Session refresh failed:", refreshError);
-              toast({
-                title: language === 'ar' ? 'جلسة غير صالحة' : 'Invalid Session',
-                description: language === 'ar' 
-                  ? 'يرجى تسجيل الدخول مرة أخرى للمتابعة.' 
-                  : 'Please login again to continue.',
-                variant: 'destructive'
-              });
-              
-              // Redirect to login
-              setTimeout(() => navigate('/login', { state: { returnUrl: '/subscribe' } }), 2000);
-            } else if (refreshData.session) {
-              console.log("[PayPalPaymentButtons] Session refreshed successfully:", refreshData.session.user.id);
-              setIsSessionValid(true);
-            } else {
-              console.error("[PayPalPaymentButtons] Session refresh returned no session");
-              setIsSessionValid(false);
-              
-              // Redirect to login
-              toast({
-                title: language === 'ar' ? 'يرجى تسجيل الدخول' : 'Please Login',
-                description: language === 'ar' 
-                  ? 'يرجى تسجيل الدخول للمتابعة مع الدفع.' 
-                  : 'Please login to continue with payment.',
-                variant: 'destructive'
-              });
-              setTimeout(() => navigate('/login', { state: { returnUrl: '/subscribe' } }), 2000);
-            }
-          } catch (refreshError) {
-            console.error("[PayPalPaymentButtons] Error refreshing session:", refreshError);
-            setIsSessionValid(false);
-          }
-        } else {
-          console.log("[PayPalPaymentButtons] Active session verified for user:", data.session.user.id);
-          setIsSessionValid(true);
-        }
-      } catch (e) {
-        console.error("[PayPalPaymentButtons] Exception in session verification:", e);
-        setIsSessionValid(false);
-      } finally {
-        setIsCheckingSession(false);
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        console.error("[PayPalPaymentButtons] No active Supabase session:", error || "session is null");
+        toast({
+          title: language === 'ar' ? 'تحذير: جلسة غير نشطة' : 'Warning: Session not active',
+          description: language === 'ar' 
+            ? 'قد تواجه مشاكل في إكمال الدفع. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
+            : 'You may have issues completing payment. Please logout and login again.',
+          variant: 'destructive'
+        });
+      } else {
+        console.log("[PayPalPaymentButtons] Active session verified for user:", data.session.user.id);
       }
     };
     
     verifySession();
-    
-    // Set up auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[PayPalPaymentButtons] Auth state changed:", event);
-      setIsSessionValid(!!session);
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [language, toast, navigate]);
+  }, [language, toast]);
   
   console.log("[PayPalPaymentButtons] Rendering with userId:", userId, "Type:", typeof userId);
-  console.log("[PayPalPaymentButtons] Session state:", isSessionValid ? "Valid" : "Invalid");
-  
-  // Show loading state while checking session
-  if (isCheckingSession) {
-    return (
-      <div className="space-y-4">
-        <div className="animate-pulse flex flex-col items-center p-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-10 bg-gray-200 rounded w-full"></div>
-          <div className="mt-4 text-sm text-gray-400">
-            {language === 'ar' ? 'جاري التحقق من حالة الجلسة...' : 'Verifying session status...'}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Show error if session is invalid
-  if (!isSessionValid) {
-    return (
-      <div className="space-y-4">
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-md text-center">
-          <div className="text-amber-800 font-medium mb-2">
-            {language === 'ar' ? 'جلسة غير صالحة' : 'Session Invalid'}
-          </div>
-          <div className="text-sm text-amber-700">
-            {language === 'ar' 
-              ? 'يرجى تسجيل الدخول مرة أخرى للمتابعة مع الدفع.' 
-              : 'Please login again to continue with payment.'}
-          </div>
-          <button 
-            onClick={() => navigate('/login', { state: { returnUrl: '/subscribe' } })}
-            className="mt-3 bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm"
-          >
-            {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
-          </button>
-        </div>
-      </div>
-    );
-  }
   
   // Strict validation of userId
   if (!userId) {
@@ -202,17 +93,14 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
           language={language}
           onApprove={async (data, actions) => {
             try {
-              // Double-check that session is still active before proceeding
-              const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-              
-              if (sessionError || !sessionData.session) {
+              // Verify session is active before proceeding
+              const { data: sessionData } = await supabase.auth.getSession();
+              if (!sessionData.session) {
                 console.error("[PayPalPaymentButtons] Session not active during payment approval");
                 throw new Error(language === 'ar' 
                   ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
                   : 'No active user session. Please login again.');
               }
-              
-              console.log("[PayPalPaymentButtons] Active session confirmed for payment:", sessionData.session.user.id);
               
               // Always ensure the userId is in the data object
               const enhancedData = {
