@@ -100,11 +100,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             components: 'buttons',
             disableFunding: 'card',
             enableFunding: 'paypal',
-            // Add vault parameter for recurring payments
             vault: paymentType === 'recurring' ? true : undefined,
-            // Add intent for one_time payments
             intent: paymentType === 'one_time' ? 'capture' : undefined,
-            // Optional buyer country parameter
             buyerCountry: paypalSettings.mode === 'sandbox' ? 'US' : undefined
           }}
         >

@@ -39,13 +39,14 @@ export const useSubscription = () => {
             clientId: paypalData.mode === 'sandbox' ? paypalData.sandbox_client_id : paypalData.live_client_id,
             secret: paypalData.mode === 'sandbox' ? paypalData.sandbox_secret : paypalData.live_secret,
             currency: paypalData.currency || 'USD',
-            subscriptionPlanId: paypalData.subscription_plan_id,
+            subscriptionPlanId: paypalData.subscription_plan_id || '',
           };
           setPaypalSettings(formattedSettings);
           console.log("Formatted PayPal settings:", formattedSettings);
           
           // Debugging log to check client ID specifically
           console.log("PayPal Client ID:", formattedSettings.clientId);
+          console.log("Subscription Plan ID:", formattedSettings.subscriptionPlanId);
         }
         
         // Fetch pro plan with all fields
