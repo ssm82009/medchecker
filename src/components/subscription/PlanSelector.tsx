@@ -1,0 +1,56 @@
+
+import React from 'react';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { PlanType } from '@/types/plan';
+
+interface PlanSelectorProps {
+  plans: PlanType[];
+  selectedPlanCode: string;
+  onPlanChange: (planCode: string) => void;
+  language: string;
+}
+
+const PlanSelector: React.FC<PlanSelectorProps> = ({ plans, selectedPlanCode, onPlanChange, language }) => {
+  if (!plans || plans.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <h3 className="font-bold text-lg mb-3 text-center">
+        {language === 'ar' ? 'اختر الباقة المناسبة لك' : 'Choose your plan'}
+      </h3>
+      <RadioGroup
+        value={selectedPlanCode}
+        onValueChange={onPlanChange}
+        className="flex flex-col gap-4"
+      >
+        {plans.map((plan) => (
+          <div key={plan.code} className={`
+            flex items-center rounded-lg border p-4 
+            ${selectedPlanCode === plan.code ? 'border-primary bg-primary/5' : 'border-gray-200'}
+            cursor-pointer hover:bg-gray-50 transition-colors
+          `}
+          onClick={() => onPlanChange(plan.code)}
+          >
+            <RadioGroupItem value={plan.code} id={plan.code} className="mr-3" />
+            <Label htmlFor={plan.code} className="flex flex-col flex-1 cursor-pointer">
+              <span className="font-medium text-lg">
+                {language === 'ar' ? plan.nameAr : plan.name}
+              </span>
+              <span className="text-gray-500 text-sm">
+                {language === 'ar' ? plan.descriptionAr : plan.description}
+              </span>
+            </Label>
+            <div className="text-xl font-bold text-green-600">
+              {plan.price} {language === 'ar' ? 'دولار' : 'USD'}
+            </div>
+          </div>
+        ))}
+      </RadioGroup>
+    </div>
+  );
+};
+
+export default PlanSelector;

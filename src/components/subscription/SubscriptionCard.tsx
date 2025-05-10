@@ -4,16 +4,19 @@ import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import PlanDetails from '@/components/subscription/PlanDetails';
-import PaymentTypeSelector from '@/components/subscription/PaymentTypeSelector';
+import PlanSelector from '@/components/subscription/PlanSelector';
 import PaymentStatus from '@/components/subscription/PaymentStatus';
 import PayPalPaymentButtons from '@/components/subscription/PayPalPaymentButtons';
+import { PlanType } from '@/types/plan';
 
 interface SubscriptionCardProps {
   language: string;
   paypalSettings: any;
-  proPlan: any;
+  plans: PlanType[];
+  selectedPlan: PlanType | null;
+  selectedPlanCode: string;
+  setSelectedPlanCode: (code: string) => void;
   paymentType: 'one_time' | 'recurring';
-  setPaymentType: (value: 'one_time' | 'recurring') => void;
   paypalReady: boolean;
   paymentStatus: 'idle' | 'success' | 'error';
   paymentMessage: string;
@@ -26,9 +29,11 @@ interface SubscriptionCardProps {
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   language,
   paypalSettings,
-  proPlan,
+  plans,
+  selectedPlan,
+  selectedPlanCode,
+  setSelectedPlanCode,
   paymentType,
-  setPaymentType,
   paypalReady,
   paymentStatus,
   paymentMessage,
@@ -49,27 +54,40 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
         <CardHeader className="text-center border-b pb-4">
           <CardTitle className="text-2xl font-bold text-primary">
-            {language === 'ar' ? 'الباقة الاحترافية' : 'Professional Plan'}
+            {language === 'ar' ? 'اختر خطة الاشتراك' : 'Choose your subscription'}
           </CardTitle>
         </CardHeader>
         
-        <PlanDetails plan={proPlan} paypalSettings={paypalSettings} />
+        {selectedPlan && (
+          <>
+            {/* إضافة منتقي الباقات */}
+            <div className="px-6 pt-6">
+              <PlanSelector 
+                plans={plans} 
+                selectedPlanCode={selectedPlanCode} 
+                onPlanChange={setSelectedPlanCode} 
+                language={language}
+              />
+            </div>
+            
+            {/* عرض تفاصيل الباقة المحددة */}
+            <PlanDetails plan={selectedPlan} paypalSettings={paypalSettings} />
+          </>
+        )}
         
         <CardFooter className="flex flex-col gap-4 pt-4">
-          <PaymentTypeSelector paymentType={paymentType} onValueChange={setPaymentType} />
-          
           <PaymentStatus 
             status={paymentStatus} 
             message={paymentMessage} 
             onRetry={resetPaymentStatus}
           />
           
-          {paymentStatus === 'idle' && (
+          {paymentStatus === 'idle' && selectedPlan && (
             <PayPalPaymentButtons
               paypalSettings={paypalSettings}
               paypalReady={paypalReady}
               paymentType={paymentType}
-              proPlan={proPlan}
+              plan={selectedPlan}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               userId={safeUserId}

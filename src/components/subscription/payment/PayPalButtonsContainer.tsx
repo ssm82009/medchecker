@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
+import { PlanType } from '@/types/plan';
 
 interface PayPalButtonsContainerProps {
   paymentType: 'one_time' | 'recurring';
   paypalSettings: any;
-  proPlan: any;
+  plan: PlanType;
   userId: string;
   language: string;
   onApprove: (data: any, actions: any) => Promise<void>;
@@ -15,7 +16,7 @@ interface PayPalButtonsContainerProps {
 const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
   paymentType,
   paypalSettings,
-  proPlan,
+  plan,
   userId,
   language,
   onApprove,
@@ -36,6 +37,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
   }
   
   console.log("PayPalButtonsContainer initialized with user ID:", safeUserId);
+  console.log("Selected plan:", plan);
   
   return (
     <PayPalScriptProvider
@@ -45,64 +47,35 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
         components: 'buttons',
         disableFunding: 'card',
         enableFunding: 'paypal',
-        vault: paymentType === 'recurring' ? true : undefined,
-        intent: paymentType === 'one_time' ? 'capture' : undefined,
+        intent: 'capture', // دائما نستخدم الدفع لمرة واحدة الآن
         buyerCountry: paypalSettings.mode === 'sandbox' ? 'US' : undefined
       }}
     >
       <PayPalButtons
         style={{ layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal' }}
-        forceReRender={[paymentType, proPlan.price, paypalSettings.currency, safeUserId]}
+        forceReRender={[paymentType, plan.price, paypalSettings.currency, safeUserId, plan.code]}
         createOrder={async (data, actions) => {
           console.log("Creating PayPal order for payment type:", paymentType);
           console.log("User ID for createOrder:", safeUserId, "Type:", typeof safeUserId);
+          console.log("Selected plan:", plan.name, "Price:", plan.price);
           
-          if (paymentType === 'one_time') {
-            return actions.order.create({
-              intent: 'CAPTURE',
-              purchase_units: [
-                {
-                  amount: {
-                    value: proPlan.price.toString(),
-                    currency_code: paypalSettings.currency || 'USD',
-                  },
-                  description: proPlan.name,
-                  custom_id: safeUserId // هذا صالح في purchase_units
+          return actions.order.create({
+            intent: 'CAPTURE',
+            purchase_units: [
+              {
+                amount: {
+                  value: plan.price.toString(),
+                  currency_code: paypalSettings.currency || 'USD',
                 },
-              ],
-              application_context: {
-                user_action: "PAY_NOW"
-              }
-            });
-          }
-          return '';
+                description: language === 'ar' ? plan.nameAr : plan.name,
+                custom_id: safeUserId // هذا صالح في purchase_units
+              },
+            ],
+            application_context: {
+              user_action: "PAY_NOW"
+            }
+          });
         }}
-        createSubscription={
-          paymentType === 'recurring'
-            ? async (data, actions) => {
-                console.log("Creating PayPal subscription");
-                console.log("User ID for createSubscription:", safeUserId, "Type:", typeof safeUserId);
-                const planId = paypalSettings.subscriptionPlanId || '';
-                if (!planId) {
-                  onError(language === 'ar' 
-                    ? 'لم يتم ضبط معرف خطة الاشتراك في إعدادات بايبال' 
-                    : 'Subscription plan ID not set in PayPal settings');
-                  return '';
-                }
-                
-                return actions.subscription.create({ 
-                  plan_id: planId,
-                  custom_id: safeUserId,
-                  application_context: {
-                    user_action: "SUBSCRIBE_NOW",
-                    // إضافة الخصائص المطلوبة وفقًا لأنواع API PayPal
-                    return_url: window.location.href,
-                    cancel_url: window.location.href
-                  }
-                });
-              }
-            : undefined
-        }
         onApprove={async (data, actions) => {
           // تأكد دائمًا من وجود معرف المستخدم في بيانات المرسلة إلى معالج الموافقة
           const enhancedData = { ...data, userId: safeUserId };

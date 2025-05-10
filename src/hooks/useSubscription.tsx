@@ -1,19 +1,24 @@
 
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePaymentData } from '@/hooks/usePaymentData';
 import { usePaymentState } from '@/hooks/usePaymentState';
+import { PlanType } from '@/types/plan';
 
 export const useSubscription = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { language } = useTranslation();
   
+  // نحتاج إلى إضافة اختيار للباقة
+  const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro'); // الباقة الشهرية هي الافتراضية
+  
   // Use our new hooks to fetch data and manage state
   const { 
     paypalSettings, 
-    proPlan, 
+    plans,
     loading, 
     paypalReady 
   } = usePaymentData();
@@ -28,6 +33,14 @@ export const useSubscription = () => {
     handlePaymentError,
     resetPaymentStatus
   } = usePaymentState(language);
+
+  // ضبط نوع الدفع ليكون لمرة واحدة دائمًا
+  useEffect(() => {
+    setPaymentType('one_time');
+  }, []);
+
+  // احصل على الباقة المحددة من قائمة الباقات
+  const selectedPlan = plans?.find(plan => plan.code === selectedPlanCode) || null;
 
   // Augment the payment success handler to include the plan details and user ID
   const enhancedPaymentSuccess = async (details: any) => {
@@ -45,8 +58,8 @@ export const useSubscription = () => {
     // Add price, plan code, and user ID to the details object
     const enhancedDetails = {
       ...details,
-      price: proPlan?.price,
-      planCode: proPlan?.code,
+      price: selectedPlan?.price,
+      planCode: selectedPlan?.code,
       currency: paypalSettings?.currency,
       userId: String(user.id) // Ensure it's a string
     };
@@ -57,7 +70,10 @@ export const useSubscription = () => {
   return {
     paypalSettings,
     loading,
-    proPlan,
+    plans,
+    selectedPlan,
+    selectedPlanCode,
+    setSelectedPlanCode,
     paymentType,
     setPaymentType,
     paypalReady,

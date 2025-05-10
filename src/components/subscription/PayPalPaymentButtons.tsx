@@ -7,12 +7,13 @@ import PaymentButton from './payment/PaymentButton';
 import PayPalButtonsContainer from './payment/PayPalButtonsContainer';
 import PayPalLoadingState from './payment/PayPalLoadingState';
 import UserIdError from './payment/UserIdError';
+import { PlanType } from '@/types/plan';
 
 interface PayPalPaymentButtonsProps {
   paypalSettings: any;
   paypalReady: boolean;
   paymentType: 'one_time' | 'recurring';
-  proPlan: any;
+  plan: PlanType;
   userId: string;
   onPaymentSuccess: (details: any) => Promise<void>;
   onPaymentError: (error: any) => void;
@@ -22,7 +23,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   paypalSettings,
   paypalReady,
   paymentType,
-  proPlan,
+  plan,
   userId,
   onPaymentSuccess,
   onPaymentError,
@@ -61,7 +62,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
         <PayPalButtonsContainer
           paymentType={paymentType}
           paypalSettings={paypalSettings}
-          proPlan={proPlan}
+          plan={plan}
           userId={safeUserId}
           language={language}
           onApprove={async (data, actions) => {

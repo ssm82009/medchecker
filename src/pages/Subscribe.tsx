@@ -18,9 +18,11 @@ const Subscribe: React.FC = () => {
   const {
     paypalSettings,
     loading,
-    proPlan,
+    plans,
+    selectedPlan,
+    selectedPlanCode,
+    setSelectedPlanCode,
     paymentType,
-    setPaymentType,
     paypalReady,
     paymentStatus,
     paymentMessage,
@@ -67,7 +69,7 @@ const Subscribe: React.FC = () => {
     return <SubscriptionLoader language={language} />;
   }
   
-  if (!proPlan) {
+  if (!plans || plans.length === 0) {
     return <PlanError language={language} />;
   }
 
@@ -78,9 +80,11 @@ const Subscribe: React.FC = () => {
     <SubscriptionCard
       language={language}
       paypalSettings={paypalSettings}
-      proPlan={proPlan}
+      plans={plans}
+      selectedPlan={selectedPlan}
+      selectedPlanCode={selectedPlanCode}
+      setSelectedPlanCode={setSelectedPlanCode}
       paymentType={paymentType}
-      setPaymentType={setPaymentType}
       paypalReady={paypalReady}
       paymentStatus={paymentStatus}
       paymentMessage={paymentMessage}

@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { PlanType } from '@/types/plan';
 
 export const usePaymentData = () => {
   const [paypalSettings, setPaypalSettings] = useState<any>(null);
-  const [proPlan, setProPlan] = useState<any>(null);
+  const [plans, setPlans] = useState<PlanType[]>([]);
   const [loading, setLoading] = useState(true);
   const [paypalReady, setPaypalReady] = useState(false);
 
   useEffect(() => {
-    // Fetch PayPal settings and pro plan
+    // Fetch PayPal settings and plans
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -34,22 +35,22 @@ export const usePaymentData = () => {
           console.log("Formatted PayPal settings:", formattedSettings);
         }
         
-        // Fetch pro plan with all fields
-        const { data: plans, error: plansError } = await supabase
+        // Fetch all paid plans (pro and annual)
+        const { data: plansData, error: plansError } = await supabase
           .from('plans')
           .select('*')
-          .eq('code', 'pro')
-          .maybeSingle();
+          .in('code', ['pro', 'annual'])
+          .order('price', { ascending: true });
         
         if (plansError) {
-          console.error("Error fetching pro plan:", plansError);
+          console.error("Error fetching plans:", plansError);
         }
         
-        if (plans) {
-          console.log("Pro plan fetched:", plans);
-          setProPlan(plans);
+        if (plansData) {
+          console.log("Plans fetched:", plansData);
+          setPlans(plansData);
         } else {
-          console.warn("No pro plan found in database");
+          console.warn("No plans found in database");
         }
       } catch (error) {
         console.error("Error in fetchData:", error);
@@ -71,7 +72,7 @@ export const usePaymentData = () => {
 
   return {
     paypalSettings,
-    proPlan,
+    plans,
     loading,
     paypalReady
   };
