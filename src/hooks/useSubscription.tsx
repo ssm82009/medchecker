@@ -109,14 +109,22 @@ export const useSubscription = () => {
       console.log("Recording transaction for user:", userId);
       
       // Ensure we have a valid numeric price value
-      const price = parseFloat(proPlan.price); // Convert string to number if needed
+      // Make sure to handle the case where price might be a string or a number
+      const price = typeof proPlan.price === 'string' 
+        ? parseFloat(proPlan.price) 
+        : proPlan.price;
+      
+      // Verify that price is a valid number
+      if (isNaN(price)) {
+        throw new Error('Invalid price value');
+      }
       
       // Record the transaction in the database
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: String(userId), // Ensure user_id is stored as string
-          amount: price, // Use the converted numeric value
+          amount: price, // Use the properly converted numeric value
           currency: paypalSettings.currency || 'USD',
           status: 'completed',
           payment_type: paymentType,
