@@ -9,6 +9,7 @@ export const usePayPalPayment = (
   onPaymentError: (error: any) => void
 ) => {
   const { language } = useTranslation();
+  const [sessionChecked, setSessionChecked] = useState(false);
   
   // Scroll to PayPal buttons on component mount
   useEffect(() => {
@@ -20,11 +21,42 @@ export const usePayPalPayment = (
     }
   }, []);
 
-  // Verify session is active on component mount
+  // Verify session is active on component mount with enhanced error handling
   useEffect(() => {
     const checkSession = async () => {
-      const isSessionActive = await verifyActiveSession();
-      console.log("Initial session check in usePayPalPayment:", isSessionActive ? "Active" : "Inactive");
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error in usePayPalPayment:", error);
+          setSessionChecked(true);
+          return;
+        }
+        
+        if (!data.session) {
+          console.log("No initial session in usePayPalPayment");
+          
+          // Try to refresh the session
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError || !refreshData.session) {
+              console.error("Session refresh failed in usePayPalPayment:", refreshError);
+            } else {
+              console.log("Session refreshed successfully in usePayPalPayment");
+            }
+          } catch (e) {
+            console.error("Error refreshing session:", e);
+          }
+        } else {
+          console.log("Initial session check in usePayPalPayment: Active for user", data.session.user.id);
+        }
+        
+        setSessionChecked(true);
+      } catch (e) {
+        console.error("Exception in initial session check:", e);
+        setSessionChecked(true);
+      }
     };
     
     checkSession();
@@ -47,7 +79,7 @@ export const usePayPalPayment = (
     console.log("Payment approved with data:", data);
     
     try {
-      // Verify active session before processing payment
+      // Verify active session before processing payment with detailed error handling
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -62,17 +94,25 @@ export const usePayPalPayment = (
         console.error("No active session in handlePayPalApprove");
         
         // Try to refresh the session
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError || !refreshData.session) {
-          console.error("Failed to refresh session:", refreshError);
-          onPaymentError(language === 'ar' 
-            ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.'
-            : 'No active user session. Please login again.');
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError || !refreshData.session) {
+            console.error("Failed to refresh session:", refreshError);
+            onPaymentError(language === 'ar' 
+              ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.'
+              : 'No active user session. Please login again.');
+            return;
+          }
+          
+          console.log("Session refreshed successfully");
+        } catch (e) {
+          console.error("Exception refreshing session:", e);
+          onPaymentError(language === 'ar'
+            ? 'حدث خطأ أثناء محاولة تحديث الجلسة'
+            : 'Error while trying to refresh session');
           return;
         }
-        
-        console.log("Session refreshed successfully");
       } else {
         console.log("Active session confirmed in handlePayPalApprove:", sessionData.session.user.id);
       }
@@ -121,6 +161,7 @@ export const usePayPalPayment = (
 
   return {
     language,
+    sessionChecked,
     handlePayButtonClick,
     handlePayPalApprove
   };
