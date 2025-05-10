@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -110,9 +109,13 @@ export const useSubscription = () => {
       
       // Ensure we have a valid numeric price value
       // Make sure to handle the case where price might be a string or a number
-      const price = typeof proPlan.price === 'string' 
-        ? parseFloat(proPlan.price) 
-        : proPlan.price;
+      let price: number;
+      
+      if (typeof proPlan.price === 'string') {
+        price = parseFloat(proPlan.price);
+      } else {
+        price = Number(proPlan.price);
+      }
       
       // Verify that price is a valid number
       if (isNaN(price)) {
@@ -124,7 +127,7 @@ export const useSubscription = () => {
         .from('transactions')
         .insert({
           user_id: String(userId), // Ensure user_id is stored as string
-          amount: price, // Use the properly converted numeric value
+          amount: price, // Now properly converted to a number
           currency: paypalSettings.currency || 'USD',
           status: 'completed',
           payment_type: paymentType,
