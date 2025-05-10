@@ -70,9 +70,12 @@ export const usePaymentData = () => {
                   id: 'annual-plan',  // Temporary ID
                   price: 120,  // Set annual price (12 months x $10)
                   name: 'Annual Plan', 
-                  nameAr: 'الباقة السنوية',
+                  name_ar: 'الباقة السنوية',
                   description: 'Save with our annual subscription',
-                  descriptionAr: 'وفر مع اشتراكنا السنوي',
+                  description_ar: 'وفر مع اشتراكنا السنوي',
+                  features: defaultAnnualPlan.features,
+                  features_ar: defaultAnnualPlan.featuresAr,
+                  is_default: false
                 });
                 console.log("Added default annual plan:", defaultAnnualPlan);
               }
@@ -87,7 +90,18 @@ export const usePaymentData = () => {
               
               if (defaultProPlan) {
                 // Add it to the plans data for display
-                plansData.push(defaultProPlan);
+                plansData.push({
+                  code: defaultProPlan.code,
+                  name: defaultProPlan.name,
+                  name_ar: defaultProPlan.nameAr,
+                  description: defaultProPlan.description,
+                  description_ar: defaultProPlan.descriptionAr,
+                  price: defaultProPlan.price,
+                  features: defaultProPlan.features,
+                  features_ar: defaultProPlan.featuresAr,
+                  id: 'pro-plan',
+                  is_default: false
+                });
                 console.log("Added default pro plan:", defaultProPlan);
               }
             }
@@ -129,7 +143,8 @@ export const usePaymentData = () => {
               descriptionAr: 'وفر مع اشتراكنا السنوي',
               price: proPrice * 12, // Annual price is 12 times the monthly price
               features: defaultPaidPlans.find(p => p.code === 'pro')?.features || [],
-              featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || []
+              featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || [],
+              isDefault: false
             });
           }
           
@@ -156,7 +171,8 @@ export const usePaymentData = () => {
             descriptionAr: 'وفر مع اشتراكنا السنوي',
             price: proPrice * 12, // Annual price is 12 times the monthly price
             features: defaultPaidPlans.find(p => p.code === 'pro')?.features || [],
-            featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || []
+            featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || [],
+            isDefault: false
           });
         }
         
