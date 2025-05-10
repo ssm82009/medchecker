@@ -49,6 +49,8 @@ const Subscribe: React.FC = () => {
           : 'User ID not found. Please log out and log in again.',
         variant: 'destructive'
       });
+    } else {
+      console.log("User ID is available and valid:", user.id, "Type:", typeof user.id);
     }
   }, [user, navigate, toast, language]);
 
@@ -122,6 +124,9 @@ const Subscribe: React.FC = () => {
     </div>
   );
 
+  // Make sure user.id is a string
+  const safeUserId = String(user.id);
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
@@ -150,7 +155,7 @@ const Subscribe: React.FC = () => {
               proPlan={proPlan}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
-              userId={user.id}
+              userId={safeUserId}
             />
           )}
           

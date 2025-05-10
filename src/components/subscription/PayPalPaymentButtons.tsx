@@ -38,8 +38,9 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
 
   console.log("PayPal settings in component:", paypalSettings);
   console.log("Payment type:", paymentType);
-  console.log("User ID received in component:", userId);
+  console.log("User ID received in component:", userId, "Type:", typeof userId);
   
+  // Early validation of userId to prevent issues
   if (!userId) {
     return (
       <div className="space-y-4">
@@ -88,6 +89,9 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
     }
   };
 
+  // Ensure userId is a string
+  const safeUserId = String(userId);
+
   return (
     <div className="space-y-4">
       <div className="bg-blue-50 p-3 rounded-md border border-blue-100 mb-4">
@@ -128,7 +132,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             forceReRender={[paymentType, proPlan.price, paypalSettings.currency]}
             createOrder={async (data, actions) => {
               console.log("Creating PayPal order for payment type:", paymentType);
-              console.log("User ID for createOrder:", userId);
+              console.log("User ID for createOrder:", safeUserId, "Type:", typeof safeUserId);
               
               if (paymentType === 'one_time') {
                 return actions.order.create({
@@ -140,7 +144,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                         currency_code: paypalSettings.currency || 'USD',
                       },
                       description: proPlan.name,
-                      custom_id: userId
+                      custom_id: safeUserId
                     },
                   ],
                 });
@@ -151,7 +155,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
               paymentType === 'recurring'
                 ? async (data, actions) => {
                     console.log("Creating PayPal subscription");
-                    console.log("User ID for createSubscription:", userId);
+                    console.log("User ID for createSubscription:", safeUserId, "Type:", typeof safeUserId);
                     const planId = paypalSettings.subscriptionPlanId || '';
                     if (!planId) {
                       onPaymentError(language === 'ar' 
@@ -162,14 +166,14 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                     
                     return actions.subscription.create({ 
                       plan_id: planId,
-                      custom_id: userId
+                      custom_id: safeUserId
                     });
                   }
                 : undefined
             }
             onApprove={async (data, actions) => {
               console.log("Payment approved:", data);
-              console.log("User ID for onApprove:", userId);
+              console.log("User ID for onApprove:", safeUserId, "Type:", typeof safeUserId);
               
               try {
                 if (actions?.order) {
@@ -179,7 +183,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                   // Create enhanced details object with user ID explicitly added
                   const enhancedDetails = {
                     ...details,
-                    userId: userId
+                    userId: safeUserId // Ensure consistent userId is passed
                   };
                   
                   await onPaymentSuccess(enhancedDetails);
@@ -189,8 +193,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                   // Create an object with the necessary details for a subscription
                   const subscriptionDetails = {
                     id: data.orderID,
-                    userId: userId,
-                    payer: { email_address: userId }
+                    userId: safeUserId, // Ensure consistent userId is passed
+                    payer: { email_address: safeUserId }
                   };
                   
                   await onPaymentSuccess(subscriptionDetails);

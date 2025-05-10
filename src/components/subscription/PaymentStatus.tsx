@@ -37,6 +37,13 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({ status, message, onRetry 
   }
 
   if (status === 'error') {
+    // Extract technical details if available
+    const technicalDetails = message.includes('invalid input syntax for type uuid') 
+      ? (language === 'ar' 
+          ? 'خطأ في معرف المستخدم: تنسيق غير صالح ل UUID' 
+          : 'User ID error: invalid UUID format')
+      : '';
+    
     return (
       <div className="bg-red-100 border border-red-300 text-red-800 rounded-lg p-4 text-center mb-4">
         <div className="flex justify-center mb-2">
@@ -49,6 +56,13 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({ status, message, onRetry 
           ? 'يرجى المحاولة مرة أخرى أو التواصل مع الدعم.' 
           : 'Please try again or contact support.')}
         </div>
+        
+        {technicalDetails && (
+          <div className="text-xs bg-red-50 p-2 rounded mb-2 text-red-700">
+            {technicalDetails}
+          </div>
+        )}
+        
         {onRetry && (
           <Button className="mt-2 w-full" onClick={onRetry} variant="destructive">
             <RefreshCw className="mr-2 h-4 w-4" />

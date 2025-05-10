@@ -95,13 +95,24 @@ export const useSubscription = () => {
         return;
       }
       
+      // Validate the userId is a valid UUID before using it
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) && 
+          !/^\d+$/.test(userId)) {
+        console.error("Invalid user ID format:", userId, "Type:", typeof userId);
+        setPaymentStatus('error');
+        setPaymentMessage(language === 'ar' 
+          ? 'تنسيق معرف المستخدم غير صالح.' 
+          : 'Invalid user ID format.');
+        return;
+      }
+      
       console.log("Recording transaction for user:", userId);
       
       // Record the transaction in the database
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
-          user_id: userId,
+          user_id: String(userId), // Ensure user_id is stored as string
           amount: proPlan.price,
           currency: paypalSettings.currency || 'USD',
           status: 'completed',
@@ -122,13 +133,13 @@ export const useSubscription = () => {
 
       console.log("Transaction recorded successfully, updating user plan");
       
-      // Update user plan
+      // Update user plan - since we're using a numeric ID in the users table
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', userId);
+        .eq('id', String(userId)); // Convert to string for comparison
 
       if (updateError) {
         console.error("User update error:", updateError);

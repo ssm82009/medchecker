@@ -26,13 +26,15 @@ export const useAuth = () => {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser) {
-          // Ensure user has a valid ID property
+          // Ensure user has a valid ID property and it's a string
           if (!parsedUser.id) {
             console.warn('Stored user missing ID, cannot proceed with invalid user data', parsedUser);
             localStorage.removeItem('user'); // Remove invalid user data
             setUser(null);
           } else {
-            console.log('User loaded from storage with ID:', parsedUser.id);
+            // Always ensure ID is stored as a string
+            parsedUser.id = String(parsedUser.id);
+            console.log('User loaded from storage with ID:', parsedUser.id, 'Type:', typeof parsedUser.id);
             setUser(parsedUser);
           }
         }
@@ -67,7 +69,7 @@ export const useAuth = () => {
       
       // Save user data to localStorage, ensuring ID is a string
       const userData: User = {
-        id: String(data.id), // Convert ID to string to match User interface
+        id: String(data.id), // Always convert ID to string
         email: data.email,
         role: data.role,
         plan_code: data.plan_code || 'visitor',
@@ -75,7 +77,7 @@ export const useAuth = () => {
         auth_uid: data.auth_uid || null,
       };
       
-      console.log("Successfully logged in with ID:", userData.id);
+      console.log("Successfully logged in with ID:", userData.id, "Type:", typeof userData.id);
       setUser(userData);
       return true;
     } catch (err) {
