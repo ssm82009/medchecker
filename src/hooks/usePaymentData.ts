@@ -39,7 +39,6 @@ export const usePaymentData = () => {
         const { data: plansData, error: plansError } = await supabase
           .from('plans')
           .select('*')
-          .in('code', ['pro', 'annual'])
           .order('price', { ascending: true });
         
         if (plansError) {
@@ -47,8 +46,24 @@ export const usePaymentData = () => {
         }
         
         if (plansData) {
-          console.log("Plans fetched:", plansData);
-          setPlans(plansData);
+          console.log("Plans fetched from DB:", plansData);
+          
+          // Map DB fields to our PlanType interface
+          const formattedPlans: PlanType[] = plansData.map(plan => ({
+            id: plan.id,
+            code: plan.code,
+            name: plan.name,
+            nameAr: plan.name_ar, // Map name_ar to nameAr
+            description: plan.description,
+            descriptionAr: plan.description_ar, // Map description_ar to descriptionAr
+            price: plan.price,
+            features: plan.features || [],
+            featuresAr: plan.features_ar || [], // Map features_ar to featuresAr
+            isDefault: plan.is_default
+          }));
+          
+          console.log("Formatted plans:", formattedPlans);
+          setPlans(formattedPlans);
         } else {
           console.warn("No plans found in database");
         }
