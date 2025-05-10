@@ -72,9 +72,8 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
               ],
               application_context: {
                 user_action: "PAY_NOW",
-              },
-              // Store the user ID in the metadata
-              custom_id: safeUserId
+              }
+              // Note: removed custom_id from here as it's not a valid property at this level
             });
           }
           return '';
@@ -97,6 +96,9 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                   custom_id: safeUserId,
                   application_context: {
                     user_action: "SUBSCRIBE_NOW",
+                    // Add required properties per PayPal API types
+                    return_url: window.location.href,
+                    cancel_url: window.location.href
                   }
                 });
               }
