@@ -12,7 +12,7 @@ export const useSubscription = () => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   
-  // تعيين الباقة الشهرية كباقة افتراضية
+  // Default to monthly plan (pro)
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
   
   // Use our new hooks to fetch data and manage state
@@ -34,13 +34,28 @@ export const useSubscription = () => {
     resetPaymentStatus
   } = usePaymentState(language);
 
-  // ضبط نوع الدفع ليكون لمرة واحدة دائمًا
+  // Always use one-time payments
   useEffect(() => {
     setPaymentType('one_time');
   }, []);
 
-  // احصل على الباقة المحددة من قائمة الباقات
+  // Get the selected plan from the list of plans
   const selectedPlan = plans?.find(plan => plan.code === selectedPlanCode) || null;
+  
+  // If we have plans but the selected plan isn't found, select the first one
+  useEffect(() => {
+    if (plans && plans.length > 0 && !selectedPlan) {
+      console.log("No selected plan found, defaulting to first available plan:", plans[0].code);
+      setSelectedPlanCode(plans[0].code);
+    }
+  }, [plans, selectedPlan]);
+
+  // Log plan details for debugging
+  useEffect(() => {
+    console.log("Available plans:", plans);
+    console.log("Selected plan code:", selectedPlanCode);
+    console.log("Selected plan details:", selectedPlan);
+  }, [plans, selectedPlanCode, selectedPlan]);
 
   // Augment the payment success handler to include the plan details and user ID
   const enhancedPaymentSuccess = async (details: any) => {

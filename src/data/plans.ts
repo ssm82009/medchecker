@@ -57,4 +57,22 @@ export const defaultPlans: PlanType[] = [
       'البحث عن الأدوية باستخدام الصور والذكاء الاصطناعي',
     ],
   },
+  {
+    code: 'annual',
+    name: 'Annual Pro',
+    nameAr: 'الاحترافية السنوية',
+    description: 'Annual subscription with all pro features at a discounted rate.',
+    descriptionAr: 'اشتراك سنوي مع جميع ميزات الباقة الاحترافية بسعر مخفض.',
+    price: 150,
+    features: [
+      'All Pro plan features',
+      'Save with annual billing',
+      'Priority support',
+    ],
+    featuresAr: [
+      'جميع ميزات الباقة الاحترافية',
+      'وفر المال مع الفاتورة السنوية',
+      'دعم ذو أولوية',
+    ],
+  },
 ]; 

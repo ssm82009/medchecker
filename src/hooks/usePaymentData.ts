@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanType } from '@/types/plan';
+import { defaultPlans } from '@/data/plans'; // Import default plans as fallback
 
 export const usePaymentData = () => {
   const [paypalSettings, setPaypalSettings] = useState<any>(null);
@@ -35,7 +36,7 @@ export const usePaymentData = () => {
           console.log("Formatted PayPal settings:", formattedSettings);
         }
         
-        // Ensure we're explicitly fetching both pro and annual plans
+        // Try to fetch both pro and annual plans explicitly
         const { data: plansData, error: plansError } = await supabase
           .from('plans')
           .select('*')
@@ -46,14 +47,50 @@ export const usePaymentData = () => {
           console.error("Error fetching plans:", plansError);
         }
         
-        if (plansData) {
+        if (plansData && plansData.length > 0) {
           console.log("Plans fetched from DB:", plansData);
           console.log("Number of plans fetched:", plansData.length);
           
           // Make sure we're getting both plans
           if (plansData.length < 2) {
-            console.warn("Warning: Not all expected plans were fetched. Expected 'pro' and 'annual', got:", 
+            console.warn("Not all expected plans were fetched. Expected 'pro' and 'annual', got:", 
               plansData.map(plan => plan.code).join(', '));
+            
+            // Check if we're missing the annual plan
+            if (!plansData.some(plan => plan.code === 'annual')) {
+              console.log("Annual plan is missing, creating one from default plans");
+              
+              // Find the annual plan from default plans
+              const defaultAnnualPlan = defaultPlans.find(plan => plan.code === 'annual');
+              
+              if (defaultAnnualPlan) {
+                // Add it to the plans data for display
+                plansData.push({
+                  ...defaultAnnualPlan,
+                  id: 'annual-plan',  // Temporary ID
+                  price: 120,  // Set annual price (12 months x $10)
+                  name: 'Annual Plan', 
+                  nameAr: 'الباقة السنوية',
+                  description: 'Save with our annual subscription',
+                  descriptionAr: 'وفر مع اشتراكنا السنوي',
+                });
+                console.log("Added default annual plan:", defaultAnnualPlan);
+              }
+            }
+            
+            // Check if we're missing the pro plan
+            if (!plansData.some(plan => plan.code === 'pro')) {
+              console.log("Pro plan is missing, creating one from default plans");
+              
+              // Find the pro plan from default plans
+              const defaultProPlan = defaultPlans.find(plan => plan.code === 'pro');
+              
+              if (defaultProPlan) {
+                // Add it to the plans data for display
+                plansData.push(defaultProPlan);
+                console.log("Added default pro plan:", defaultProPlan);
+              }
+            }
           }
           
           // Map DB fields to our PlanType interface
@@ -73,10 +110,58 @@ export const usePaymentData = () => {
           console.log("Formatted plans:", formattedPlans);
           setPlans(formattedPlans);
         } else {
-          console.warn("No plans found in database");
+          console.warn("No plans found in database, using default plans");
+          
+          // Filter default plans to only include pro and annual
+          const defaultPaidPlans = defaultPlans.filter(plan => 
+            plan.code === 'pro' || plan.code === 'annual'
+          );
+          
+          // If there's no annual plan in the default plans, create one
+          if (!defaultPaidPlans.some(plan => plan.code === 'annual')) {
+            const proPrice = defaultPaidPlans.find(p => p.code === 'pro')?.price || 15;
+            defaultPaidPlans.push({
+              id: 'annual-plan',
+              code: 'annual',
+              name: 'Annual Plan',
+              nameAr: 'الباقة السنوية',
+              description: 'Save with our annual subscription',
+              descriptionAr: 'وفر مع اشتراكنا السنوي',
+              price: proPrice * 12, // Annual price is 12 times the monthly price
+              features: defaultPaidPlans.find(p => p.code === 'pro')?.features || [],
+              featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || []
+            });
+          }
+          
+          console.log("Using default paid plans:", defaultPaidPlans);
+          setPlans(defaultPaidPlans);
         }
       } catch (error) {
         console.error("Error in fetchData:", error);
+        
+        // Fallback to default plans if something goes wrong
+        const defaultPaidPlans = defaultPlans.filter(plan => 
+          plan.code === 'pro' || plan.code === 'annual'
+        );
+        
+        // Ensure we have an annual plan
+        if (!defaultPaidPlans.some(plan => plan.code === 'annual')) {
+          const proPrice = defaultPaidPlans.find(p => p.code === 'pro')?.price || 15;
+          defaultPaidPlans.push({
+            id: 'annual-plan',
+            code: 'annual',
+            name: 'Annual Plan',
+            nameAr: 'الباقة السنوية',
+            description: 'Save with our annual subscription',
+            descriptionAr: 'وفر مع اشتراكنا السنوي',
+            price: proPrice * 12, // Annual price is 12 times the monthly price
+            features: defaultPaidPlans.find(p => p.code === 'pro')?.features || [],
+            featuresAr: defaultPaidPlans.find(p => p.code === 'pro')?.featuresAr || []
+          });
+        }
+        
+        console.log("Using default paid plans as fallback after error:", defaultPaidPlans);
+        setPlans(defaultPaidPlans);
       } finally {
         setLoading(false);
       }

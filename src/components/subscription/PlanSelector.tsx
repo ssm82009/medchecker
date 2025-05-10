@@ -13,8 +13,12 @@ interface PlanSelectorProps {
 
 const PlanSelector: React.FC<PlanSelectorProps> = ({ plans, selectedPlanCode, onPlanChange, language }) => {
   if (!plans || plans.length === 0) {
+    console.error("No plans provided to PlanSelector");
     return null;
   }
+  
+  console.log("PlanSelector rendering with plans:", plans);
+  console.log("Selected plan code:", selectedPlanCode);
 
   return (
     <div className="mb-6">
