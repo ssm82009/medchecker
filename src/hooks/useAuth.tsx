@@ -25,13 +25,17 @@ export const useAuth = () => {
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        // Ensure user has an ID property
-        if (parsedUser && !parsedUser.id && parsedUser.email) {
-          console.warn('Stored user missing ID, attempting to fix', parsedUser);
-          // Try to set a temporary ID based on email if needed
-          parsedUser.id = String(Date.now());
+        if (parsedUser) {
+          // Ensure user has a valid ID property
+          if (!parsedUser.id) {
+            console.warn('Stored user missing ID, cannot proceed with invalid user data', parsedUser);
+            localStorage.removeItem('user'); // Remove invalid user data
+            setUser(null);
+          } else {
+            console.log('User loaded from storage with ID:', parsedUser.id);
+            setUser(parsedUser);
+          }
         }
-        setUser(parsedUser);
       } catch (e) {
         console.error('Error parsing stored user data:', e);
         localStorage.removeItem('user');
@@ -61,7 +65,7 @@ export const useAuth = () => {
         throw new Error('Invalid email or password');
       }
       
-      // Save user data to localStorage
+      // Save user data to localStorage, ensuring ID is a string
       const userData: User = {
         id: String(data.id), // Convert ID to string to match User interface
         email: data.email,
@@ -71,7 +75,7 @@ export const useAuth = () => {
         auth_uid: data.auth_uid || null,
       };
       
-      console.log("Successfully logged in:", userData);
+      console.log("Successfully logged in with ID:", userData.id);
       setUser(userData);
       return true;
     } catch (err) {

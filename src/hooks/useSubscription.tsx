@@ -43,10 +43,6 @@ export const useSubscription = () => {
           };
           setPaypalSettings(formattedSettings);
           console.log("Formatted PayPal settings:", formattedSettings);
-          
-          // Debugging log to check client ID specifically
-          console.log("PayPal Client ID:", formattedSettings.clientId);
-          console.log("Subscription Plan ID:", formattedSettings.subscriptionPlanId);
         }
         
         // Fetch pro plan with all fields
@@ -125,17 +121,14 @@ export const useSubscription = () => {
       }
 
       console.log("Transaction recorded successfully, updating user plan");
-
-      // Update user plan
-      // For string user IDs that look like numbers, try to ensure correct format for the query
-      let userIdForQuery = userId;
       
+      // Update user plan
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', userIdForQuery);
+        .eq('id', userId);
 
       if (updateError) {
         console.error("User update error:", updateError);

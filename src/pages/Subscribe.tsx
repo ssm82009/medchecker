@@ -54,14 +54,11 @@ const Subscribe: React.FC = () => {
 
   // Debug logs to help identify issues
   React.useEffect(() => {
-    console.log("Subscribe page - PayPal settings:", paypalSettings);
-    console.log("Subscribe page - PayPal ready:", paypalReady);
-    console.log("Subscribe page - Pro plan:", proPlan);
     console.log("Subscribe page - Current user:", user);
     if (user) {
       console.log("User ID:", user.id, "Type:", typeof user.id);
     }
-  }, [paypalSettings, paypalReady, proPlan, user]);
+  }, [user]);
 
   if (!user || !user.id) {
     return (
