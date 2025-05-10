@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -147,13 +148,13 @@ export const useSubscription = () => {
 
       console.log("Transaction recorded successfully, updating user plan");
       
-      // Update user plan - since we're using a numeric ID in the users table
+      // Fix for line 156 - Convert user ID to string type for comparison
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', String(userId)); // Convert to string for comparison
+        .eq('id', Number(userId)); // Convert userId to number since users table uses numeric IDs
 
       if (updateError) {
         console.error("User update error:", updateError);
