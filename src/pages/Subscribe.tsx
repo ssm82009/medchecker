@@ -28,7 +28,8 @@ const Subscribe: React.FC = () => {
     paymentMessage,
     handlePaymentSuccess,
     handlePaymentError,
-    resetPaymentStatus
+    resetPaymentStatus,
+    userId
   } = useSubscription();
 
   // Check if user is logged in and has ID
@@ -52,6 +53,23 @@ const Subscribe: React.FC = () => {
       console.log("User ID is available and valid:", user.id, "Type:", typeof user.id);
     }
   }, [user, navigate, toast, language]);
+
+  // Always make sure we have an auth session
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log("No active session found, redirecting to login");
+        navigate('/login', { state: { returnUrl: '/subscribe' } });
+      } else {
+        console.log("Active session confirmed:", data.session.user.id);
+      }
+    };
+    
+    if (user) {
+      checkSession();
+    }
+  }, [user, navigate]);
 
   // Debug logs to help identify issues
   React.useEffect(() => {

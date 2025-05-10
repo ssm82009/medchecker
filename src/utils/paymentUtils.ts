@@ -18,11 +18,21 @@ export const recordTransaction = async (
   console.log("Recording transaction for user:", userId);
   
   try {
-    // تخزين المعاملة في قاعدة البيانات
+    // Make sure the session is active
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No active session found when recording transaction");
+      throw new Error(language === 'ar' 
+        ? 'لا توجد جلسة نشطة للمستخدم. يرجى تسجيل الدخول مرة أخرى.' 
+        : 'No active user session. Please login again.');
+    }
+    
+    // Store transaction in the database
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
-        user_id: userId, // الآن يمكن استخدام user_id مباشرة كنص
+        user_id: userId, // Use user_id as string
         amount: price,
         currency: currency || 'USD',
         status: 'completed',

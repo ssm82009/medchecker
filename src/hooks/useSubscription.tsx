@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { usePaymentData } from '@/hooks/usePaymentData';
 import { usePaymentState } from '@/hooks/usePaymentState';
 import { PlanType } from '@/types/plan';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSubscription = () => {
   const { user } = useAuth();
@@ -14,6 +15,20 @@ export const useSubscription = () => {
   
   // Default to monthly plan (pro)
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
+  
+  // Check for active session when component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log("No active Supabase session found in useSubscription");
+      } else {
+        console.log("Active Supabase session confirmed in useSubscription:", data.session.user.id);
+      }
+    };
+    
+    checkAuth();
+  }, []);
   
   // Use our new hooks to fetch data and manage state
   const { 
