@@ -3,7 +3,8 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { useTranslation } from '@/hooks/useTranslation';
-import { CreditCard, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { CreditCard, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface PayPalPaymentButtonsProps {
   paypalSettings: any;
@@ -23,6 +24,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   onPaymentError,
 }) => {
   const { language } = useTranslation();
+  const { user } = useAuth();
   
   // Scroll to PayPal buttons on component mount
   useEffect(() => {
@@ -36,6 +38,22 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
 
   console.log("PayPal settings in component:", paypalSettings);
   console.log("Payment type:", paymentType);
+  console.log("Current user:", user);
+  
+  if (!user) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4">
+          <div className="flex items-center gap-2 text-amber-700">
+            <AlertTriangle className="h-5 w-5" />
+            <span className="font-medium">
+              {language === 'ar' ? 'يرجى تسجيل الدخول أولاً للاشتراك' : 'Please log in first to subscribe'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   if (!paypalReady || !paypalSettings || !paypalSettings.clientId) {
     return (
@@ -110,6 +128,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             forceReRender={[paymentType, proPlan.price, paypalSettings.currency]}
             createOrder={async (data, actions) => {
               console.log("Creating PayPal order for payment type:", paymentType);
+              console.log("User ID for createOrder:", user?.id);
+              
               if (paymentType === 'one_time') {
                 return actions.order.create({
                   intent: 'CAPTURE',
@@ -120,6 +140,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                         currency_code: paypalSettings.currency || 'USD',
                       },
                       description: proPlan.name,
+                      custom_id: user?.id?.toString() || 'unknown' // تضمين معرف المستخدم هنا
                     },
                   ],
                 });
@@ -130,6 +151,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
               paymentType === 'recurring'
                 ? async (data, actions) => {
                     console.log("Creating PayPal subscription");
+                    console.log("User ID for createSubscription:", user?.id);
                     const planId = paypalSettings.subscriptionPlanId || '';
                     if (!planId) {
                       onPaymentError(language === 'ar' 
@@ -137,22 +159,31 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                         : 'Subscription plan ID not set in PayPal settings');
                       return '';
                     }
-                    return actions.subscription.create({ plan_id: planId });
+                    
+                    return actions.subscription.create({ 
+                      plan_id: planId,
+                      custom_id: user?.id?.toString() || 'unknown' // تضمين معرف المستخدم هنا
+                    });
                   }
                 : undefined
             }
             onApprove={async (data, actions) => {
               console.log("Payment approved:", data);
+              console.log("User ID for onApprove:", user?.id);
+              
               try {
                 if (actions?.order) {
                   const details = await actions.order.capture();
                   console.log("Payment details:", details);
+                  // إضافة معرف المستخدم إلى تفاصيل الدفع
+                  details.user_id = user?.id;
                   await onPaymentSuccess(details);
                 } else if (data.orderID) {
                   console.log("Subscription created with order ID:", data.orderID);
                   await onPaymentSuccess({
                     id: data.orderID,
-                    payer: { email_address: "subscriber@example.com" }
+                    user_id: user?.id,
+                    payer: { email_address: user?.email || "subscriber@example.com" }
                   });
                 }
               } catch (error) {

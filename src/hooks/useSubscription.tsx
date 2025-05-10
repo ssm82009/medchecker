@@ -87,8 +87,22 @@ export const useSubscription = () => {
   const handlePaymentSuccess = async (details: any) => {
     console.log("Payment success handler called with details:", details);
     try {
-      if (!user?.id) {
-        console.error("No user ID found");
+      // التحقق من وجود المستخدم وإظهار رسالة خطأ واضحة إذا لم يكن موجود
+      if (!user) {
+        console.error("No user found in auth context");
+        setPaymentStatus('error');
+        setPaymentMessage(language === 'ar' 
+          ? 'لم يتم العثور على بيانات المستخدم. يرجى تسجيل الدخول وإعادة المحاولة.' 
+          : 'User data not found. Please log in and try again.');
+        return;
+      }
+      
+      if (!user.id) {
+        console.error("User found but no user ID available:", user);
+        setPaymentStatus('error');
+        setPaymentMessage(language === 'ar' 
+          ? 'تعذر تحديد معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
+          : 'User ID could not be determined. Please log out and log in again.');
         return; 
       }
       
@@ -120,12 +134,20 @@ export const useSubscription = () => {
       console.log("Transaction recorded successfully, updating user plan");
 
       // تحديث خطة المستخدم
+      let userId = user.id;
+      
+      // التحقق مما إذا كان معرف المستخدم رقماً أم نصاً
+      if (typeof userId === 'string' && !isNaN(Number(userId))) {
+        userId = parseInt(userId);
+        console.log("Converted user ID to number:", userId);
+      }
+      
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', parseInt(user.id)); // Convert string ID to number for users table
+        .eq('id', userId);
 
       if (updateError) {
         console.error("User update error:", updateError);
@@ -147,7 +169,9 @@ export const useSubscription = () => {
         variant: 'destructive'
       });
       setPaymentStatus('error');
-      setPaymentMessage('حدث خطأ أثناء معالجة الدفع');
+      setPaymentMessage(language === 'ar' 
+        ? 'حدث خطأ أثناء معالجة الدفع: ' + String(error)
+        : 'Error processing payment: ' + String(error));
     }
   };
 
