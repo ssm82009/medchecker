@@ -23,11 +23,30 @@ export const useSubscription = () => {
     // جلب إعدادات بايبال وخطة pro
     const fetchData = async () => {
       setLoading(true);
-      const { data: paypalData } = await supabase.from('settings').select('value').eq('type', 'paypal').maybeSingle();
-      setPaypalSettings(paypalData?.value || null);
-      const { data: plans } = await supabase.from('plans').select('*').eq('code', 'pro').maybeSingle();
-      setProPlan(plans || null);
-      setLoading(false);
+      try {
+        // Fetch paypal settings
+        const { data: paypalData } = await supabase.from('paypal_settings').select('*').maybeSingle();
+        
+        if (paypalData) {
+          // Format settings with the correct property names for PayPal SDK
+          const formattedSettings = {
+            mode: paypalData.mode || 'sandbox',
+            clientId: paypalData.mode === 'sandbox' ? paypalData.sandbox_client_id : paypalData.live_client_id,
+            secret: paypalData.mode === 'sandbox' ? paypalData.sandbox_secret : paypalData.live_secret,
+            currency: paypalData.currency || 'USD',
+            subscriptionPlanId: paypalData.subscription_plan_id,
+          };
+          setPaypalSettings(formattedSettings);
+        }
+        
+        // Fetch pro plan
+        const { data: plans } = await supabase.from('plans').select('*').eq('code', 'pro').maybeSingle();
+        setProPlan(plans || null);
+      } catch (error) {
+        console.error("Error fetching subscription data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);

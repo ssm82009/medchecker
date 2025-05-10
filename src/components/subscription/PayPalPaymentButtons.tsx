@@ -65,7 +65,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
       <div id="paypal-buttons" className="pt-4">
         <PayPalScriptProvider
           options={{
-            'client-id': paypalSettings.clientId,
+            clientId: paypalSettings.clientId,
             currency: paypalSettings.currency || 'USD',
             intent: paymentType === 'recurring' ? 'subscription' : 'capture',
             components: 'buttons',
