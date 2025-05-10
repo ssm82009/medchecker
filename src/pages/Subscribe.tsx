@@ -1,11 +1,11 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client'; // Added missing import
+import { supabase } from '@/integrations/supabase/client';
 import AuthenticationError from '@/components/subscription/AuthenticationError';
 import SubscriptionLoader from '@/components/subscription/SubscriptionLoader';
 import PlanError from '@/components/subscription/PlanError';
@@ -13,6 +13,7 @@ import SubscriptionCard from '@/components/subscription/SubscriptionCard';
 
 const Subscribe: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { language } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -55,7 +56,7 @@ const Subscribe: React.FC = () => {
     }
   }, [user, navigate, toast, language]);
 
-  // Always make sure we have an auth session
+  // Always make sure we have an auth session without redirecting to dashboard
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -78,7 +79,8 @@ const Subscribe: React.FC = () => {
     if (user) {
       console.log("User ID:", user.id, "Type:", typeof user.id);
     }
-  }, [user]);
+    console.log("Current location:", location.pathname);
+  }, [user, location]);
 
   if (!user || !user.id) {
     return <AuthenticationError language={language} user={user} />;
