@@ -1,3 +1,4 @@
+
 import { PlanType } from '../types/plan';
 
 export const defaultPlans: PlanType[] = [
