@@ -34,6 +34,7 @@ const Subscribe: React.FC = () => {
   useEffect(() => {
     if (!user) {
       console.log("No user found, redirecting to login page");
+      navigate('/login', { state: { returnUrl: '/subscribe' } });
     }
   }, [user, navigate]);
 
@@ -43,6 +44,9 @@ const Subscribe: React.FC = () => {
     console.log("Subscribe page - PayPal ready:", paypalReady);
     console.log("Subscribe page - Pro plan:", proPlan);
     console.log("Subscribe page - Current user:", user);
+    if (user) {
+      console.log("User ID:", user.id, "Type:", typeof user.id);
+    }
   }, [paypalSettings, paypalReady, proPlan, user]);
 
   if (!user) {

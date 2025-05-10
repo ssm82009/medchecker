@@ -88,6 +88,9 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
     }
   };
 
+  // Make sure we have a user ID to use in PayPal operations
+  const userId = user?.id?.toString() || '';
+
   return (
     <div className="space-y-4">
       <div className="bg-blue-50 p-3 rounded-md border border-blue-100 mb-4">
@@ -128,7 +131,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             forceReRender={[paymentType, proPlan.price, paypalSettings.currency]}
             createOrder={async (data, actions) => {
               console.log("Creating PayPal order for payment type:", paymentType);
-              console.log("User ID for createOrder:", user?.id);
+              console.log("User ID for createOrder:", userId);
               
               if (paymentType === 'one_time') {
                 return actions.order.create({
@@ -140,7 +143,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                         currency_code: paypalSettings.currency || 'USD',
                       },
                       description: proPlan.name,
-                      custom_id: user?.id?.toString() || 'unknown' // تضمين معرف المستخدم هنا
+                      custom_id: userId // Use userId instead of user?.id
                     },
                   ],
                 });
@@ -151,7 +154,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
               paymentType === 'recurring'
                 ? async (data, actions) => {
                     console.log("Creating PayPal subscription");
-                    console.log("User ID for createSubscription:", user?.id);
+                    console.log("User ID for createSubscription:", userId);
                     const planId = paypalSettings.subscriptionPlanId || '';
                     if (!planId) {
                       onPaymentError(language === 'ar' 
@@ -162,29 +165,38 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
                     
                     return actions.subscription.create({ 
                       plan_id: planId,
-                      custom_id: user?.id?.toString() || 'unknown' // تضمين معرف المستخدم هنا
+                      custom_id: userId // Use userId instead of user?.id
                     });
                   }
                 : undefined
             }
             onApprove={async (data, actions) => {
               console.log("Payment approved:", data);
-              console.log("User ID for onApprove:", user?.id);
+              console.log("User ID for onApprove:", userId);
               
               try {
                 if (actions?.order) {
                   const details = await actions.order.capture();
                   console.log("Payment details:", details);
-                  // إضافة معرف المستخدم إلى تفاصيل الدفع
-                  details.user_id = user?.id;
-                  await onPaymentSuccess(details);
+                  
+                  // Create enhanced details object with user ID explicitly added
+                  const enhancedDetails = {
+                    ...details,
+                    userId: userId // Add userId as a property
+                  };
+                  
+                  await onPaymentSuccess(enhancedDetails);
                 } else if (data.orderID) {
                   console.log("Subscription created with order ID:", data.orderID);
-                  await onPaymentSuccess({
+                  
+                  // Create an object with the necessary details for a subscription
+                  const subscriptionDetails = {
                     id: data.orderID,
-                    user_id: user?.id,
+                    userId: userId,
                     payer: { email_address: user?.email || "subscriber@example.com" }
-                  });
+                  };
+                  
+                  await onPaymentSuccess(subscriptionDetails);
                 }
               } catch (error) {
                 console.error('Payment approval error:', error);

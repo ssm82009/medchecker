@@ -106,13 +106,17 @@ export const useSubscription = () => {
         return; 
       }
       
-      console.log("Recording transaction for user:", user.id);
+      // Get the user ID either from details.userId (where we explicitly set it)
+      // or try to get it from the user object
+      const userId = details.userId || user.id;
+      
+      console.log("Recording transaction for user:", userId);
       
       // تسجيل المعاملة في قاعدة البيانات
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           amount: proPlan.price,
           currency: paypalSettings.currency || 'USD',
           status: 'completed',
@@ -133,21 +137,22 @@ export const useSubscription = () => {
 
       console.log("Transaction recorded successfully, updating user plan");
 
-      // تحديث خطة المستخدم
-      let userId = user.id;
+      // تحديث خطة المستخدم - ensure userId is the appropriate format
+      const userIdForUpdate = userId;
       
-      // التحقق مما إذا كان معرف المستخدم رقماً أم نصاً
-      if (typeof userId === 'string' && !isNaN(Number(userId))) {
-        userId = parseInt(userId);
-        console.log("Converted user ID to number:", userId);
-      }
+      // Only try to convert to number if it's actually a string that looks like a number
+      const userIdForQuery = typeof userIdForUpdate === 'string' && /^\d+$/.test(userIdForUpdate) 
+        ? parseInt(userIdForUpdate, 10) 
+        : userIdForUpdate;
+      
+      console.log("Using user ID for update:", userIdForQuery, "Type:", typeof userIdForQuery);
       
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           plan_code: proPlan.code 
         })
-        .eq('id', userId);
+        .eq('id', userIdForQuery);
 
       if (updateError) {
         console.error("User update error:", updateError);
