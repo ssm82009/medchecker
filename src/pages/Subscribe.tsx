@@ -27,6 +27,13 @@ const Subscribe: React.FC = () => {
     resetPaymentStatus
   } = useSubscription();
 
+  // Debug logs to help identify issues
+  React.useEffect(() => {
+    console.log("Subscribe page - PayPal settings:", paypalSettings);
+    console.log("Subscribe page - PayPal ready:", paypalReady);
+    console.log("Subscribe page - Pro plan:", proPlan);
+  }, [paypalSettings, paypalReady, proPlan]);
+
   if (loading) return (
     <div className="flex justify-center items-center min-h-[40vh]">
       {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}

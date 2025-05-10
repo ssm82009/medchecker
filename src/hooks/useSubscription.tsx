@@ -43,10 +43,17 @@ export const useSubscription = () => {
           };
           setPaypalSettings(formattedSettings);
           console.log("Formatted PayPal settings:", formattedSettings);
+          
+          // Debugging log to check client ID specifically
+          console.log("PayPal Client ID:", formattedSettings.clientId);
         }
         
-        // Fetch pro plan
-        const { data: plans, error: plansError } = await supabase.from('plans').select('*').eq('code', 'pro').maybeSingle();
+        // Fetch pro plan with all fields
+        const { data: plans, error: plansError } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('code', 'pro')
+          .maybeSingle();
         
         if (plansError) {
           console.error("Error fetching pro plan:", plansError);

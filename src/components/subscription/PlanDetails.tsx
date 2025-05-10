@@ -18,7 +18,7 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ plan, paypalSettings }) => {
   // Get the appropriate plan name and description based on language
   const planName = language === 'ar' ? plan.nameAr || plan.name : plan.name;
   const planDescription = language === 'ar' ? plan.descriptionAr || plan.description : plan.description;
-  const planFeatures = language === 'ar' ? plan.featuresAr || plan.features : plan.features;
+  const planFeatures = language === 'ar' ? plan.features_ar || plan.featuresAr || plan.features : plan.features;
 
   return (
     <CardContent className="py-6">
@@ -39,12 +39,21 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ plan, paypalSettings }) => {
           {language === 'ar' ? 'المميزات المتاحة:' : 'Available Features:'}
         </h3>
         <ul className="space-y-3">
-          {planFeatures && planFeatures.map((feature: string, i: number) => (
+          {planFeatures && Array.isArray(planFeatures) && planFeatures.map((feature: string, i: number) => (
             <li key={i} className="flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
               <span className="text-gray-700">{feature}</span>
             </li>
           ))}
+          
+          {(!planFeatures || !Array.isArray(planFeatures) || planFeatures.length === 0) && (
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-gray-700">
+                {language === 'ar' ? 'باقة احترافية كاملة المميزات' : 'Full featured professional plan'}
+              </span>
+            </li>
+          )}
         </ul>
       </div>
     </CardContent>
