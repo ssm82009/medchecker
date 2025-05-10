@@ -70,7 +70,8 @@ export const recordTransaction = async (
         metadata: {
           payer: details.payer,
           payment_details: details,
-          session_id: finalSessionCheck.session.id // Store session ID for debugging
+          // Use user.id instead of session.id which doesn't exist
+          session_id: finalSessionCheck.session.user.id
         }
       });
 

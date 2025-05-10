@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -176,7 +175,8 @@ export const useSubscription = () => {
       planCode: selectedPlan?.code,
       currency: paypalSettings?.currency,
       userId: effectiveUserId, // Use the effective user ID
-      sessionId: data.session.id // Include session ID for verification
+      // Use user.id instead of session.id which doesn't exist
+      sessionId: data.session.user.id
     };
     
     await handlePaymentSuccess(enhancedDetails);

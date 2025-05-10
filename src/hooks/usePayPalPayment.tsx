@@ -94,7 +94,8 @@ export const usePayPalPayment = (
         const enhancedDetails = {
           ...details,
           userId: data.userId,
-          sessionId: sessionData.session?.id || data.sessionId
+          // Use user.id instead of session.id which doesn't exist
+          sessionId: sessionData.session?.user.id || data.sessionId
         };
         
         await onPaymentSuccess(enhancedDetails);
@@ -106,7 +107,8 @@ export const usePayPalPayment = (
           id: data.orderID,
           payer: { email_address: 'subscription' },
           userId: data.userId, // Include user ID here
-          sessionId: sessionData.session?.id || data.sessionId
+          // Use user.id instead of session.id which doesn't exist
+          sessionId: sessionData.session?.user.id || data.sessionId
         };
         
         await onPaymentSuccess(subscriptionDetails);

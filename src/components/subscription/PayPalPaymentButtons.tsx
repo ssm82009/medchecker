@@ -106,7 +106,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
               const enhancedData = {
                 ...data, 
                 userId: safeUserId,
-                sessionId: sessionData.session.id
+                // Use session user ID instead of session.id which doesn't exist
+                sessionId: sessionData.session.user.id
               };
               console.log("[PayPalPaymentButtons] Enhanced PayPal approval data with userId:", enhancedData);
               await handlePayPalApprove(enhancedData, actions);
