@@ -39,6 +39,11 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 }) => {
   const navigate = useNavigate();
   
+  // Extra validation for user ID - always ensure it's a string
+  const safeUserId = userId ? String(userId) : '';
+  
+  console.log("SubscriptionCard rendered with user ID:", safeUserId);
+  
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
@@ -67,7 +72,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               proPlan={proPlan}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
-              userId={userId}
+              userId={safeUserId}
             />
           )}
           

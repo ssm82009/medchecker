@@ -32,21 +32,37 @@ export const usePayPalPayment = (
   };
 
   const handlePayPalApprove = async (data: any, actions: any) => {
-    console.log("Payment approved:", data);
+    console.log("Payment approved with data:", data);
     
     try {
+      // Verify that we have a userId in the data
+      if (!data.userId) {
+        console.error("No userId in PayPal approval data:", data);
+        onPaymentError(language === 'ar' 
+          ? 'معرف المستخدم غير متوفر في بيانات الدفع' 
+          : 'User ID not available in payment data');
+        return;
+      }
+      
       if (actions?.order) {
         const details = await actions.order.capture();
         console.log("Payment details:", details);
         
-        await onPaymentSuccess(details);
+        // Add the user ID from data to details
+        const enhancedDetails = {
+          ...details,
+          userId: data.userId
+        };
+        
+        await onPaymentSuccess(enhancedDetails);
       } else if (data.orderID) {
         console.log("Subscription created with order ID:", data.orderID);
         
         // Create an object with the necessary details for a subscription
         const subscriptionDetails = {
           id: data.orderID,
-          payer: { email_address: 'subscription' }
+          payer: { email_address: 'subscription' },
+          userId: data.userId // Include user ID here
         };
         
         await onPaymentSuccess(subscriptionDetails);

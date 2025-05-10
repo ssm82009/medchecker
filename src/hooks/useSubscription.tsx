@@ -29,14 +29,26 @@ export const useSubscription = () => {
     resetPaymentStatus
   } = usePaymentState(language);
 
-  // Augment the payment success handler to include the plan details
+  // Augment the payment success handler to include the plan details and user ID
   const enhancedPaymentSuccess = async (details: any) => {
-    // Add price and plan code to the details object
+    // Make sure we have a user ID
+    if (!user || !user.id) {
+      console.error("No user ID available in useSubscription");
+      handlePaymentError(language === 'ar' 
+        ? 'معرف المستخدم غير متوفر' 
+        : 'User ID not available');
+      return;
+    }
+    
+    console.log("Enhanced payment success with user ID:", user.id);
+    
+    // Add price, plan code, and user ID to the details object
     const enhancedDetails = {
       ...details,
       price: proPlan?.price,
       planCode: proPlan?.code,
-      currency: paypalSettings?.currency
+      currency: paypalSettings?.currency,
+      userId: String(user.id) // Ensure it's a string
     };
     
     await handlePaymentSuccess(enhancedDetails);
@@ -54,6 +66,7 @@ export const useSubscription = () => {
     paymentMessage,
     handlePaymentSuccess: enhancedPaymentSuccess,
     handlePaymentError,
-    resetPaymentStatus
+    resetPaymentStatus,
+    userId: user?.id ? String(user.id) : null // Ensure we return the user ID as a string
   };
 };

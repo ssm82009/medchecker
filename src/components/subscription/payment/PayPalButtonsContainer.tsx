@@ -21,8 +21,21 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
   onApprove,
   onError
 }) => {
-  // Ensure userId is a string
-  const safeUserId = String(userId);
+  // Extra validation to ensure userId is always available and is a string
+  const safeUserId = userId ? String(userId) : '';
+  
+  if (!safeUserId) {
+    console.error("No user ID available in PayPalButtonsContainer");
+    return (
+      <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4">
+        <div className="text-amber-700">
+          {language === 'ar' ? 'معرف المستخدم غير متوفر' : 'User ID not available'}
+        </div>
+      </div>
+    );
+  }
+  
+  console.log("PayPalButtonsContainer initialized with user ID:", safeUserId);
   
   return (
     <PayPalScriptProvider
@@ -39,7 +52,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
     >
       <PayPalButtons
         style={{ layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal' }}
-        forceReRender={[paymentType, proPlan.price, paypalSettings.currency]}
+        forceReRender={[paymentType, proPlan.price, paypalSettings.currency, safeUserId]}
         createOrder={async (data, actions) => {
           console.log("Creating PayPal order for payment type:", paymentType);
           console.log("User ID for createOrder:", safeUserId, "Type:", typeof safeUserId);
@@ -57,6 +70,11 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                   custom_id: safeUserId
                 },
               ],
+              application_context: {
+                user_action: "PAY_NOW",
+              },
+              // Store the user ID in the metadata
+              custom_id: safeUserId
             });
           }
           return '';
@@ -76,12 +94,20 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
                 
                 return actions.subscription.create({ 
                   plan_id: planId,
-                  custom_id: safeUserId
+                  custom_id: safeUserId,
+                  application_context: {
+                    user_action: "SUBSCRIBE_NOW",
+                  }
                 });
               }
             : undefined
         }
-        onApprove={onApprove}
+        onApprove={async (data, actions) => {
+          // Always include the user ID in the data we send to the approval handler
+          const enhancedData = { ...data, userId: safeUserId };
+          console.log("Payment approved with enhanced data:", enhancedData);
+          await onApprove(enhancedData, actions);
+        }}
         onError={(err) => {
           console.error('PayPal error:', err);
           onError(language === 'ar' 

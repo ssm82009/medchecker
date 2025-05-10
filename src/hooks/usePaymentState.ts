@@ -12,7 +12,7 @@ export const usePaymentState = (language: string) => {
   const handlePaymentSuccess = async (details: any) => {
     console.log("Payment success handler called with details:", details);
     try {
-      // Check if userId is available in the details
+      // Get the user ID from the details
       const userId = details.userId;
       
       if (!userId) {
@@ -24,7 +24,9 @@ export const usePaymentState = (language: string) => {
         return;
       }
       
-      // Validate the userId is a valid UUID before using it
+      console.log("Processing payment for user ID:", userId, "Type:", typeof userId);
+      
+      // Validate the userId is a valid UUID or numeric ID before using it
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) && 
           !/^\d+$/.test(userId)) {
         console.error("Invalid user ID format:", userId, "Type:", typeof userId);
