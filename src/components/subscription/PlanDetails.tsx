@@ -18,7 +18,7 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ plan, paypalSettings }) => {
   // Get the appropriate plan name and description based on language
   const planName = language === 'ar' ? plan.nameAr || plan.name : plan.name;
   const planDescription = language === 'ar' ? plan.descriptionAr || plan.description : plan.description;
-  const planFeatures = language === 'ar' ? plan.features_ar || plan.featuresAr || plan.features : plan.features;
+  const planFeatures = language === 'ar' ? plan.featuresAr || plan.features : plan.features;
 
   return (
     <CardContent className="py-6">
