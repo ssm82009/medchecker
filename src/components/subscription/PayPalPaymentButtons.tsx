@@ -35,6 +35,7 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
   }, [paypalReady]);
 
   console.log("PayPal settings in component:", paypalSettings);
+  console.log("Payment type:", paymentType);
   
   if (!paypalReady || !paypalSettings || !paypalSettings.clientId) {
     return (
@@ -96,12 +97,15 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
           options={{
             clientId: paypalSettings.clientId,
             currency: paypalSettings.currency || 'USD',
-            intent: paymentType === 'recurring' ? 'subscription' : 'capture',
             components: 'buttons',
             disableFunding: 'card',
             enableFunding: 'paypal',
-            dataClientToken: 'abc123xyz==',
-            ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {})
+            // Add vault parameter for recurring payments
+            vault: paymentType === 'recurring' ? true : undefined,
+            // Add intent for one_time payments
+            intent: paymentType === 'one_time' ? 'capture' : undefined,
+            // Optional buyer country parameter
+            buyerCountry: paypalSettings.mode === 'sandbox' ? 'US' : undefined
           }}
         >
           <PayPalButtons
