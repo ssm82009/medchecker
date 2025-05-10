@@ -7,6 +7,7 @@ import PlanDetails from '@/components/subscription/PlanDetails';
 import PlanSelector from '@/components/subscription/PlanSelector';
 import PaymentStatus from '@/components/subscription/PaymentStatus';
 import PayPalPaymentButtons from '@/components/subscription/PayPalPaymentButtons';
+import LoginPrompt from '@/components/subscription/LoginPrompt';
 import { PlanType } from '@/types/plan';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,6 +26,7 @@ interface SubscriptionCardProps {
   handlePaymentError: (error: any) => void;
   resetPaymentStatus: () => void;
   userId: string;
+  showLoginPrompt?: boolean;
 }
 
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
@@ -42,6 +44,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   handlePaymentError,
   resetPaymentStatus,
   userId,
+  showLoginPrompt = false,
 }) => {
   const navigate = useNavigate();
   
@@ -63,6 +66,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const safeUserId = userId ? String(userId) : '';
   
   console.log("[SubscriptionCard] Rendered with user ID:", safeUserId, "Type:", typeof safeUserId);
+  console.log("[SubscriptionCard] Show login prompt:", showLoginPrompt);
   
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
@@ -72,6 +76,13 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             {language === 'ar' ? 'اختر خطة الاشتراك' : 'Choose your subscription'}
           </CardTitle>
         </CardHeader>
+        
+        {/* عرض مكون تنبيه تسجيل الدخول إذا كان المستخدم غير مسجل */}
+        {showLoginPrompt && (
+          <div className="px-6 pt-6">
+            <LoginPrompt language={language} />
+          </div>
+        )}
         
         {selectedPlan && (
           <>
@@ -97,7 +108,8 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             onRetry={resetPaymentStatus}
           />
           
-          {paymentStatus === 'idle' && selectedPlan && (
+          {/* عرض أزرار الدفع فقط إذا كان المستخدم مسجل دخول وفي حالة صالحة */}
+          {paymentStatus === 'idle' && selectedPlan && !showLoginPrompt && (
             <PayPalPaymentButtons
               paypalSettings={paypalSettings}
               paypalReady={paypalReady}

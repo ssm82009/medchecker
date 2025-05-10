@@ -38,6 +38,7 @@ export const useSubscription = () => {
           console.log("Session check failed:", sessionCheck.message);
           setSupabaseUserId(null);
           
+          // إظهار رسالة فقط دون إعادة توجيه
           toast({
             title: language === 'ar' ? 'تنبيه بخصوص الجلسة' : 'Session Alert',
             description: sessionCheck.message,
@@ -65,7 +66,7 @@ export const useSubscription = () => {
         setSupabaseUserId(null);
         console.log("No session from auth state change");
         
-        // محاولة تحديث الجلسة
+        // محاولة تحديث الجلسة دون إعادة توجيه
         const refreshCheck = await checkAndGetSession(language);
         if (refreshCheck.success) {
           setSupabaseUserId(refreshCheck.session.user.id);
@@ -122,9 +123,12 @@ export const useSubscription = () => {
   console.log("User from auth hook:", user?.id ? `${user.id} (${typeof user.id})` : "not available");
   console.log("User from Supabase session:", supabaseUserId || "not available");
 
-  // Notify user if no valid user ID is found
+  // نعرض للمستخدم خيار تسجيل الدخول إذا كانوا غير مسجلين ولكن بدون إعادة توجيه تلقائية
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
   useEffect(() => {
     if (!sessionChecking && !effectiveUserId && !loading) {
+      setShowLoginPrompt(true);
       toast({
         title: language === 'ar' ? 'تسجيل دخول مطلوب' : 'Login Required',
         description: language === 'ar' 
@@ -132,15 +136,10 @@ export const useSubscription = () => {
           : 'Please login to complete payment process',
         variant: 'destructive'
       });
-      
-      // توجيه المستخدم إلى صفحة تسجيل الدخول بعد فترة قصيرة
-      const redirectTimer = setTimeout(() => {
-        navigate('/login', { state: { returnUrl: '/subscribe' } });
-      }, 3000);
-      
-      return () => clearTimeout(redirectTimer);
+    } else {
+      setShowLoginPrompt(false);
     }
-  }, [effectiveUserId, sessionChecking, loading, language, toast, navigate]);
+  }, [effectiveUserId, sessionChecking, loading, language, toast]);
 
   // تحسين معالج نجاح الدفع ليشمل تفاصيل الخطة ومعرف المستخدم
   const enhancedPaymentSuccess = async (details: any) => {
@@ -200,6 +199,7 @@ export const useSubscription = () => {
     handlePaymentSuccess: enhancedPaymentSuccess,
     handlePaymentError,
     resetPaymentStatus,
-    userId: effectiveUserId // إرجاع معرف المستخدم الفعلي
+    userId: effectiveUserId, // إرجاع معرف المستخدم الفعلي
+    showLoginPrompt // إضافة مؤشر لعرض نافذة تسجيل الدخول
   };
 };

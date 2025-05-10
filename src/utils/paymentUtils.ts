@@ -132,11 +132,11 @@ export const validatePrice = (price: number): boolean => {
 
 /**
  * وظيفة محسنة للتحقق من وجود جلسة نشطة
- * تقوم بإجراء ثلاث محاولات للحصول على الجلسة
+ * تقوم بإجراء محاولات للحصول على الجلسة بدون إعادة توجيه المستخدم
  */
 export const checkAndGetSession = async (language: string = 'en') => {
   try {
-    // المحاولة الأولى - جلب الجلسة الحالية
+    // محاولة جلب الجلسة الحالية
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
     // التحقق من وجود خطأ
@@ -161,7 +161,7 @@ export const checkAndGetSession = async (language: string = 'en') => {
       };
     }
     
-    // المحاولة الثانية - تحديث الجلسة
+    // محاولة تحديث الجلسة
     console.log("No active session found, attempting to refresh...");
     const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
     
@@ -182,7 +182,7 @@ export const checkAndGetSession = async (language: string = 'en') => {
       console.error("Session refresh returned no session");
     }
 
-    // المحاولة الأخيرة - التحقق مرة أخرى من الجلسة
+    // محاولة أخيرة للتحقق من الجلسة
     const { data: finalCheck } = await supabase.auth.getSession();
     if (finalCheck.session) {
       console.log("Session found after final check:", finalCheck.session.user.id);

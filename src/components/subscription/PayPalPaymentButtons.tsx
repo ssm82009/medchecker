@@ -11,7 +11,8 @@ import UserIdError from './payment/UserIdError';
 import { PlanType } from '@/types/plan';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface PayPalPaymentButtonsProps {
   paypalSettings: any;
@@ -34,7 +35,6 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
 }) => {
   const { language } = useTranslation();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { handlePayButtonClick, handlePayPalApprove } = usePayPalPayment(onPaymentSuccess, onPaymentError);
   const [sessionStatus, setSessionStatus] = useState<'checking' | 'active' | 'inactive'>('checking');
   
@@ -52,8 +52,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
         toast({
           title: language === 'ar' ? 'تحذير: جلسة غير نشطة' : 'Warning: Session not active',
           description: language === 'ar' 
-            ? 'يرجى تسجيل الدخول مرة أخرى لإكمال عملية الدفع' 
-            : 'Please login again to complete payment process',
+            ? 'يرجى تسجيل الدخول للمتابعة' 
+            : 'Please login to continue',
           variant: 'destructive'
         });
       } else {
@@ -65,17 +65,6 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
     
     verifySession();
   }, [language, toast]);
-  
-  // توجيه المستخدم إلى صفحة تسجيل الدخول إذا لم تكن هناك جلسة نشطة
-  useEffect(() => {
-    if (sessionStatus === 'inactive') {
-      const redirectTimer = setTimeout(() => {
-        navigate('/login', { state: { returnUrl: '/subscribe' } });
-      }, 3000); // إعطاء المستخدم وقت لقراءة رسالة الخطأ
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [sessionStatus, navigate]);
   
   console.log("[PayPalPaymentButtons] Rendering with userId:", userId, "Type:", typeof userId);
   console.log("[PayPalPaymentButtons] Session status:", sessionStatus);
@@ -91,17 +80,28 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
     return <PayPalLoadingState language={language} />;
   }
   
-  // عرض رسالة خطأ إذا لم تكن هناك جلسة نشطة
+  // عرض رسالة جلسة غير نشطة مع زر تسجيل الدخول
   if (sessionStatus === 'inactive') {
     return (
       <div className="bg-amber-50 p-4 rounded-md border border-amber-200 mb-4">
         <div className="text-amber-700 font-medium mb-2">
           {language === 'ar' ? 'جلسة غير نشطة' : 'Session not active'}
         </div>
-        <div className="text-amber-600 text-sm">
+        <div className="text-amber-600 text-sm mb-4">
           {language === 'ar' 
-            ? 'جاري تحويلك إلى صفحة تسجيل الدخول...' 
-            : 'Redirecting to login page...'}
+            ? 'يجب عليك تسجيل الدخول للمتابعة' 
+            : 'You need to login to continue'}
+        </div>
+        <div className="flex justify-center">
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            asChild
+          >
+            <Link to="/login" state={{ returnUrl: '/subscribe' }}>
+              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+            </Link>
+          </Button>
         </div>
       </div>
     );
