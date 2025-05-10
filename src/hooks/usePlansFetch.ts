@@ -12,12 +12,12 @@ export const usePlansFetch = () => {
     const fetchPlans = async () => {
       setLoading(true);
       try {
-        // Fetch both pro and annual plans explicitly
+        // Fetch both pro and pro12 plans explicitly (monthly and yearly plans)
         console.log("Attempting to fetch plans from database...");
         const { data: plansData, error: plansError } = await supabase
           .from('plans')
           .select('*')
-          .in('code', ['pro', 'annual'])
+          .in('code', ['pro', 'pro12'])
           .order('price', { ascending: true });
         
         if (plansError) {
@@ -32,30 +32,38 @@ export const usePlansFetch = () => {
           
           // Check if we have both plans
           const hasPro = plansData.some(plan => plan.code === 'pro');
-          const hasAnnual = plansData.some(plan => plan.code === 'annual');
+          const hasYearly = plansData.some(plan => plan.code === 'pro12');
           
-          console.log(`Has pro plan: ${hasPro}, Has annual plan: ${hasAnnual}`);
+          console.log(`Has pro plan: ${hasPro}, Has yearly plan: ${hasYearly}`);
           
           let finalPlansData = [...plansData];
           
           // If missing plans, add them from defaults
-          if (!hasPro || !hasAnnual) {
-            console.warn(`Missing plans: ${!hasPro ? 'pro' : ''} ${!hasAnnual ? 'annual' : ''}`);
+          if (!hasPro || !hasYearly) {
+            console.warn(`Missing plans: ${!hasPro ? 'pro' : ''} ${!hasYearly ? 'pro12' : ''}`);
             
-            if (!hasAnnual) {
-              const defaultAnnualPlan = defaultPlans.find(plan => plan.code === 'annual');
-              if (defaultAnnualPlan) {
-                console.log("Adding default annual plan");
+            if (!hasYearly) {
+              const defaultYearlyPlan = defaultPlans.find(plan => plan.code === 'annual');
+              if (defaultYearlyPlan) {
+                console.log("Adding default yearly plan");
                 finalPlansData.push({
-                  id: 'annual-plan',
-                  code: 'annual',
-                  name: 'Annual Plan',
-                  name_ar: 'الباقة السنوية',
+                  id: 'pro12-plan',
+                  code: 'pro12',
+                  name: 'Yearly Pro Plan',
+                  name_ar: 'الباقة الاحترافية السنوية',
                   description: 'Save with our annual subscription',
                   description_ar: 'وفر مع اشتراكنا السنوي',
-                  price: 120, // 12 months x $10
-                  features: defaultAnnualPlan.features,
-                  features_ar: defaultAnnualPlan.features.map(f => f), // Copy English features if Arabic not available
+                  price: 39, // yearly price as shown in the screenshot
+                  features: [
+                    'Check up to 10 medications',
+                    'Full access for 12 months',
+                    'AI-powered image search'
+                  ],
+                  features_ar: [
+                    'فحص حتى 10 أدوية',
+                    'وصول كامل لمدة 12 شهر',
+                    'البحث بالصور بالذكاء الاصطناعي'
+                  ],
                   is_default: false
                 });
               }
@@ -68,13 +76,21 @@ export const usePlansFetch = () => {
                 finalPlansData.push({
                   id: 'pro-plan',
                   code: 'pro',
-                  name: 'Pro Plan',
-                  name_ar: 'الباقة الاحترافية',
-                  description: 'Professional features for serious users',
-                  description_ar: 'ميزات احترافية للمستخدمين الجادين',
-                  price: 10,
-                  features: defaultProPlan.features,
-                  features_ar: defaultProPlan.features.map(f => f), // Copy English features if Arabic not available
+                  name: 'Monthly Pro Plan',
+                  name_ar: 'الباقة الاحترافية الشهرية',
+                  description: 'Professional features for monthly subscribers',
+                  description_ar: 'ميزات احترافية للمشتركين الشهريين',
+                  price: 3.99,
+                  features: [
+                    'Check up to 10 medications',
+                    'AI-powered image search',
+                    'Advanced patient history'
+                  ],
+                  features_ar: [
+                    'فحص حتى 10 أدوية',
+                    'البحث بالصور بالذكاء الاصطناعي',
+                    'سجل متقدم للمريض'
+                  ],
                   is_default: false
                 });
               }
@@ -100,10 +116,19 @@ export const usePlansFetch = () => {
         } else {
           console.warn("No plans found in database, using default plans");
           
-          // Filter default plans to only include pro and annual
-          const defaultPaidPlans = defaultPlans.filter(plan => 
-            plan.code === 'pro' || plan.code === 'annual'
-          );
+          // Filter default plans to only include pro and pro12
+          const defaultPaidPlans = defaultPlans
+            .filter(plan => plan.code === 'pro')
+            .concat(
+              // Add a modified annual plan with code='pro12'
+              [{
+                ...defaultPlans.find(plan => plan.code === 'annual'),
+                code: 'pro12',
+                name: 'Yearly Pro Plan',
+                nameAr: 'الباقة الاحترافية السنوية',
+                price: 39
+              }].filter(Boolean)
+            ) as PlanType[];
           
           console.log("Using default paid plans:", defaultPaidPlans);
           setPlans(defaultPaidPlans);
@@ -112,9 +137,18 @@ export const usePlansFetch = () => {
         console.error("Error in fetchPlans:", error);
         
         // Fallback to default plans if something goes wrong
-        const defaultPaidPlans = defaultPlans.filter(plan => 
-          plan.code === 'pro' || plan.code === 'annual'
-        );
+        const defaultPaidPlans = defaultPlans
+          .filter(plan => plan.code === 'pro')
+          .concat(
+            // Add a modified annual plan with code='pro12'
+            [{
+              ...defaultPlans.find(plan => plan.code === 'annual'),
+              code: 'pro12',
+              name: 'Yearly Pro Plan',
+              nameAr: 'الباقة الاحترافية السنوية',
+              price: 39
+            }].filter(Boolean)
+          ) as PlanType[];
         
         console.log("Using default paid plans as fallback after error:", defaultPaidPlans);
         setPlans(defaultPaidPlans);
