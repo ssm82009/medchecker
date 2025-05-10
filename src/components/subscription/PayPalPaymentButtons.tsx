@@ -33,8 +33,10 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
       }, 300);
     }
   }, [paypalReady]);
+
+  console.log("PayPal settings in component:", paypalSettings);
   
-  if (!paypalReady) {
+  if (!paypalReady || !paypalSettings || !paypalSettings.clientId) {
     return (
       <div className="space-y-4">
         <Button disabled className="w-full flex items-center gap-2">
@@ -96,11 +98,12 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             currency: paypalSettings.currency || 'USD',
             intent: paymentType === 'recurring' ? 'subscription' : 'capture',
             components: 'buttons',
-            'disable-funding': 'card',
-            'enable-funding': 'paypal',
-            'data-sdk-integration-source': 'button',
+            disableFunding: 'card',
+            enableFunding: 'paypal',
+            dataClientToken: 'abc123xyz==',
             ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {}),
           }}
+          deferLoading={false}
         >
           <PayPalButtons
             style={{ layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal' }}

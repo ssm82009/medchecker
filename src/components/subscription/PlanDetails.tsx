@@ -15,23 +15,32 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ plan, paypalSettings }) => {
   
   if (!plan) return null;
 
+  // Get the appropriate plan name and description based on language
+  const planName = language === 'ar' ? plan.nameAr || plan.name : plan.name;
+  const planDescription = language === 'ar' ? plan.descriptionAr || plan.description : plan.description;
+  const planFeatures = language === 'ar' ? plan.featuresAr || plan.features : plan.features;
+
   return (
-    <CardContent>
-      <div className="text-center text-lg mb-2 text-gray-700">
-        {language === 'ar' ? plan.descriptionAr : plan.description}
+    <CardContent className="py-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-primary mb-2">{planName}</h2>
+        <p className="text-lg mb-3 text-gray-700">{planDescription}</p>
+        <div className="text-3xl font-bold text-green-600 flex items-center justify-center gap-1">
+          <span>{plan.price}</span>
+          <span className="text-xl">{paypalSettings?.currency || 'USD'}</span>
+          <span className="text-lg text-gray-600">/ {language === 'ar' ? 'شهر' : 'month'}</span>
+        </div>
       </div>
-      <div className="text-center text-3xl font-bold text-green-600 mb-4">
-        {plan.price} {paypalSettings?.currency || 'USD'} {language === 'ar' ? '/ شهر' : '/ month'}
-      </div>
-      <div className="mb-6">
-        <h3 className="font-semibold mb-3 text-primary text-lg">
+
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 rounded-lg border border-blue-100/50 mb-6">
+        <h3 className="font-semibold mb-4 text-primary text-lg border-b pb-2 border-primary/20">
           {language === 'ar' ? 'المميزات المتاحة:' : 'Available Features:'}
         </h3>
-        <ul className="space-y-2">
-          {(language === 'ar' ? plan.featuresAr : plan.features)?.map((feature: string, i: number) => (
-            <li key={i} className="flex items-center gap-2 text-gray-700">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <span>{feature}</span>
+        <ul className="space-y-3">
+          {planFeatures && planFeatures.map((feature: string, i: number) => (
+            <li key={i} className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-gray-700">{feature}</span>
             </li>
           ))}
         </ul>

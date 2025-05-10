@@ -8,9 +8,11 @@ import PlanDetails from '@/components/subscription/PlanDetails';
 import PaymentTypeSelector from '@/components/subscription/PaymentTypeSelector';
 import PaymentStatus from '@/components/subscription/PaymentStatus';
 import PayPalPaymentButtons from '@/components/subscription/PayPalPaymentButtons';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Subscribe: React.FC = () => {
   const navigate = useNavigate();
+  const { language } = useTranslation();
   const {
     paypalSettings,
     loading,
@@ -25,19 +27,30 @@ const Subscribe: React.FC = () => {
     resetPaymentStatus
   } = useSubscription();
 
-  if (loading) return <div className="flex justify-center items-center min-h-[40vh]">جاري التحميل...</div>;
-  if (!proPlan) return <div className="text-center text-red-500">لم يتم العثور على الباقة الاحترافية</div>;
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-[40vh]">
+      {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+    </div>
+  );
+  
+  if (!proPlan) return (
+    <div className="text-center text-red-500">
+      {language === 'ar' ? 'لم يتم العثور على الباقة الاحترافية' : 'Professional plan not found'}
+    </div>
+  );
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-primary">{proPlan.name_ar || proPlan.name}</CardTitle>
+        <CardHeader className="text-center border-b pb-4">
+          <CardTitle className="text-2xl font-bold text-primary">
+            {language === 'ar' ? 'الباقة الاحترافية' : 'Professional Plan'}
+          </CardTitle>
         </CardHeader>
         
         <PlanDetails plan={proPlan} paypalSettings={paypalSettings} />
         
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="flex flex-col gap-4 pt-4">
           <PaymentTypeSelector paymentType={paymentType} onValueChange={setPaymentType} />
           
           <PaymentStatus 
@@ -58,7 +71,7 @@ const Subscribe: React.FC = () => {
           )}
           
           <Button variant="secondary" className="w-full" onClick={() => navigate(-1)}>
-            عودة
+            {language === 'ar' ? 'عودة' : 'Back'}
           </Button>
         </CardFooter>
       </Card>
