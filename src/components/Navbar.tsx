@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Pill, Menu } from 'lucide-react';
+import { Pill, Menu, CreditCard } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -57,6 +58,15 @@ const Navbar: React.FC = () => {
               <Button variant="outline" asChild className="w-full justify-start">
                 <Link to="/about" onClick={handleLinkClick}>{t('about' as any)}</Link>
               </Button>
+              
+              {/* Subscription Link - Available to all users */}
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link to="/subscribe" onClick={handleLinkClick}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  {language === 'ar' ? 'الاشتراك' : 'Subscribe'}
+                </Link>
+              </Button>
+              
               <Button variant="outline" asChild className="w-full justify-start">
                 <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse' as any)}</Link>
               </Button>

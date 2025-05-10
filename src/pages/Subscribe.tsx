@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,8 @@ const Subscribe: React.FC = () => {
   const { language } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [sessionValid, setSessionValid] = useState(false);
   const {
     paypalSettings,
     loading,
@@ -34,55 +36,60 @@ const Subscribe: React.FC = () => {
     userId
   } = useSubscription();
 
-  // Check if user is logged in and has ID
-  useEffect(() => {
-    if (!user) {
-      console.log("No user found, redirecting to login page");
-      navigate('/login', { state: { returnUrl: '/subscribe' } });
-      return;
-    }
-
-    if (!user.id) {
-      console.error("User found but no ID available:", user);
-      toast({
-        title: language === 'ar' ? 'خطأ في بيانات المستخدم' : 'User data error',
-        description: language === 'ar' 
-          ? 'تعذر العثور على معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
-          : 'User ID not found. Please log out and log in again.',
-        variant: 'destructive'
-      });
-    } else {
-      console.log("User ID is available and valid:", user.id, "Type:", typeof user.id);
-    }
-  }, [user, navigate, toast, language]);
-
-  // Always make sure we have an auth session without redirecting to dashboard
+  // Initial check for active session without redirecting
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        console.log("No active session found, redirecting to login");
-        navigate('/login', { state: { returnUrl: '/subscribe' } });
-      } else {
-        console.log("Active session confirmed:", data.session.user.id);
+      console.log("Subscribe: Checking session...");
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setSessionValid(false);
+        } else if (data.session) {
+          console.log("Active session found:", data.session.user.id);
+          setSessionValid(true);
+        } else {
+          console.log("No active session");
+          setSessionValid(false);
+        }
+      } catch (e) {
+        console.error("Exception in session check:", e);
+        setSessionValid(false);
+      } finally {
+        setSessionChecked(true);
       }
     };
     
-    if (user) {
-      checkSession();
-    }
-  }, [user, navigate]);
+    checkSession();
+  }, []);
 
-  // Debug logs to help identify issues
+  // Only redirect to login if we've finished checking session and found no valid session
+  useEffect(() => {
+    if (sessionChecked && !sessionValid && !user) {
+      console.log("No valid session or user, redirecting to login");
+      navigate('/login', { state: { returnUrl: '/subscribe' } });
+    }
+  }, [sessionChecked, sessionValid, user, navigate]);
+
+  // Debug logs
   React.useEffect(() => {
-    console.log("Subscribe page - Current user:", user);
-    if (user) {
-      console.log("User ID:", user.id, "Type:", typeof user.id);
-    }
-    console.log("Current location:", location.pathname);
-  }, [user, location]);
+    console.log("Subscribe page rendering with state:", {
+      user: user ? "exists" : "none",
+      userId: user?.id || "none",
+      sessionChecked,
+      sessionValid,
+      path: location.pathname
+    });
+  }, [user, location, sessionChecked, sessionValid]);
 
-  if (!user || !user.id) {
+  // Show loading state until session check completes
+  if (!sessionChecked) {
+    return <SubscriptionLoader language={language} />;
+  }
+
+  // Don't show authentication error if we're still checking or redirecting
+  if (!sessionValid && !user) {
     return <AuthenticationError language={language} user={user} />;
   }
 
@@ -95,7 +102,8 @@ const Subscribe: React.FC = () => {
   }
 
   // Make sure user.id is a string
-  const safeUserId = String(user.id);
+  const safeUserId = user?.id ? String(user.id) : '';
+  console.log("Using safeUserId for subscription:", safeUserId);
 
   return (
     <SubscriptionCard
