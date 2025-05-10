@@ -92,7 +92,7 @@ export const useSubscription = () => {
         .insert({
           user_id: user.id,
           amount: proPlan.price,
-          currency: 'USD',
+          currency: paypalSettings.currency || 'USD',
           status: 'completed',
           payment_type: paymentType,
           payment_provider: 'paypal',

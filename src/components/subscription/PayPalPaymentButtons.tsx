@@ -101,9 +101,8 @@ const PayPalPaymentButtons: React.FC<PayPalPaymentButtonsProps> = ({
             disableFunding: 'card',
             enableFunding: 'paypal',
             dataClientToken: 'abc123xyz==',
-            ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {}),
+            ...(paypalSettings.mode === 'sandbox' ? { 'buyer-country': 'US' } : {})
           }}
-          deferLoading={false}
         >
           <PayPalButtons
             style={{ layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal' }}

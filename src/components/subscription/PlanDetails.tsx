@@ -25,14 +25,16 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ plan, paypalSettings }) => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-primary mb-2">{planName}</h2>
         <p className="text-lg mb-3 text-gray-700">{planDescription}</p>
-        <div className="text-3xl font-bold text-green-600 flex items-center justify-center gap-1">
-          <span>{plan.price}</span>
-          <span className="text-xl">{paypalSettings?.currency || 'USD'}</span>
+        <div className="flex flex-col items-center gap-1">
+          <div className="text-3xl font-bold text-green-600 flex items-center justify-center gap-1">
+            <span>{plan.price}</span>
+            <span className="text-xl">{paypalSettings?.currency || 'USD'}</span>
+          </div>
           <span className="text-lg text-gray-600">/ {language === 'ar' ? 'شهر' : 'month'}</span>
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 rounded-lg border border-blue-100/50 mb-6">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 rounded-lg border border-blue-100/50 mb-6 shadow-sm">
         <h3 className="font-semibold mb-4 text-primary text-lg border-b pb-2 border-primary/20">
           {language === 'ar' ? 'المميزات المتاحة:' : 'Available Features:'}
         </h3>
