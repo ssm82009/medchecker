@@ -11,7 +11,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Search } from 'lucide-react';
+import { Clock, Search, RefreshCw } from 'lucide-react';
 
 const MyAccount: React.FC = () => {
   const { user, logout, fetchLatestPlan } = useAuth();
@@ -31,6 +31,7 @@ const MyAccount: React.FC = () => {
   const [activeTab, setActiveTab] = useState('account');
   const [historyFetchAttempted, setHistoryFetchAttempted] = useState(false);
   const [planDataFetched, setPlanDataFetched] = useState(false);
+  const [isRefreshingPlan, setIsRefreshingPlan] = useState(false);
   
   // Add a reference to track mounted state and timer reference
   const isMountedRef = useRef(true);
@@ -49,7 +50,7 @@ const MyAccount: React.FC = () => {
   }, []);
 
   const fetchPlanData = useCallback(async () => {
-    if (!user || !isMountedRef.current || planDataFetched) return;
+    if (!user || !isMountedRef.current || (planDataFetched && !shouldRefreshPlan)) return;
     
     setLoading(true);
     try {
@@ -77,15 +78,15 @@ const MyAccount: React.FC = () => {
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
+        setShouldRefreshPlan(false);
       }
     }
-  }, [user, fetchLatestPlan, planDataFetched]);
+  }, [user, fetchLatestPlan, planDataFetched, shouldRefreshPlan]);
 
   // Only fetch data when the user or shouldRefreshPlan changes
   useEffect(() => {
     if (user && (shouldRefreshPlan || !planDataFetched)) {
       fetchPlanData();
-      setShouldRefreshPlan(false);
     }
   }, [user, shouldRefreshPlan, fetchPlanData, planDataFetched]);
 
@@ -174,7 +175,7 @@ const MyAccount: React.FC = () => {
         setFetchingTransactions(false);
       }
     }
-  }, [user, language, toast]);
+  }, [user, language]);
 
   // Fetch search history
   const fetchSearchHistory = useCallback(async () => {
@@ -197,7 +198,7 @@ const MyAccount: React.FC = () => {
         if (isMountedRef.current) {
           toast({
             title: language === 'ar' ? 'خطأ' : 'Error',
-            description: language === 'ar' ? 'خ��أ في جلب سجل البحث' : 'Error fetching search history',
+            description: language === 'ar' ? 'خطأ في جلب سجل البحث' : 'Error fetching search history',
             variant: 'destructive'
           });
         }
@@ -216,7 +217,7 @@ const MyAccount: React.FC = () => {
         setHistoryFetchAttempted(true);
       }
     }
-  }, [user, language, toast]);
+  }, [user, language]);
 
   // Fetch transactions when user is available, but only once
   useEffect(() => {
@@ -296,13 +297,29 @@ const MyAccount: React.FC = () => {
     fetchSearchHistory();
   };
 
-  const handleRefreshPlanOnly = () => {
+  const handleRefreshPlanOnly = async () => {
+    if (isRefreshingPlan) return;
+    
+    setIsRefreshingPlan(true);
     toast({
       title: language === 'ar' ? 'جاري التحديث' : 'Refreshing',
       description: language === 'ar' ? 'جاري تحديث بيانات الباقة...' : 'Refreshing plan data...',
     });
-    setPlanDataFetched(false);
-    setShouldRefreshPlan(true);
+    
+    try {
+      setPlanDataFetched(false);
+      await fetchLatestPlan();
+      setShouldRefreshPlan(true);
+    } catch (error) {
+      console.error('Error refreshing plan:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'حدث خطأ أثناء تحديث البيانات' : 'Error refreshing data',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsRefreshingPlan(false);
+    }
   };
 
   // Helper function to determine billing period display based on plan code
@@ -393,8 +410,15 @@ const MyAccount: React.FC = () => {
                       </Button>
                     )}
                     <div className="mt-4">
-                      <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly} disabled={loading}>
-                        {loading 
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRefreshPlanOnly} 
+                        disabled={isRefreshingPlan}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshingPlan ? 'animate-spin' : ''}`} />
+                        {isRefreshingPlan 
                           ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
                           : (language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data')}
                       </Button>
@@ -427,7 +451,9 @@ const MyAccount: React.FC = () => {
                       size="sm" 
                       onClick={handleRefreshTransactions} 
                       disabled={fetchingTransactions}
+                      className="flex items-center gap-2"
                     >
+                      <RefreshCw className={`h-4 w-4 ${fetchingTransactions ? 'animate-spin' : ''}`} />
                       {fetchingTransactions 
                         ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
                         : (language === 'ar' ? 'تحديث' : 'Refresh')}
@@ -502,7 +528,9 @@ const MyAccount: React.FC = () => {
                       size="sm" 
                       onClick={handleRefreshSearchHistory} 
                       disabled={fetchingHistory}
+                      className="flex items-center gap-2"
                     >
+                      <RefreshCw className={`h-4 w-4 ${fetchingHistory ? 'animate-spin' : ''}`} />
                       {fetchingHistory 
                         ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
                         : (language === 'ar' ? 'تحديث' : 'Refresh')}
