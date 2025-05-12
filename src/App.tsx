@@ -50,7 +50,8 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
         console.log("AdminRoute - Checking admin status for:", user.email);
         console.log("AdminRoute - User role is:", user.role);
         
-        // Directly check the role property
+        // Directly check the role property from our user object
+        // This now incorporates the database role check in useAuth
         const adminStatus = user.role === 'admin';
         console.log("AdminRoute - Is admin?", adminStatus);
         

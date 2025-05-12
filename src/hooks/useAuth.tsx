@@ -76,8 +76,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("Setting user from session:", session.user);
           console.log("User metadata:", session.user.user_metadata);
           
-          const userRole = session.user.user_metadata?.role || 'user';
-          console.log("Resolved user role:", userRole);
+          // Important: Get the correct role from the database tables, not just metadata
+          // This is where we need to fix the role extraction
+          let userRole = 'user'; // Default role
+          
+          if (session.user.app_metadata && session.user.app_metadata.role) {
+            userRole = session.user.app_metadata.role;
+            console.log("Found role in app_metadata:", userRole);
+          } else if (session.user.user_metadata && session.user.user_metadata.role) {
+            userRole = session.user.user_metadata.role;
+            console.log("Found role in user_metadata:", userRole);
+          }
+          
+          // When using app_metadata.provider='email' that might indicate an admin user
+          if (session.user.app_metadata && 
+              session.user.app_metadata.provider === 'email' && 
+              session.user.role === 'authenticated') {
+            console.log("User has email provider, checking if admin in database");
+            
+            // Try to get the user's role from the users table
+            try {
+              const { data: userData, error } = await supabase
+                .from('users')
+                .select('role')
+                .eq('auth_uid', session.user.id)
+                .maybeSingle();
+                
+              if (!error && userData && userData.role) {
+                userRole = userData.role;
+                console.log("Retrieved role from users table:", userRole);
+              }
+            } catch (err) {
+              console.error("Error fetching user role from database:", err);
+            }
+          }
+          
+          console.log("Final resolved user role:", userRole);
           
           setUser({
             id: session.user.id,
@@ -95,16 +129,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     getInitialSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (isMountedRef.current) {
         setSession(session);
         
         if (session?.user) {
           console.log("Auth change - Setting user:", session.user);
           console.log("Auth change - User metadata:", session.user.user_metadata);
+          console.log("Auth change - App metadata:", session.user.app_metadata);
           
-          const userRole = session.user.user_metadata?.role || 'user';
-          console.log("Auth change - Resolved user role:", userRole);
+          // Similar role determination as above for consistency
+          let userRole = 'user'; // Default role
+          
+          if (session.user.app_metadata && session.user.app_metadata.role) {
+            userRole = session.user.app_metadata.role;
+            console.log("Auth change - Found role in app_metadata:", userRole);
+          } else if (session.user.user_metadata && session.user.user_metadata.role) {
+            userRole = session.user.user_metadata.role;
+            console.log("Auth change - Found role in user_metadata:", userRole);
+          }
+          
+          // When using app_metadata.provider='email' that might indicate an admin user
+          if (session.user.app_metadata && 
+              session.user.app_metadata.provider === 'email' && 
+              session.user.role === 'authenticated') {
+            console.log("Auth change - User has email provider, checking if admin in database");
+            
+            // Try to get the user's role from the users table
+            try {
+              const { data: userData, error } = await supabase
+                .from('users')
+                .select('role')
+                .eq('auth_uid', session.user.id)
+                .maybeSingle();
+                
+              if (!error && userData && userData.role) {
+                userRole = userData.role;
+                console.log("Auth change - Retrieved role from users table:", userRole);
+              }
+            } catch (err) {
+              console.error("Auth change - Error fetching user role from database:", err);
+            }
+          }
+          
+          console.log("Auth change - Final resolved user role:", userRole);
           
           setUser({
             id: session.user.id,
@@ -471,7 +539,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return planCodeString.includes('premium') || planCodeString.includes('pro');
   };
 
-  // Improved isAdmin function to check for both 'admin' role and authenticated users
+  // Improved isAdmin function to check for actual role values from the database
   const isAdmin = () => {
     if (!user) {
       console.log("isAdmin check: No user found");
@@ -482,15 +550,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log("isAdmin user role is:", user.role);
     console.log("isAdmin full user object:", user);
     
-    // Check for admin role in either the role property or in the metadata
+    // Direct check if the role is 'admin'
     const adminStatus = user.role === 'admin';
     console.log("isAdmin result:", adminStatus);
-    
-    // If the user has 'authenticated' role, we need to manually check in Supabase
-    // and update their role to 'admin' via the Supabase dashboard
-    if (!adminStatus) {
-      console.log("User is not an admin. If this user should be an admin, update their role in Supabase.");
-    }
     
     return adminStatus;
   };

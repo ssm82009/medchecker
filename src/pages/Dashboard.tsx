@@ -26,10 +26,17 @@ const Dashboard: React.FC = () => {
         console.log("Dashboard - User role:", user.role);
         console.log("Dashboard - User auth data:", user);
         
-        // Check for both 'admin' role and 'authenticated' role with app_metadata.provider='email'
-        // This is to accommodate both role formats
-        const isAdminUser = user.role === 'admin';
-        console.log("Dashboard - Is admin based on role?", isAdminUser);
+        // Check for admin role - need to handle both cases where role might be 'admin' or user might
+        // have app_metadata.provider='email' - this is the key issue we need to fix
+        let isAdminUser = false;
+        
+        // First check if role is directly set to 'admin'
+        if (user.role === 'admin') {
+          console.log("Dashboard - User has admin role set directly");
+          isAdminUser = true;
+        } 
+        
+        console.log("Dashboard - Final admin status:", isAdminUser);
         
         if (!isAdminUser) {
           console.log('Dashboard - User is not an admin, redirecting');
