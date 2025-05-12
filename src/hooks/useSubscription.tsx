@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,9 @@ export const useSubscription = () => {
   // Add isMounted ref to prevent state updates after unmounting
   const isMountedRef = useRef(true);
   
+  // Add flag to prevent refetchLatestPlan from running in a loop
+  const fetchingLatestPlanRef = useRef(false);
+  
   // Default to monthly plan (pro)
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
   
@@ -33,6 +37,7 @@ export const useSubscription = () => {
     // Return cleanup function to set isMountedRef to false when component unmounts
     return () => {
       isMountedRef.current = false;
+      fetchingLatestPlanRef.current = false;
     };
   }, []);
   

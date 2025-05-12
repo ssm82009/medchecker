@@ -139,23 +139,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Update user object with plan_code and expiry_date
         if (isMountedRef.current) {
-          setUser(prevUser => prevUser ? { 
-            ...prevUser, 
-            plan_code: userData.plan_code,
-            plan_expiry_date: expiryDate
-          } : null);
+          setUser(prevUser => {
+            // Only update if the plan code has changed to prevent infinite loops
+            if (prevUser && (prevUser.plan_code !== userData.plan_code || !prevUser.plan_expiry_date)) {
+              return { 
+                ...prevUser, 
+                plan_code: userData.plan_code,
+                plan_expiry_date: expiryDate
+              };
+            }
+            return prevUser;
+          });
         }
         
-        // Fetch plan details
-        const { data: planData, error: planError } = await supabase
-          .from('plans')
-          .select('*')
-          .eq('code', userData.plan_code)
-          .maybeSingle();
-        
-        if (!planError && planData && isMountedRef.current) {
-          setUserPlan(planData);
-          console.log("Set user plan from users table:", planData);
+        // Fetch plan details only if userPlan is not set or different from current plan code
+        if (!userPlan || userPlan.code !== userData.plan_code) {
+          const { data: planData, error: planError } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('code', userData.plan_code)
+            .maybeSingle();
+          
+          if (!planError && planData && isMountedRef.current) {
+            setUserPlan(planData);
+            console.log("Set user plan from users table:", planData);
+            return;
+          }
+        } else {
+          // Plan already set correctly, just return
           return;
         }
       }
@@ -218,22 +229,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Get plan code from latest transaction and update user
               const latestPlanCode = userTransactions[0].plan_code;
               
-              // Calculate expiry date based on plan type
-              const expiryDate = calculateExpiryDate(latestPlanCode);
-              
-              // Update user record with plan code and expiry date
-              await updateUserPlanCode(latestPlanCode, expiryDate);
-              
-              // Fetch plan details
-              const { data: planData, error: planError } = await supabase
-                .from('plans')
-                .select('*')
-                .eq('code', latestPlanCode)
-                .maybeSingle();
-              
-              if (!planError && planData && isMountedRef.current) {
-                setUserPlan(planData);
-                console.log("Set user plan from transaction metadata:", planData);
+              // Check if plan code is different from current plan code to prevent loops
+              if (!user.plan_code || user.plan_code !== latestPlanCode) {
+                // Calculate expiry date based on plan type
+                const expiryDate = calculateExpiryDate(latestPlanCode);
+                
+                // Update user record with plan code and expiry date
+                await updateUserPlanCode(latestPlanCode, expiryDate);
+                
+                // Fetch plan details
+                const { data: planData, error: planError } = await supabase
+                  .from('plans')
+                  .select('*')
+                  .eq('code', latestPlanCode)
+                  .maybeSingle();
+                
+                if (!planError && planData && isMountedRef.current) {
+                  setUserPlan(planData);
+                  console.log("Set user plan from transaction metadata:", planData);
+                }
               }
             }
           }
@@ -244,24 +258,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const latestTransaction = txnData[0];
         const latestPlanCode = latestTransaction.plan_code;
         
-        console.log("Latest transaction found with plan:", latestPlanCode);
-        
-        // Calculate expiry date based on plan type
-        const expiryDate = calculateExpiryDate(latestPlanCode);
-        
-        // Update user record with plan code and expiry date
-        await updateUserPlanCode(latestPlanCode, expiryDate);
-        
-        // Fetch plan details
-        const { data: planData, error: planError } = await supabase
-          .from('plans')
-          .select('*')
-          .eq('code', latestPlanCode)
-          .maybeSingle();
-        
-        if (!planError && planData && isMountedRef.current) {
-          setUserPlan(planData);
-          console.log("Set user plan from transactions:", planData);
+        // Only update if plan code is different
+        if (!user.plan_code || user.plan_code !== latestPlanCode) {
+          console.log("Latest transaction found with plan:", latestPlanCode);
+          
+          // Calculate expiry date based on plan type
+          const expiryDate = calculateExpiryDate(latestPlanCode);
+          
+          // Update user record with plan code and expiry date
+          await updateUserPlanCode(latestPlanCode, expiryDate);
+          
+          // Fetch plan details
+          const { data: planData, error: planError } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('code', latestPlanCode)
+            .maybeSingle();
+          
+          if (!planError && planData && isMountedRef.current) {
+            setUserPlan(planData);
+            console.log("Set user plan from transactions:", planData);
+          }
         }
       }
     } catch (error) {
@@ -379,14 +396,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // This effect runs when user profile changes to fetch the plan
   useEffect(() => {
-    if (user?.id && !planEffectRun.current) {
+    if (user?.id && !planEffectRun.current && !planRefreshInProgress) {
       planEffectRun.current = true;
       fetchLatestPlan();
     } else if (!user) {
       setUserPlan(null);
       planEffectRun.current = false;
     }
-  }, [user, fetchLatestPlan]);
+  }, [user, fetchLatestPlan, planRefreshInProgress]);
 
   const signOut = async () => {
     try {
