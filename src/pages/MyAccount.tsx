@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from '@/hooks/use-toast';
-import { Transaction, SearchHistory } from '../types';
+import { Transaction, SearchHistory } from '@/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
@@ -323,244 +323,245 @@ const MyAccount: React.FC = () => {
             {language === 'ar' ? 'حسابي' : 'My Account'}
           </CardTitle>
           <div className="mt-2">
-            <TabsList className="w-full">
-              <TabsTrigger 
-                value="account" 
-                className="w-1/3" 
-                onClick={() => setActiveTab('account')}
-              >
-                {language === 'ar' ? 'معلومات الحساب' : 'Account'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="transactions" 
-                className="w-1/3" 
-                onClick={() => setActiveTab('transactions')}
-              >
-                {language === 'ar' ? 'المعاملات' : 'Transactions'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="w-1/3" 
-                onClick={() => setActiveTab('history')}
-                disabled={!user?.plan_code || user.plan_code === 'visitor'}
-              >
-                {language === 'ar' ? 'سجل البحث' : 'Search History'}
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="account" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full">
+                <TabsTrigger 
+                  value="account" 
+                  className="w-1/3"
+                >
+                  {language === 'ar' ? 'معلومات الحساب' : 'Account'}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="transactions" 
+                  className="w-1/3" 
+                >
+                  {language === 'ar' ? 'المعاملات' : 'Transactions'}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="history" 
+                  className="w-1/3"
+                  disabled={!user?.plan_code || user.plan_code === 'visitor'}
+                >
+                  {language === 'ar' ? 'سجل البحث' : 'Search History'}
+                </TabsTrigger>
+              </TabsList>
+          
+              <TabsContent value="account">
+                <div className="space-y-6">
+                  <div className="mb-4 text-center">
+                    <div className="text-lg font-semibold">{user.email}</div>
+                  </div>
+                  <div className="mb-6 text-center">
+                    <div className="font-bold text-primary">{language === 'ar' ? 'الباقة الحالية:' : 'Current Plan:'}</div>
+                    <div className="text-lg font-semibold">{language === 'ar' ? plan?.name_ar : plan?.name || '---'}</div>
+                    <div className="text-gray-500 text-sm">{language === 'ar' ? plan?.description_ar : plan?.description}</div>
+                    <div className="text-green-600 font-bold mt-2">
+                      {plan?.price === 0 
+                        ? (language === 'ar' ? 'مجانية' : 'Free') 
+                        : `${plan?.price} ${language === 'ar' ? 'دولار / ' + getBillingPeriodDisplay(plan?.code) : 'USD / ' + getBillingPeriodDisplay(plan?.code)}`
+                      }
+                    </div>
+                    {/* Display expiry date information */}
+                    <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {language === 'ar' ? 'تاريخ الانتهاء:' : 'Expires:'} {formatExpiryDate(user.plan_expiry_date)}
+                      </span>
+                    </div>
+                    {plan?.code !== 'pro' && plan?.code !== 'pro12' && plan?.code !== 'annual' && (
+                      <Button className="mt-4" onClick={() => navigate('/subscribe')}>
+                        {language === 'ar' ? 'ترقية إلى الباقة الاحترافية' : 'Upgrade to Pro Plan'}
+                      </Button>
+                    )}
+                    <div className="mt-4">
+                      <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly} disabled={loading}>
+                        {loading 
+                          ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
+                          : (language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data')}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mb-6 text-center">
+                    <Button variant="outline" onClick={() => setShowChangePassword(v => !v)}>
+                      {showChangePassword ? (language === 'ar' ? 'إغلاق تغيير كلمة المرور' : 'Close Password Change') : (language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password')}
+                    </Button>
+                    {showChangePassword && (
+                      <div className="mt-4 space-y-2">
+                        <input type="password" className="border rounded px-3 py-2 w-full" placeholder={language === 'ar' ? 'كلمة المرور القديمة' : 'Old Password'} value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
+                        <input type="password" className="border rounded px-3 py-2 w-full" placeholder={language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                        <Button className="w-full" onClick={handleChangePassword}>{language === 'ar' ? 'تغيير' : 'Change'}</Button>
+                        {changeStatus && <div className="text-sm text-center text-red-500 mt-2">{changeStatus}</div>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="transactions">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">
+                      {language === 'ar' ? 'سجل المعاملات' : 'Transaction History'}
+                    </h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleRefreshTransactions} 
+                      disabled={fetchingTransactions}
+                    >
+                      {fetchingTransactions 
+                        ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
+                        : (language === 'ar' ? 'تحديث' : 'Refresh')}
+                    </Button>
+                  </div>
+                  
+                  {fetchingTransactions ? (
+                    <div className="text-center py-4">
+                      {language === 'ar' ? 'جاري تحميل المعاملات...' : 'Loading transactions...'}
+                    </div>
+                  ) : transactions.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'الباقة' : 'Plan'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'المبلغ' : 'Amount'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((transaction) => (
+                          <TableRow key={transaction.id}>
+                            <TableCell className="font-medium">
+                              {new Date(transaction.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>{transaction.plan_code}</TableCell>
+                            <TableCell>
+                              {transaction.amount} {transaction.currency}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {language === 'ar' ? 
+                                  transaction.status === 'completed' ? 'مكتمل' :
+                                  transaction.status === 'failed' ? 'فشل' :
+                                  transaction.status === 'pending' ? 'قيد الانتظار' :
+                                  'مسترد' :
+                                  transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+                                }
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      {language === 'ar' ? 'لا توجد معاملات سابقة' : 'No previous transactions'}
+                      <div className="mt-2 text-sm">
+                        {language === 'ar' 
+                          ? 'معرف المستخدم: ' + user.id + (user.auth_uid ? ' | معرف المصادقة: ' + user.auth_uid : '')
+                          : 'User ID: ' + user.id + (user.auth_uid ? ' | Auth ID: ' + user.auth_uid : '')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="history">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">
+                      {language === 'ar' ? 'سجل البحث' : 'Search History'}
+                    </h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleRefreshSearchHistory} 
+                      disabled={fetchingHistory}
+                    >
+                      {fetchingHistory 
+                        ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
+                        : (language === 'ar' ? 'تحديث' : 'Refresh')}
+                    </Button>
+                  </div>
+                  
+                  {!user?.plan_code || user.plan_code === 'visitor' ? (
+                    <div className="bg-amber-50 border border-amber-300 rounded p-4 text-center">
+                      <p className="font-medium text-amber-800">
+                        {language === 'ar' 
+                          ? 'هذه الميزة متاحة فقط للباقات المدفوعة' 
+                          : 'This feature is only available for paid plans'}
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="mt-2" 
+                        onClick={() => navigate('/subscribe')}
+                      >
+                        {language === 'ar' ? 'ترقية الآن' : 'Upgrade Now'}
+                      </Button>
+                    </div>
+                  ) : fetchingHistory ? (
+                    <div className="text-center py-4">
+                      {language === 'ar' ? 'جاري تحميل سجل البحث...' : 'Loading search history...'}
+                    </div>
+                  ) : searchHistory.length > 0 ? (
+                    <div className="space-y-4">
+                      {searchHistory.map(record => (
+                        <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <Search className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium">{record.search_query}</span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(record.created_at).toLocaleString()}
+                            </div>
+                          </div>
+                          
+                          {record.search_results && (
+                            <div className="mt-2 text-sm">
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {Array.isArray(record.search_results) ? (
+                                  record.search_results.map((result: any, idx: number) => (
+                                    <Badge key={idx} variant="secondary">
+                                      {typeof result === 'string' ? result : (result?.name || 'Result')}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <div className="text-xs text-gray-600 italic">
+                                    {language === 'ar' ? 'نتائج متاحة' : 'Results available'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-10">
+                      <Search className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>{language === 'ar' ? 'لا يوجد سجل بحث' : 'No search history'}</p>
+                      <p className="text-sm mt-2">
+                        {language === 'ar' 
+                          ? 'ستظهر عمليات البحث الخاصة بك هنا' 
+                          : 'Your searches will appear here'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
-          {activeTab === 'account' && (
-            <div className="space-y-6">
-              <div className="mb-4 text-center">
-                <div className="text-lg font-semibold">{user.email}</div>
-              </div>
-              <div className="mb-6 text-center">
-                <div className="font-bold text-primary">{language === 'ar' ? 'الباقة الحالية:' : 'Current Plan:'}</div>
-                <div className="text-lg font-semibold">{language === 'ar' ? plan?.name_ar : plan?.name || '---'}</div>
-                <div className="text-gray-500 text-sm">{language === 'ar' ? plan?.description_ar : plan?.description}</div>
-                <div className="text-green-600 font-bold mt-2">
-                  {plan?.price === 0 
-                    ? (language === 'ar' ? 'مجانية' : 'Free') 
-                    : `${plan?.price} ${language === 'ar' ? 'دولار / ' + getBillingPeriodDisplay(plan?.code) : 'USD / ' + getBillingPeriodDisplay(plan?.code)}`
-                  }
-                </div>
-                {/* Display expiry date information */}
-                <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {language === 'ar' ? 'تاريخ الانتهاء:' : 'Expires:'} {formatExpiryDate(user.plan_expiry_date)}
-                  </span>
-                </div>
-                {plan?.code !== 'pro' && plan?.code !== 'pro12' && plan?.code !== 'annual' && (
-                  <Button className="mt-4" onClick={() => navigate('/subscribe')}>
-                    {language === 'ar' ? 'ترقية إلى الباقة الاحترافية' : 'Upgrade to Pro Plan'}
-                  </Button>
-                )}
-                <div className="mt-4">
-                  <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly} disabled={loading}>
-                    {loading 
-                      ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
-                      : (language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data')}
-                  </Button>
-                </div>
-              </div>
-              <div className="mb-6 text-center">
-                <Button variant="outline" onClick={() => setShowChangePassword(v => !v)}>
-                  {showChangePassword ? (language === 'ar' ? 'إغلاق تغيير كلمة المرور' : 'Close Password Change') : (language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password')}
-                </Button>
-                {showChangePassword && (
-                  <div className="mt-4 space-y-2">
-                    <input type="password" className="border rounded px-3 py-2 w-full" placeholder={language === 'ar' ? 'كلمة المرور القديمة' : 'Old Password'} value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
-                    <input type="password" className="border rounded px-3 py-2 w-full" placeholder={language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                    <Button className="w-full" onClick={handleChangePassword}>{language === 'ar' ? 'تغيير' : 'Change'}</Button>
-                    {changeStatus && <div className="text-sm text-center text-red-500 mt-2">{changeStatus}</div>}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'transactions' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">
-                  {language === 'ar' ? 'سجل المعاملات' : 'Transaction History'}
-                </h2>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefreshTransactions} 
-                  disabled={fetchingTransactions}
-                >
-                  {fetchingTransactions 
-                    ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
-                    : (language === 'ar' ? 'تحديث' : 'Refresh')}
-                </Button>
-              </div>
-              
-              {fetchingTransactions ? (
-                <div className="text-center py-4">
-                  {language === 'ar' ? 'جاري تحميل المعاملات...' : 'Loading transactions...'}
-                </div>
-              ) : transactions.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'الباقة' : 'Plan'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'المبلغ' : 'Amount'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">
-                          {new Date(transaction.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{transaction.plan_code}</TableCell>
-                        <TableCell>
-                          {transaction.amount} {transaction.currency}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
-                            transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {language === 'ar' ? 
-                              transaction.status === 'completed' ? 'مكتمل' :
-                              transaction.status === 'failed' ? 'فشل' :
-                              transaction.status === 'pending' ? 'قيد الانتظار' :
-                              'مسترد' :
-                              transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
-                            }
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center text-gray-500 py-4">
-                  {language === 'ar' ? 'لا توجد معاملات سابقة' : 'No previous transactions'}
-                  <div className="mt-2 text-sm">
-                    {language === 'ar' 
-                      ? 'معرف المستخدم: ' + user.id + (user.auth_uid ? ' | معرف المصادقة: ' + user.auth_uid : '')
-                      : 'User ID: ' + user.id + (user.auth_uid ? ' | Auth ID: ' + user.auth_uid : '')}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {activeTab === 'history' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">
-                  {language === 'ar' ? 'سجل البحث' : 'Search History'}
-                </h2>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefreshSearchHistory} 
-                  disabled={fetchingHistory}
-                >
-                  {fetchingHistory 
-                    ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
-                    : (language === 'ar' ? 'تحديث' : 'Refresh')}
-                </Button>
-              </div>
-              
-              {!user?.plan_code || user.plan_code === 'visitor' ? (
-                <div className="bg-amber-50 border border-amber-300 rounded p-4 text-center">
-                  <p className="font-medium text-amber-800">
-                    {language === 'ar' 
-                      ? 'هذه الميزة متاحة فقط للباقات المدفوعة' 
-                      : 'This feature is only available for paid plans'}
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="mt-2" 
-                    onClick={() => navigate('/subscribe')}
-                  >
-                    {language === 'ar' ? 'ترقية الآن' : 'Upgrade Now'}
-                  </Button>
-                </div>
-              ) : fetchingHistory ? (
-                <div className="text-center py-4">
-                  {language === 'ar' ? 'جاري تحميل سجل البحث...' : 'Loading search history...'}
-                </div>
-              ) : searchHistory.length > 0 ? (
-                <div className="space-y-4">
-                  {searchHistory.map(record => (
-                    <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <Search className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium">{record.search_query}</span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(record.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                      
-                      {record.search_results && (
-                        <div className="mt-2 text-sm">
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {Array.isArray(record.search_results) ? (
-                              record.search_results.map((result: any, idx: number) => (
-                                <Badge key={idx} variant="secondary">
-                                  {typeof result === 'string' ? result : (result?.name || 'Result')}
-                                </Badge>
-                              ))
-                            ) : (
-                              <div className="text-xs text-gray-600 italic">
-                                {language === 'ar' ? 'نتائج متاحة' : 'Results available'}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-10">
-                  <Search className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p>{language === 'ar' ? 'لا يوجد سجل بحث' : 'No search history'}</p>
-                  <p className="text-sm mt-2">
-                    {language === 'ar' 
-                      ? 'ستظهر عمليات البحث الخاصة بك هنا' 
-                      : 'Your searches will appear here'}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          {/* المحتوى الآن سيظهر داخل TabsContent */}
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
           <Button variant="destructive" onClick={handleLogout}>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</Button>
