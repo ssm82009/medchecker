@@ -29,3 +29,7 @@ enabled = true
 
 [functions.detect-medications]
 verify_jwt = true
+import_map = [
+  "https://esm.sh/@supabase/supabase-js@2"
+]
+

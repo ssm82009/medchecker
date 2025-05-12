@@ -1,6 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +15,41 @@ serve(async (req) => {
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    // Get API key from environment variables first
+    let OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    let model = 'gpt-4o-mini'; // Default model
+
+    // If no key in environment variables, try to fetch from database
     if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not set in environment variables');
+      // Create Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase credentials missing from environment');
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Attempt to get AI settings from the settings table
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('type', 'ai_settings')
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching AI settings:', error);
+      } else if (data?.value) {
+        // Get API key and model from settings
+        OPENAI_API_KEY = data.value.apiKey || '';
+        model = data.value.model || 'gpt-4o-mini';
+        console.log(`Using model from database: ${model}`);
+      }
+    }
+
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not set in environment variables or database');
     }
 
     // Parse the request body to get the image data
@@ -26,6 +59,7 @@ serve(async (req) => {
     }
 
     console.log('Received image data, sending to OpenAI for processing...');
+    console.log(`Using model: ${model}`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -34,7 +68,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: model, // Use the model from settings
         messages: [
           {
             role: 'system',

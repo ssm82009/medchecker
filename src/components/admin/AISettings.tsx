@@ -20,10 +20,12 @@ const AISettings = () => {
   });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // الحصول على إعدادات الذكاء الاصطناعي عند تحميل الصفحة
+    // Fetch AI settings from the database when component mounts
     const fetchSettings = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('settings')
@@ -37,23 +39,26 @@ const AISettings = () => {
         }
         
         if (data?.value) {
-          // التحقق من أن البيانات مناسبة لنوع AISettingsType
+          // Ensure data.value is an object with our expected properties
           const value = data.value;
           
           if (typeof value === 'object' && !Array.isArray(value)) {
-            // استخدام وظيفة التحويل الآمن
+            // Use our safe parsing function
             const parsedSettings = safelyParseAISettings(value as Record<string, Json>);
+            
+            console.log('Fetched AI settings from database:', parsedSettings);
             
             setApiKey(parsedSettings.apiKey || '');
             setModel(parsedSettings.model || 'gpt-4o-mini');
+            
+            // Update localStorage
+            setAiSettings(parsedSettings);
           }
-        } else {
-          // استخدام القيم من localStorage إذا لم تكن متوفرة في قاعدة البيانات
-          setApiKey(aiSettings.apiKey || '');
-          setModel(aiSettings.model || 'gpt-4o-mini');
         }
       } catch (error) {
         console.error('Error in fetchSettings:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -61,17 +66,17 @@ const AISettings = () => {
   }, []);
 
   const saveAISettings = async () => {
-    // تعيين القيم الحالية
+    // Set current values
     const newSettings: AISettingsType = {
       apiKey,
       model
     };
     
     try {
-      // تحديث في localStorage
+      // Update in localStorage
       setAiSettings(newSettings);
       
-      // تحديث في قاعدة البيانات
+      // Update in database
       const { error } = await supabase
         .from('settings')
         .upsert({
@@ -106,23 +111,38 @@ const AISettings = () => {
       <CardHeader><CardTitle>{t('aiSettings')}</CardTitle></CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">{t('apiKey')}</Label>
-            <Input id="apiKey" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="model">{t('model')}</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button onClick={saveAISettings}>{t('saveSettings')}</Button>
+          {isLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+              <p className="mt-2">{t('loading')}</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="apiKey">{t('apiKey')}</Label>
+                <Input 
+                  id="apiKey" 
+                  type="password" 
+                  value={apiKey} 
+                  onChange={(e) => setApiKey(e.target.value)} 
+                  placeholder="sk-..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">{t('model')}</Label>
+                <Select value={model} onValueChange={setModel}>
+                  <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o-mini">GPT-4o-mini</SelectItem>
+                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                    <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                    <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={saveAISettings}>{t('saveSettings')}</Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

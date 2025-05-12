@@ -67,6 +67,8 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
           }
           
           if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+            console.log('Found AI settings in database:', data.value);
+            
             // Safe type cast with validation
             const jsonValue = data.value as Record<string, Json>;
             
@@ -77,6 +79,8 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
             setStoredValue(typedValue);
             // Update localStorage with the database value
             window.localStorage.setItem(key, JSON.stringify(typedValue));
+          } else {
+            console.log('No AI settings found in database or invalid format');
           }
         } catch (error) {
           console.error('Error fetching from database:', error);
