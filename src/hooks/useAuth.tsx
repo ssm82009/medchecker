@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -9,9 +8,10 @@ import { Json } from '@/integrations/supabase/types';
 export interface User {
   id: string;
   email: string;
-  auth_uid?: string;
-  role?: string;
+  role: string;
+  auth_uid: string;
   plan_code?: string;
+  plan_expiry_date?: string;
 }
 
 interface AuthContextType {

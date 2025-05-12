@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-import { AISettingsType, Medication, PatientInfo, InteractionResult } from '@/types/medication';
+import { AISettingsType, Medication, PatientInfo, InteractionResult, MedicationInput } from '@/types/medication';
 import { MOCK_INTERACTIONS, MOCK_INTERACTIONS_EN } from '@/data/mockInteractions';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -16,6 +17,12 @@ export const useInteractionChecker = () => {
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
   const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
   const { user, isPremium } = useAuth();
+  const [localPatientInfo, setLocalPatientInfo] = useState<PatientInfo>({
+    age: '',
+    weight: '',
+    allergies: '',
+    healthCondition: ''
+  });
 
   // Fetch API settings from Supabase
   useEffect(() => {
@@ -53,13 +60,18 @@ export const useInteractionChecker = () => {
     fetchAISettings();
   }, []);
 
-  const checkInteractions = async (medications: MedicationInput[]) => {
+  const checkInteractions = async (medications: MedicationInput[], patientInfo?: PatientInfo) => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
     
     setLoading(true);
     setResult(null);
     setApiKeyError(false);
+    
+    // Update local patient info state if provided
+    if (patientInfo) {
+      setLocalPatientInfo(patientInfo);
+    }
     
     try {
       const medicationNames = validMedications.map(med => med.name.toLowerCase());
@@ -130,8 +142,8 @@ export const useInteractionChecker = () => {
           }
         }
         
-        if (patientInfo.age && interactionData.ageWarnings) {
-          const age = parseInt(patientInfo.age);
+        if (localPatientInfo.age && interactionData.ageWarnings) {
+          const age = parseInt(localPatientInfo.age);
           const relevantAgeWarnings = interactionData.ageWarnings.filter(warning => {
             if ((warning.includes('أطفال') || warning.includes('children')) && age < 18) {
               if (warning.includes('12') && age < 12) return true;
@@ -155,10 +167,10 @@ export const useInteractionChecker = () => {
       }
       
       const patientContext = [
-        patientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${patientInfo.age}` : '',
-        patientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${patientInfo.weight} kg` : '',
-        patientInfo.allergies ? `${language === 'ar' ? 'الحساسية:' : 'Allergies:'} ${patientInfo.allergies}` : '',
-        patientInfo.healthCondition ? `${language === 'ar' ? 'الحالة الصحية:' : 'Health condition:'} ${patientInfo.healthCondition}` : ''
+        localPatientInfo.age ? `${language === 'ar' ? 'العمر:' : 'Age:'} ${localPatientInfo.age}` : '',
+        localPatientInfo.weight ? `${language === 'ar' ? 'الوزن:' : 'Weight:'} ${localPatientInfo.weight} kg` : '',
+        localPatientInfo.allergies ? `${language === 'ar' ? 'الحساسية:' : 'Allergies:'} ${localPatientInfo.allergies}` : '',
+        localPatientInfo.healthCondition ? `${language === 'ar' ? 'الحالة الصحية:' : 'Health condition:'} ${localPatientInfo.healthCondition}` : ''
       ].filter(Boolean).join(', ');
       
       let prompt = "";
@@ -224,7 +236,7 @@ export const useInteractionChecker = () => {
           await supabase.from('search_history').insert({
             user_id: user.id,
             search_query: medicationNames.join(', '),
-            search_results: result
+            search_results: JSON.stringify(result)
           });
           
           console.log('Search history recorded for premium user');

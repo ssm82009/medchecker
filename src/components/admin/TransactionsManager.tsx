@@ -15,7 +15,7 @@ const TransactionsManager = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchEmail, setSearchEmail] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -23,7 +23,7 @@ const TransactionsManager = () => {
       let query = supabase.from('transactions').select('*').order('created_at', { ascending: false });
       
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as 'pending' | 'completed' | 'failed' | 'refunded');
       }
       
       const { data, error } = await query;
@@ -50,7 +50,7 @@ const TransactionsManager = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const handleStatusChange = async (id: string, newStatus: 'pending' | 'completed' | 'failed' | 'refunded') => {
     try {
       const { error } = await supabase
         .from('transactions')
@@ -185,7 +185,7 @@ const TransactionsManager = () => {
                     </TableCell>
                     <TableCell>
                       <Select 
-                        onValueChange={(value) => handleStatusChange(transaction.id, value)} 
+                        onValueChange={(value) => handleStatusChange(transaction.id, value as 'pending' | 'completed' | 'failed' | 'refunded')} 
                         defaultValue={transaction.status}
                       >
                         <SelectTrigger className="w-[130px]">

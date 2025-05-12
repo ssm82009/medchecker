@@ -4,6 +4,11 @@ export interface AISettingsType {
   model: string;
 }
 
+export interface MedicationInput {
+  name: string;
+  dosage?: string;
+}
+
 export interface Medication {
   id: string;
   name: string;
