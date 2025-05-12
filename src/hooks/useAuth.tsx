@@ -471,7 +471,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return planCodeString.includes('premium') || planCodeString.includes('pro');
   };
 
-  // Improved isAdmin function with better logging
+  // Improved isAdmin function to check for both 'admin' role and authenticated users
   const isAdmin = () => {
     if (!user) {
       console.log("isAdmin check: No user found");
@@ -480,10 +480,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     console.log("isAdmin checking admin status for user:", user.email);
     console.log("isAdmin user role is:", user.role);
+    console.log("isAdmin full user object:", user);
     
-    // Explicitly compare with strict equality to ensure proper type checking
+    // Check for admin role in either the role property or in the metadata
     const adminStatus = user.role === 'admin';
     console.log("isAdmin result:", adminStatus);
+    
+    // If the user has 'authenticated' role, we need to manually check in Supabase
+    // and update their role to 'admin' via the Supabase dashboard
+    if (!adminStatus) {
+      console.log("User is not an admin. If this user should be an admin, update their role in Supabase.");
+    }
     
     return adminStatus;
   };

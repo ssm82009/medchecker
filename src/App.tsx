@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +8,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import { useAuth, AuthProvider } from "./hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -40,11 +39,31 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Admin route component that checks if user has admin role
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
   const { language } = useTranslation();
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!loading && user) {
+        console.log("AdminRoute - Checking admin status for:", user.email);
+        console.log("AdminRoute - User role is:", user.role);
+        
+        // Directly check the role property
+        const adminStatus = user.role === 'admin';
+        console.log("AdminRoute - Is admin?", adminStatus);
+        
+        setIsAdminUser(adminStatus);
+      }
+      setCheckingAdmin(false);
+    };
+    
+    checkAdmin();
+  }, [user, loading]);
   
   // Show loading state
-  if (loading) {
+  if (loading || checkingAdmin) {
     return <div className="flex h-screen items-center justify-center">
       {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
     </div>;
@@ -56,7 +75,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   // Redirect to home if user is not an admin
-  if (!isAdmin()) {
+  if (!isAdminUser) {
     return <Navigate to="/" replace />;
   }
   

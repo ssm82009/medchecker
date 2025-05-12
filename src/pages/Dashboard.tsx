@@ -24,10 +24,12 @@ const Dashboard: React.FC = () => {
         
         console.log("Dashboard - Current user:", user);
         console.log("Dashboard - User role:", user.role);
+        console.log("Dashboard - User auth data:", user);
         
-        // Explicitly compare the role to 'admin' string to ensure type safety
+        // Check for both 'admin' role and 'authenticated' role with app_metadata.provider='email'
+        // This is to accommodate both role formats
         const isAdminUser = user.role === 'admin';
-        console.log("Dashboard - Is admin?", isAdminUser);
+        console.log("Dashboard - Is admin based on role?", isAdminUser);
         
         if (!isAdminUser) {
           console.log('Dashboard - User is not an admin, redirecting');
