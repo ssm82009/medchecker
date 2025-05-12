@@ -51,7 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ? {
         id: session.user.id,
         email: session.user.email || '',
-        role: session.user.user_metadata?.role || 'user'
+        role: session.user.user_metadata?.role || 'user',
+        auth_uid: session.user.id
       } : null);
       setLoading(false);
     };
@@ -63,7 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ? {
         id: session.user.id,
         email: session.user.email || '',
-        role: session.user.user_metadata?.role || 'user'
+        role: session.user.user_metadata?.role || 'user',
+        auth_uid: session.user.id
       } : null);
     });
   }, []);
@@ -384,7 +386,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: refreshedSession.user.id,
           email: refreshedSession.user.email || '',
-          role: refreshedSession.user.user_metadata?.role || 'user'
+          role: refreshedSession.user.user_metadata?.role || 'user',
+          auth_uid: refreshedSession.user.id
         });
         
         // Re-fetch user profile and plan
