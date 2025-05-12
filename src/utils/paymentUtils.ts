@@ -83,6 +83,23 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
       console.warn(`UpdateUserPlan: Passed userId ('${userId}') does not match authenticated session auth_uid ('${authenticatedAuthUid}'). Proceeding with session auth_uid.`);
     }
 
+    // Calculate expiry date based on plan code
+    const now = new Date();
+    let expiryDate = new Date(now);
+    
+    if (planCode === 'pro12' || planCode === 'annual') {
+      // For annual plans, add 1 year
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+    } else if (planCode === 'pro') {
+      // For monthly plans, add 1 month
+      expiryDate.setMonth(expiryDate.getMonth() + 1);
+    } else {
+      // For other plans like free plan, add 30 days (or whatever makes sense)
+      expiryDate.setDate(expiryDate.getDate() + 30);
+    }
+    
+    console.log(`Plan expiry date set to ${expiryDate.toISOString()} for plan ${planCode}`);
+
     // First check if user exists
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
@@ -103,7 +120,10 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
       // User exists, update plan
       const { error } = await supabase
         .from('users')
-        .update({ plan_code: planCode })
+        .update({ 
+          plan_code: planCode,
+          plan_expiry_date: expiryDate.toISOString()
+        })
         .eq('auth_uid', authenticatedAuthUid);
       
       if (error) {
@@ -121,7 +141,8 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
           auth_uid: authenticatedAuthUid,
           email: userEmail,
           password: 'oauth-user', // Placeholder for OAuth users
-          plan_code: planCode
+          plan_code: planCode,
+          plan_expiry_date: expiryDate.toISOString()
         });
       
       if (error) {

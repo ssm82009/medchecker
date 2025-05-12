@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 import { AISettingsType, Medication, PatientInfo, InteractionResult } from '@/types/medication';
 import { MOCK_INTERACTIONS, MOCK_INTERACTIONS_EN } from '@/data/mockInteractions';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useInteractionChecker = () => {
   const { language } = useTranslation();
@@ -15,6 +15,7 @@ export const useInteractionChecker = () => {
   const [loading, setLoading] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
   const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
+  const { user, isPremium } = useAuth();
 
   // Fetch API settings from Supabase
   useEffect(() => {
@@ -52,7 +53,7 @@ export const useInteractionChecker = () => {
     fetchAISettings();
   }, []);
 
-  const checkInteractions = async (medications: Medication[], patientInfo: PatientInfo) => {
+  const checkInteractions = async (medications: MedicationInput[]) => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
     
@@ -210,6 +211,28 @@ export const useInteractionChecker = () => {
       }
       
       setResult(parsedResult);
+      
+      // After successful check, store search history if user is premium
+      if (result && user?.id && isPremium()) {
+        try {
+          // Extract medication names for the search history
+          const medicationNames = medications
+            .filter(med => med.name && med.name.trim() !== '')
+            .map(med => med.name);
+          
+          // Create a record of this search
+          await supabase.from('search_history').insert({
+            user_id: user.id,
+            search_query: medicationNames.join(', '),
+            search_results: result
+          });
+          
+          console.log('Search history recorded for premium user');
+        } catch (error) {
+          console.error('Error recording search history:', error);
+          // Don't fail the main operation if history recording fails
+        }
+      }
     } catch (error) {
       console.error('Error checking interactions:', error);
       setApiKeyError(true);

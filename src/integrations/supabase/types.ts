@@ -189,6 +189,30 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          created_at: string
+          id: string
+          search_query: string
+          search_results: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          search_query: string
+          search_results?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          search_query?: string
+          search_results?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           id: number
@@ -259,6 +283,7 @@ export type Database = {
           id: number
           password: string
           plan_code: string | null
+          plan_expiry_date: string | null
           role: string
         }
         Insert: {
@@ -267,6 +292,7 @@ export type Database = {
           id?: number
           password: string
           plan_code?: string | null
+          plan_expiry_date?: string | null
           role?: string
         }
         Update: {
@@ -275,6 +301,7 @@ export type Database = {
           id?: number
           password?: string
           plan_code?: string | null
+          plan_expiry_date?: string | null
           role?: string
         }
         Relationships: [

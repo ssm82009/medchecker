@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
+import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard, History } from 'lucide-react';
 import AISettings from '@/components/admin/AISettings';
 import LogoSettings from '@/components/admin/LogoSettings';
 import AdvertisementSettings from '@/components/admin/AdvertisementSettings';
 import PlansManager from '@/components/admin/PlansManager';
 import UsersManager from '@/components/admin/UsersManager';
 import PaypalSettings from '@/components/admin/PaypalSettings';
+import TransactionsManager from '@/components/admin/TransactionsManager';
 
 const adminSections = [
   { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },
@@ -14,6 +15,7 @@ const adminSections = [
   { key: 'ad', label: 'الإعلانات', icon: BadgeDollarSign },
   { key: 'plans', label: 'الخطط', icon: Layers },
   { key: 'users', label: 'إدارة الأعضاء', icon: Users },
+  { key: 'transactions', label: 'إدارة المعاملات', icon: History },
   { key: 'paypal', label: 'بوابة الدفع بايبال', icon: CreditCard },
 ];
 
@@ -43,6 +45,7 @@ const Admin: React.FC = () => {
         {activeSection === 'ad' && <AdvertisementSettings />}
         {activeSection === 'plans' && <PlansManager />}
         {activeSection === 'users' && <UsersManager />}
+        {activeSection === 'transactions' && <TransactionsManager />}
         {activeSection === 'paypal' && <PaypalSettings />}
       </main>
     </div>
