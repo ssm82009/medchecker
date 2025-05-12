@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,6 +146,14 @@ const MyAccount: React.FC = () => {
     fetchTransactions();
   };
 
+  // Helper function to determine billing period display based on plan code
+  const getBillingPeriodDisplay = (planCode: string) => {
+    if (planCode === 'pro12' || planCode === 'annual') {
+      return language === 'ar' ? 'سنة' : 'year';
+    }
+    return language === 'ar' ? 'شهر' : 'month';
+  };
+
   if (!user) return <div className="text-center py-20">{language === 'ar' ? 'يجب تسجيل الدخول لعرض هذه الصفحة' : 'You must be logged in to view this page'}</div>;
   if (loading) return <div className="text-center py-20">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
 
@@ -166,8 +173,13 @@ const MyAccount: React.FC = () => {
             <div className="font-bold text-primary">{language === 'ar' ? 'الباقة الحالية:' : 'Current Plan:'}</div>
             <div className="text-lg font-semibold">{language === 'ar' ? plan?.name_ar : plan?.name || '---'}</div>
             <div className="text-gray-500 text-sm">{language === 'ar' ? plan?.description_ar : plan?.description}</div>
-            <div className="text-green-600 font-bold mt-2">{plan?.price === 0 ? (language === 'ar' ? 'مجانية' : 'Free') : `${plan?.price} ${language === 'ar' ? 'دولار / شهر' : 'USD / month'}`}</div>
-            {plan?.code !== 'pro' && (
+            <div className="text-green-600 font-bold mt-2">
+              {plan?.price === 0 
+                ? (language === 'ar' ? 'مجانية' : 'Free') 
+                : `${plan?.price} ${language === 'ar' ? 'دولار / ' + getBillingPeriodDisplay(plan?.code) : 'USD / ' + getBillingPeriodDisplay(plan?.code)}`
+              }
+            </div>
+            {plan?.code !== 'pro' && plan?.code !== 'pro12' && plan?.code !== 'annual' && (
               <Button className="mt-4" onClick={() => navigate('/subscribe')}>
                 {language === 'ar' ? 'ترقية إلى الباقة الاحترافية' : 'Upgrade to Pro Plan'}
               </Button>

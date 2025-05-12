@@ -58,6 +58,24 @@ export const defaultPlans: PlanType[] = [
     ],
   },
   {
+    code: 'pro12',
+    name: 'Annual Pro',
+    nameAr: 'الباقة الاحترافية السنوية',
+    description: 'Annual professional plan with all features at a discounted price.',
+    descriptionAr: 'الباقة الاحترافية السنوية مع جميع الميزات بسعر مخفض.',
+    price: 29,
+    features: [
+      'All Pro features',
+      'Annual billing',
+      'Save 84% compared to monthly billing',
+    ],
+    featuresAr: [
+      'جميع ميزات الباقة الاحترافية',
+      'فاتورة سنوية',
+      'وفر 84% مقارنة بالدفع الشهري',
+    ],
+  },
+  {
     code: 'annual',
     name: 'Annual Pro',
     nameAr: 'الاحترافية السنوية',
