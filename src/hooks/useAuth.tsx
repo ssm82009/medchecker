@@ -3,6 +3,7 @@ import { useEffect, useState, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 // Define User type that's referenced in other components
 export interface User {
@@ -119,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // If no transactions found, try looking by email in metadata
+      // If no transactions found by ID, try looking by email in metadata
       if (!txnData || txnData.length === 0) {
         console.log("No transactions found by ID, checking metadata...");
         
@@ -131,11 +132,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .limit(10);
         
         if (!metadataError && metadataTransactions) {
-          // Filter transactions by user email in metadata
-          const userTransactions = metadataTransactions.filter(tx => 
-            tx.metadata?.user_email === user.email || 
-            tx.metadata?.payer?.email_address === user.email
-          );
+          // Filter transactions by user email in metadata using safe access
+          const userTransactions = metadataTransactions.filter(tx => {
+            // Safely check if metadata exists and has user_email or payer.email_address property
+            if (tx.metadata && typeof tx.metadata === 'object') {
+              // Check if user_email exists in metadata
+              const metadataObj = tx.metadata as Record<string, any>;
+              
+              // Check for direct user_email property
+              if (typeof metadataObj.user_email === 'string' && metadataObj.user_email === user.email) {
+                return true;
+              }
+              
+              // Check for payer.email_address property
+              if (metadataObj.payer && typeof metadataObj.payer === 'object' && 
+                  typeof metadataObj.payer.email_address === 'string' && 
+                  metadataObj.payer.email_address === user.email) {
+                return true;
+              }
+            }
+            return false;
+          });
           
           if (userTransactions.length > 0) {
             console.log("Found transactions in metadata:", userTransactions[0]);

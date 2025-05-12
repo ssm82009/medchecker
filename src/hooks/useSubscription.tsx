@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { checkAndGetSession } from '@/utils/paymentUtils';
 
 export const useSubscription = () => {
-  const { user, refreshUser, fetchLatestPlan } = useAuth(); // Include fetchLatestPlan from useAuth
+  const { user, refreshUser, fetchLatestPlan } = useAuth();
   const navigate = useNavigate();
   const { language } = useTranslation();
   const { toast } = useToast();
@@ -25,10 +25,15 @@ export const useSubscription = () => {
   
   // Use the improved function to check for active session
   useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates after unmount
+
     const initializeSession = async () => {
       try {
+        if (!isMounted) return;
         setSessionChecking(true);
         const sessionCheck = await checkAndGetSession(language);
+        
+        if (!isMounted) return;
         
         if (sessionCheck.success) {
           console.log("Active Supabase session confirmed in useSubscription:", 
@@ -45,10 +50,13 @@ export const useSubscription = () => {
           });
         }
       } catch (e) {
+        if (!isMounted) return;
         console.error("Exception in Supabase auth check:", e);
         setSupabaseUserId(null);
       } finally {
-        setSessionChecking(false);
+        if (isMounted) {
+          setSessionChecking(false);
+        }
       }
     };
     
@@ -56,6 +64,7 @@ export const useSubscription = () => {
     
     // Set up a listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
       console.log("Auth state changed in useSubscription:", event);
       
       if (session) {
@@ -66,16 +75,19 @@ export const useSubscription = () => {
         console.log("No session from auth state change");
         
         // Try to refresh the session without redirecting
-        const refreshCheck = await checkAndGetSession(language);
-        if (refreshCheck.success) {
-          setSupabaseUserId(refreshCheck.session.user.id);
-          console.log("Session refreshed after auth state change:", 
-            refreshCheck.session.user.id);
+        if (isMounted) {
+          const refreshCheck = await checkAndGetSession(language);
+          if (refreshCheck.success) {
+            setSupabaseUserId(refreshCheck.session.user.id);
+            console.log("Session refreshed after auth state change:", 
+              refreshCheck.session.user.id);
+          }
         }
       }
     });
     
     return () => {
+      isMounted = false; // Prevent state updates after unmount
       subscription.unsubscribe();
     };
   }, [language, toast]);

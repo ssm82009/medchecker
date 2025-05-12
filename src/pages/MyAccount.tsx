@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,27 +21,36 @@ const MyAccount: React.FC = () => {
   const [changeStatus, setChangeStatus] = useState<string>('');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [fetchingTransactions, setFetchingTransactions] = useState(false);
+  const [shouldRefreshPlan, setShouldRefreshPlan] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!shouldRefreshPlan) return;
+      
       setLoading(true);
       if (user) {
-        // Fetch plan data using auth hook's fetchLatestPlan
-        await fetchLatestPlan();
-        
-        // Then get the plan details
-        const { data: planData } = await supabase
-          .from('plans')
-          .select('*')
-          .eq('code', user.plan_code || 'visitor')
-          .maybeSingle();
-        
-        setPlan(planData);
+        try {
+          // Fetch plan data using auth hook's fetchLatestPlan
+          await fetchLatestPlan();
+          
+          // Then get the plan details
+          const { data: planData } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('code', user.plan_code || 'visitor')
+            .maybeSingle();
+          
+          setPlan(planData);
+        } catch (error) {
+          console.error("Error fetching plan data:", error);
+        }
       }
       setLoading(false);
+      setShouldRefreshPlan(false); // Reset the flag
     };
+    
     fetchData();
-  }, [user, fetchLatestPlan]);
+  }, [user, fetchLatestPlan, shouldRefreshPlan]);
 
   // Fetch transaction history
   const fetchTransactions = async () => {
@@ -80,10 +88,26 @@ const MyAccount: React.FC = () => {
           
         if (!metadataError && metadataTransactions) {
           // Filter transactions by user email in metadata
-          const userTransactions = metadataTransactions.filter(tx => 
-            tx.metadata?.user_email === user.email || 
-            tx.metadata?.payer?.email_address === user.email
-          );
+          const userTransactions = metadataTransactions.filter(tx => {
+            // Safely check if metadata exists and has user_email or payer.email_address property
+            if (tx.metadata && typeof tx.metadata === 'object') {
+              // Check if user_email exists in metadata
+              const metadataObj = tx.metadata as Record<string, any>;
+              
+              // Check for direct user_email property
+              if (typeof metadataObj.user_email === 'string' && metadataObj.user_email === user.email) {
+                return true;
+              }
+              
+              // Check for payer.email_address property
+              if (metadataObj.payer && typeof metadataObj.payer === 'object' && 
+                  typeof metadataObj.payer.email_address === 'string' && 
+                  metadataObj.payer.email_address === user.email) {
+                return true;
+              }
+            }
+            return false;
+          });
           
           if (userTransactions.length > 0) {
             setTransactions(userTransactions);
@@ -105,7 +129,7 @@ const MyAccount: React.FC = () => {
     }
   };
 
-  // Fetch transactions when user loads
+  // Fetch transactions when user loads, but only once
   useEffect(() => {
     if (user) {
       fetchTransactions();
@@ -143,15 +167,20 @@ const MyAccount: React.FC = () => {
   const handleRefreshTransactions = () => {
     toast.success(language === 'ar' ? 'جاري تحديث سجل المعاملات...' : 'Refreshing transaction history...');
     fetchTransactions();
-    fetchLatestPlan(); // Also refresh the plan data
+    setShouldRefreshPlan(true); // Set flag to refresh plan data
+  };
+
+  const handleRefreshPlanOnly = () => {
+    toast.success(language === 'ar' ? 'جاري تحديث بيانات الباقة...' : 'Refreshing plan data...');
+    setShouldRefreshPlan(true);
   };
 
   // Helper function to determine billing period display based on plan code
   const getBillingPeriodDisplay = (planCode: string) => {
     if (planCode === 'pro12' || planCode === 'annual') {
-      return language === 'ar' ? 'سنة' : 'year';
+      return 'سنة';
     }
-    return language === 'ar' ? 'شهر' : 'month';
+    return 'شهر';
   };
 
   if (!user) return <div className="text-center py-20">{language === 'ar' ? 'يجب تسجيل الدخول لعرض هذه الصفحة' : 'You must be logged in to view this page'}</div>;
@@ -185,7 +214,7 @@ const MyAccount: React.FC = () => {
               </Button>
             )}
             <div className="mt-4">
-              <Button variant="outline" size="sm" onClick={fetchLatestPlan}>
+              <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly}>
                 {language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data'}
               </Button>
             </div>
