@@ -40,7 +40,8 @@ export const recordTransaction = async (
         metadata: {
           payer: details.payer,
           payment_details: details,
-          session_uid: activeSession?.user?.id
+          session_uid: activeSession?.user?.id,
+          user_email: details.email || details.payer?.email_address // Store email in metadata for easier lookup
         }
       });
 
