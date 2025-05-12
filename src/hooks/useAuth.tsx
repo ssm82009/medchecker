@@ -29,7 +29,7 @@ export const useAuth = () => {
           // Ensure user has a valid ID property and it's a string
           if (!parsedUser.id) {
             console.warn('Stored user missing ID, cannot proceed with invalid user data', parsedUser);
-            localStorage.removeItem('user'); // Remove invalid user data
+            localStorage.removeItem('user');
             setUser(null);
           } else {
             // Always ensure ID is stored as a string
@@ -51,26 +51,44 @@ export const useAuth = () => {
     try {
       // Use Supabase Auth to sign in
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data.user) {
-        throw new Error('Invalid email or password');
+      
+      if (error) {
+        console.error('Authentication error:', error.message);
+        throw new Error(error.message || 'Invalid email or password');
       }
-      // Fetch user profile from users table
-      const { data: profile, error: profileError } = await supabase
+      
+      if (!data.user) {
+        throw new Error('No user returned from authentication');
+      }
+      
+      // Get user directly from users table using email instead of auth_uid
+      const { data: userProfile, error: userError } = await supabase
         .from('users')
         .select('id, auth_uid, email, role, plan_code, is_active')
-        .eq('auth_uid', data.user.id)
+        .eq('email', email)
         .maybeSingle();
-      if (profileError || !profile) {
+      
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+        throw new Error('Error retrieving user profile');
+      }
+      
+      if (!userProfile) {
+        console.error('User profile not found for email:', email);
         throw new Error('User profile not found');
       }
+      
+      // Create user data from profile
       const userData: User = {
-        id: String(profile.id),
-        email: profile.email,
-        role: profile.role,
-        plan_code: profile.plan_code || 'visitor',
-        is_active: profile.is_active !== undefined ? profile.is_active : true,
-        auth_uid: profile.auth_uid || data.user.id,
+        id: String(userProfile.id),
+        email: userProfile.email,
+        role: userProfile.role || 'user',
+        plan_code: userProfile.plan_code || 'visitor',
+        is_active: userProfile.is_active !== undefined ? userProfile.is_active : true,
+        auth_uid: userProfile.auth_uid || data.user.id,
       };
+      
+      console.log('User successfully logged in:', userData);
       setUser(userData);
       return true;
     } catch (err) {
@@ -82,10 +100,10 @@ export const useAuth = () => {
     }
   };
 
-
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
+    supabase.auth.signOut(); // Also sign out from Supabase
   };
 
   const refreshUser = async () => {

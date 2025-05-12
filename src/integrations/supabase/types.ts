@@ -254,7 +254,7 @@ export type Database = {
       }
       users: {
         Row: {
-          auth_uid: string | null
+          auth_uid: string
           email: string
           id: number
           password: string
@@ -262,7 +262,7 @@ export type Database = {
           role: string
         }
         Insert: {
-          auth_uid?: string | null
+          auth_uid: string
           email: string
           id?: number
           password: string
@@ -270,7 +270,7 @@ export type Database = {
           role?: string
         }
         Update: {
-          auth_uid?: string | null
+          auth_uid?: string
           email?: string
           id?: number
           password?: string

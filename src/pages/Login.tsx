@@ -22,6 +22,7 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login, error, loading, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
   
   const form = useForm<LoginFormValues>({
     defaultValues: {
@@ -40,17 +41,26 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (values: LoginFormValues) => {
     try {
+      setLoginAttempted(true);
+      console.log('Attempting login with:', values.email);
       const success = await login(values.email, values.password);
+      
       if (success) {
+        console.log('Login successful, preparing redirect...');
         toast({
           title: t('loginSuccess'),
           description: t('welcomeBack'),
         });
+        
         const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : '/';
+        console.log('Redirecting to:', returnUrl);
+        
+        // Add slight delay to ensure toast is shown
         setTimeout(() => {
           navigate(returnUrl);
         }, 500);
       } else {
+        console.error('Login failed in component');
         toast({
           title: t('loginFailed'),
           description: t('invalidCredentials'),
@@ -58,7 +68,7 @@ const Login: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Login error in component:', err);
       toast({
         title: t('loginFailed'),
         description: t('invalidCredentials'),
@@ -69,35 +79,6 @@ const Login: React.FC = () => {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
-  };
-
-  const handleLogin = async (credentials) => {
-    const { user, error } = await supabase.auth.signInWithPassword(credentials);
-  
-    if (error) {
-      // Handle login error
-      return;
-    }
-  
-    if (user) {
-      // هنا قد يكون هناك منطق إضافي لجلب الدور
-      // const { data: profileData, error: profileError } = await supabase
-      //   .from('profiles') // أو 'users'
-      //   .select('role')
-      //   .eq('id', user.id) // أو 'auth_uid'
-      //   .single();
-  
-      // !! تحقق هنا: هل يوجد شرط يمنع المستخدم إذا لم يكن دوره 'admin'؟
-      // مثال على منطق خاطئ قد يسبب المشكلة:
-      // if (profileData && profileData.role !== 'admin') {
-      //   toast.error('فقط المسؤولون يمكنهم تسجيل الدخول'); // هذا سيمنع المستخدم العادي
-      //   await supabase.auth.signOut(); // تسجيل الخروج
-      //   return;
-      // }
-  
-      // إذا كان كل شيء على ما يرام، قم بإعادة التوجيه
-      navigate('/some-default-page-after-login');
-    }
   };
 
   return (
@@ -155,7 +136,7 @@ const Login: React.FC = () => {
                   </FormItem>
                 )}
               />
-              {error && (
+              {error && loginAttempted && (
                 <div className="text-destructive text-sm">{t('invalidCredentials')}</div>
               )}
             </CardContent>

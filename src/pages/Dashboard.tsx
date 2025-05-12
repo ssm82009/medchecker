@@ -1,47 +1,64 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth'; // تأكد من استيراد useAuth
-import { useTranslation } from '@/hooks/useTranslation'; // إذا كنت بحاجة للترجمة
+import { useAuth } from '@/hooks/useAuth'; 
+import { useTranslation } from '@/hooks/useTranslation'; 
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { language } = useTranslation(); // مثال إذا كنت ستعرض رسالة مترجمة
+  const { language } = useTranslation(); 
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      // إذا انتهى التحميل ولا يوجد مستخدم مسجل، أعد توجيهه لصفحة تسجيل الدخول
-      navigate('/login');
-      return;
-    }
-
-    if (!loading && user) {
-      // تحقق من دور المستخدم بعد التأكد من أن المستخدم وبياناته قد تم تحميلها
-      // افترض أن لديك خاصية 'role' في كائن 'user'
-      // وأن 'admin' هو الدور الذي يُسمح له بالوصول
-      if (user.role !== 'admin') {
-        // إذا لم يكن المستخدم "admin"، أعد توجيهه إلى صفحة "حسابي"
-        navigate('/my-account'); // <--- تم التعديل هنا
-        // يمكنك إظهار رسالة للمستخدم قبل إعادة التوجيه إذا أردت
-        // toast.error(language === 'ar' ? 'ليس لديك صلاحية الوصول لهذه الصفحة، تم توجيهك لحسابك' : 'You do not have permission to access this page, redirecting to your account.');
+    if (!loading) {
+      // Only check permissions once loading is complete
+      if (!user) {
+        // If no user is logged in, redirect to login page
+        console.log('No user found, redirecting to login');
+        navigate('/login');
+        return;
       }
+      
+      // Check user role only if a user exists
+      if (user && user.role !== 'admin') {
+        // If user is not an admin, show message and redirect
+        console.log('User is not an admin, redirecting', user);
+        toast({
+          title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+          description: language === 'ar' 
+            ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
+            : 'You do not have permission to access this page',
+          variant: 'destructive'
+        });
+        navigate('/my-account');
+      }
+      
+      // Permission checking is complete
+      setCheckingPermissions(false);
     }
   }, [user, loading, navigate, language]);
 
-  // إذا كان التحميل جاريًا أو إذا تم بالفعل بدء إعادة التوجيه، لا تعرض شيئًا مؤقتًا
-  if (loading || (user && user.role !== 'admin')) {
-    // يمكنك عرض مؤشر تحميل هنا إذا أردت
-    return <div className="text-center py-20">{language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}</div>;
+  // Show loading state while checking permissions
+  if (loading || checkingPermissions) {
+    return <div className="text-center py-20">
+      {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+    </div>;
   }
 
-  // إذا كان المستخدم "admin"، اعرض محتوى لوحة التحكم
+  // Only render dashboard content if user is an admin
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
         {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
       </h1>
-      {/* ... باقي محتوى لوحة التحكم هنا ... */}
-      <p>{language === 'ar' ? 'مرحباً بك في لوحة التحكم الخاصة بالمسؤولين.' : 'Welcome to the admin dashboard.'}</p>
+      <p>
+        {language === 'ar' 
+          ? 'مرحباً بك في لوحة التحكم الخاصة بالمسؤولين.' 
+          : 'Welcome to the admin dashboard.'
+        }
+      </p>
     </div>
   );
 };
