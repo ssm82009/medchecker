@@ -448,9 +448,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return planCodeString.includes('premium') || planCodeString.includes('pro');
   };
 
-  // Add isAdmin method that's being used in components
+  // تحسين دالة isAdmin للتأكد من أنها تعمل بشكل صحيح
   const isAdmin = () => {
     if (!user) return false;
+    console.log("Checking admin status for user:", user);
+    console.log("User role:", user.role);
+    // استخدام تحقق دقيق لمقارنة القيمة والنوع
     return user.role === 'admin';
   };
 

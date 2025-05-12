@@ -14,17 +14,20 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!loading) {
-        // Only check permissions once loading is complete
+        // فقط تحقق من الصلاحيات عندما تكتمل عملية التحميل
         if (!user) {
-          // If no user is logged in, redirect to login page
+          // إذا لم يكن هناك مستخدم مسجل، انتقل إلى صفحة تسجيل الدخول
           console.log('No user found, redirecting to login');
           navigate('/login');
           return;
         }
         
-        // Check if user role is admin
+        console.log("Current user:", user);
+        console.log("User role:", user.role);
+        
+        // تحقق مما إذا كان دور المستخدم هو مسؤول
         if (user.role !== 'admin') {
-          // If user is not an admin, show message and redirect
+          // إذا لم يكن المستخدم مسؤولاً، أظهر رسالة وقم بإعادة التوجيه
           console.log('User is not an admin, redirecting', user);
           
           toast({
@@ -35,12 +38,14 @@ const Dashboard: React.FC = () => {
             variant: 'destructive'
           });
           
-          // Redirect to home page
+          // إعادة التوجيه إلى الصفحة الرئيسية
           navigate('/');
           return;
+        } else {
+          console.log('User is admin, access granted');
         }
         
-        // Permission checking is complete
+        // اكتمال التحقق من الصلاحيات
         setCheckingPermissions(false);
       }
     };
@@ -48,14 +53,14 @@ const Dashboard: React.FC = () => {
     checkAdminStatus();
   }, [user, loading, navigate, language]);
 
-  // Show loading state while checking permissions
+  // إظهار حالة التحميل أثناء التحقق من الصلاحيات
   if (loading || checkingPermissions) {
     return <div className="text-center py-20">
       {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
     </div>;
   }
 
-  // Only render dashboard content if user is an admin
+  // عرض محتوى لوحة التحكم فقط إذا كان المستخدم مسؤولًا
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
@@ -63,8 +68,8 @@ const Dashboard: React.FC = () => {
       </h1>
       <p>
         {language === 'ar' 
-          ? 'مرحباً بك في لوحة التحكم الخاصة بالمسؤولين.' 
-          : 'Welcome to the admin dashboard.'
+          ? `مرحباً بك في لوحة التحكم الخاصة بالمسؤولين (${user?.email})` 
+          : `Welcome to the admin dashboard (${user?.email})`
         }
       </p>
     </div>
