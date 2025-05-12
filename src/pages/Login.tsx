@@ -86,7 +86,8 @@ const Login: React.FC = () => {
       <Card className="w-full max-w-md border-primary/10 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">{t('login')}</CardTitle>
-          <CardDescription className="text-center">{t('forUsers')}</CardDescription>
+          {/* Fix the translation key by removing it or using valid key */}
+          <CardDescription className="text-center"></CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>

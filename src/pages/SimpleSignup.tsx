@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,29 +45,66 @@ const SimpleSignup: React.FC = () => {
       return;
     }
     setLoading(true);
-    // تحقق من عدم وجود المستخدم مسبقًا
-    const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
-    if (existing) {
-      toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use', variant: 'destructive' });
+    
+    try {
+      // First, create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (authError) {
+        toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: authError.message, variant: 'destructive' });
+        setLoading(false);
+        resetCaptcha();
+        return;
+      }
+
+      if (!authData.user) {
+        toast({ 
+          title: language === 'ar' ? 'خطأ' : 'Error', 
+          description: language === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account', 
+          variant: 'destructive' 
+        });
+        setLoading(false);
+        resetCaptcha();
+        return;
+      }
+
+      // تحقق من عدم وجود المستخدم مسبقًا
+      const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
+      if (existing) {
+        toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use', variant: 'destructive' });
+        setLoading(false);
+        resetCaptcha();
+        return;
+      }
+      
+      // أضف المستخدم
+      const { error } = await supabase.from('users').insert({
+        email,
+        password,
+        role: 'user',
+        plan_code: 'basic',
+        auth_uid: authData.user.id // Include auth_uid from the created auth user
+      });
+      
+      if (!error) {
+        toast({ title: language === 'ar' ? 'تم التسجيل' : 'Signup Success', description: language === 'ar' ? 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' : 'Account created successfully. You can now login.' });
+        navigate('/login');
+      } else {
+        toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: error.message, variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ 
+        title: language === 'ar' ? 'خطأ' : 'Error', 
+        description: err.message || (language === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'An error occurred during signup'), 
+        variant: 'destructive' 
+      });
+    } finally {
       setLoading(false);
       resetCaptcha();
-      return;
     }
-    // أضف المستخدم
-    const { error } = await supabase.from('users').insert({
-      email,
-      password,
-      role: 'user',
-      plan_code: 'basic',
-    });
-    if (!error) {
-      toast({ title: language === 'ar' ? 'تم التسجيل' : 'Signup Success', description: language === 'ar' ? 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' : 'Account created successfully. You can now login.' });
-      navigate('/login');
-    } else {
-      toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: error.message, variant: 'destructive' });
-    }
-    setLoading(false);
-    resetCaptcha();
   };
 
   return (

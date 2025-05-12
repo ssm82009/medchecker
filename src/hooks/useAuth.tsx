@@ -64,7 +64,7 @@ export const useAuth = () => {
       // Get user directly from users table using email instead of auth_uid
       const { data: userProfile, error: userError } = await supabase
         .from('users')
-        .select('id, auth_uid, email, role, plan_code, is_active')
+        .select('id, auth_uid, email, role, plan_code')
         .eq('email', email)
         .maybeSingle();
       
@@ -78,13 +78,13 @@ export const useAuth = () => {
         throw new Error('User profile not found');
       }
       
-      // Create user data from profile
+      // Create user data from profile, handling possible missing fields
       const userData: User = {
         id: String(userProfile.id),
         email: userProfile.email,
         role: userProfile.role || 'user',
         plan_code: userProfile.plan_code || 'visitor',
-        is_active: userProfile.is_active !== undefined ? userProfile.is_active : true,
+        is_active: true, // Default to true as is_active column doesn't exist
         auth_uid: userProfile.auth_uid || data.user.id,
       };
       
@@ -115,8 +115,8 @@ export const useAuth = () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('users')
-        .select('id, auth_uid, email, role, plan_code, is_active') // Ensure all relevant fields are selected
-        .eq('id', user.id) // Assuming user.id is the primary key in your users table
+        .select('id, auth_uid, email, role, plan_code') // Remove is_active as it doesn't exist
+        .eq('id', String(user.id)) // Ensure id is a string
         .single();
 
       if (fetchError) {
@@ -131,7 +131,7 @@ export const useAuth = () => {
           email: data.email,
           role: data.role,
           plan_code: data.plan_code || 'visitor',
-          is_active: data.is_active !== undefined ? data.is_active : true, // Handle potential undefined is_active
+          is_active: true, // Default to true as is_active doesn't exist
           auth_uid: data.auth_uid || user.auth_uid, // Preserve auth_uid if not returned or use existing
         };
         setUser(updatedUserData);

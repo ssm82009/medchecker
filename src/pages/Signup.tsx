@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -25,27 +26,59 @@ const Signup: React.FC = () => {
       return;
     }
     setLoading(true);
-    // تحقق من عدم وجود المستخدم مسبقًا
-    const { data: existing, error: existError } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
-    if (existing) {
-      toast({ title: 'خطأ', description: 'البريد الإلكتروني مستخدم بالفعل', variant: 'destructive' });
+    
+    try {
+      // First, create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (authError) {
+        toast({ title: 'خطأ', description: authError.message, variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      if (!authData.user) {
+        toast({ title: 'خطأ', description: 'فشل إنشاء الحساب', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      // تحقق من عدم وجود المستخدم مسبقًا
+      const { data: existing, error: existError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existing) {
+        toast({ title: 'خطأ', description: 'البريد الإلكتروني مستخدم بالفعل', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      // أضف المستخدم في جدول المستخدمين
+      const { error } = await supabase.from('users').insert({
+        email,
+        password,
+        role: 'user',
+        plan_code: 'basic',
+        auth_uid: authData.user.id // Include the auth_uid from the created auth user
+      });
+
+      if (!error) {
+        toast({ title: 'تم التسجيل', description: 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' });
+        navigate('/login');
+      } else {
+        toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'خطأ', description: err.message || 'حدث خطأ أثناء التسجيل', variant: 'destructive' });
+    } finally {
       setLoading(false);
-      return;
     }
-    // أضف المستخدم
-    const { error } = await supabase.from('users').insert({
-      email,
-      password,
-      role: 'user',
-      plan_code: 'basic',
-    });
-    if (!error) {
-      toast({ title: 'تم التسجيل', description: 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' });
-      navigate('/login');
-    } else {
-      toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
-    }
-    setLoading(false);
   };
 
   return (

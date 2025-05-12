@@ -16,6 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 
+// Updated type to include 'pro12'
+type PlanType = 'visitor' | 'basic' | 'pro' | 'pro12';
+
 const MedicationInteractionChecker: React.FC = () => {
   const { t, dir, language } = useTranslation();
   const isMobile = useIsMobile();
@@ -36,7 +39,7 @@ const MedicationInteractionChecker: React.FC = () => {
   const { result, loading, apiKeyError, checkInteractions } = useInteractionChecker();
   
   const { user } = useAuth();
-  const [userPlan, setUserPlan] = useState<'visitor' | 'basic' | 'pro'>('visitor');
+  const [userPlan, setUserPlan] = useState<PlanType>('visitor');
   const [maxMedications, setMaxMedications] = useState(2); // Default for visitor
 
   const navigate = useNavigate();
@@ -57,7 +60,7 @@ const MedicationInteractionChecker: React.FC = () => {
       }
       // If user has no plan_code or plan not found, it defaults to 'visitor'
 
-      setUserPlan(planCode as 'visitor' | 'basic' | 'pro' | 'pro12');
+      setUserPlan(planCode as PlanType);
 
       if (planCode === 'pro' || planCode === 'pro12') {
         setMaxMedications(10);
@@ -145,6 +148,7 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   const handleImageScanClick = () => {
+    // Updated to fix the type comparison error with pro12
     if (userPlan !== 'pro' && userPlan !== 'pro12') {
       setShowUpgradeDialog(true);
       return;
@@ -199,14 +203,19 @@ const MedicationInteractionChecker: React.FC = () => {
                 </p>
                 <div onClick={handleImageScanClick} 
                      style={{
+                       // Updated to fix the type comparison error with pro12
                        cursor: (userPlan === 'pro' || userPlan === 'pro12') ? 'pointer' : 'not-allowed', 
                        opacity: (userPlan === 'pro' || userPlan === 'pro12') ? 1 : 0.7 
                      }}
-                     role="button" // Added for accessibility
-                     tabIndex={0} // Added for accessibility
-                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleImageScanClick(); }} // Added for accessibility
+                     role="button"
+                     tabIndex={0}
+                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleImageScanClick(); }}
                 >
-                  <ImageToTextScanner onTextDetected={handleMedicationsDetected} canUse={userPlan === 'pro' || userPlan === 'pro12'} />
+                  <ImageToTextScanner 
+                    onTextDetected={handleMedicationsDetected} 
+                    // Updated to fix the type comparison error with pro12
+                    canUse={userPlan === 'pro' || userPlan === 'pro12'} 
+                  />
                 </div>
               </div>
 

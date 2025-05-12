@@ -65,7 +65,7 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
   console.log("Attempting to update user plan. Passed userId (should be auth_uid):", userId, "Target planCode:", planCode);
 
   try {
-    const sessionCheck = await checkAndGetSession(); // لا نمرر اللغة هنا، ستستخدم الافتراضية أو الإنجليزية
+    const sessionCheck = await checkAndGetSession();
     if (!sessionCheck.success || !sessionCheck.session?.user?.id) {
       console.error("UpdateUserPlan: No active session or session user ID. Message:", sessionCheck.message);
       throw new Error(sessionCheck.message || "Active session required to update plan.");
@@ -102,7 +102,7 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
     // قد تحتاج إلى طريقة لتحديث بيانات المستخدم محليًا بعد تغيير الخطة بنجاح
     return true;
   } catch (error) {
-    console.error("UpdateUserPlan: Critical error during plan update for passed userId", userId, "(using session auth_uid '", sessionCheck?.session?.user?.id ,"'):", error);
+    console.error("UpdateUserPlan: Critical error during plan update for passed userId", userId, ":", error);
     throw error;
   }
 };
