@@ -71,12 +71,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (isMountedRef.current) {
         setSession(session);
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'user',
-          auth_uid: session.user.id
-        } : null);
+        
+        if (session?.user) {
+          console.log("Setting user from session:", session.user);
+          console.log("User metadata:", session.user.user_metadata);
+          
+          const userRole = session.user.user_metadata?.role || 'user';
+          console.log("Resolved user role:", userRole);
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: userRole,
+            auth_uid: session.user.id
+          });
+        } else {
+          setUser(null);
+        }
+        
         setLoading(false);
       }
     };
@@ -86,12 +98,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (isMountedRef.current) {
         setSession(session);
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'user',
-          auth_uid: session.user.id
-        } : null);
+        
+        if (session?.user) {
+          console.log("Auth change - Setting user:", session.user);
+          console.log("Auth change - User metadata:", session.user.user_metadata);
+          
+          const userRole = session.user.user_metadata?.role || 'user';
+          console.log("Auth change - Resolved user role:", userRole);
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: userRole,
+            auth_uid: session.user.id
+          });
+        } else {
+          setUser(null);
+        }
       }
     });
 
@@ -448,13 +471,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return planCodeString.includes('premium') || planCodeString.includes('pro');
   };
 
-  // تحسين دالة isAdmin للتأكد من أنها تعمل بشكل صحيح
+  // Improved isAdmin function with better logging
   const isAdmin = () => {
-    if (!user) return false;
-    console.log("Checking admin status for user:", user);
-    console.log("User role:", user.role);
-    // استخدام تحقق دقيق لمقارنة القيمة والنوع
-    return user.role === 'admin';
+    if (!user) {
+      console.log("isAdmin check: No user found");
+      return false;
+    }
+    
+    console.log("isAdmin checking admin status for user:", user.email);
+    console.log("isAdmin user role is:", user.role);
+    
+    // Explicitly compare with strict equality to ensure proper type checking
+    const adminStatus = user.role === 'admin';
+    console.log("isAdmin result:", adminStatus);
+    
+    return adminStatus;
   };
 
   // Add login method that's being used in Login.tsx

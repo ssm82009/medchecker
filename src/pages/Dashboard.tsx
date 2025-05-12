@@ -14,21 +14,23 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!loading) {
-        // فقط تحقق من الصلاحيات عندما تكتمل عملية التحميل
+        console.log('Dashboard - Checking admin status, loading complete');
+        
         if (!user) {
-          // إذا لم يكن هناك مستخدم مسجل، انتقل إلى صفحة تسجيل الدخول
-          console.log('No user found, redirecting to login');
+          console.log('Dashboard - No user found, redirecting to login');
           navigate('/login');
           return;
         }
         
-        console.log("Current user:", user);
-        console.log("User role:", user.role);
+        console.log("Dashboard - Current user:", user);
+        console.log("Dashboard - User role:", user.role);
         
-        // تحقق مما إذا كان دور المستخدم هو مسؤول
-        if (user.role !== 'admin') {
-          // إذا لم يكن المستخدم مسؤولاً، أظهر رسالة وقم بإعادة التوجيه
-          console.log('User is not an admin, redirecting', user);
+        // Explicitly compare the role to 'admin' string to ensure type safety
+        const isAdminUser = user.role === 'admin';
+        console.log("Dashboard - Is admin?", isAdminUser);
+        
+        if (!isAdminUser) {
+          console.log('Dashboard - User is not an admin, redirecting');
           
           toast({
             title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
@@ -38,14 +40,12 @@ const Dashboard: React.FC = () => {
             variant: 'destructive'
           });
           
-          // إعادة التوجيه إلى الصفحة الرئيسية
           navigate('/');
           return;
         } else {
-          console.log('User is admin, access granted');
+          console.log('Dashboard - User is admin, access granted');
         }
         
-        // اكتمال التحقق من الصلاحيات
         setCheckingPermissions(false);
       }
     };
@@ -53,14 +53,12 @@ const Dashboard: React.FC = () => {
     checkAdminStatus();
   }, [user, loading, navigate, language]);
 
-  // إظهار حالة التحميل أثناء التحقق من الصلاحيات
   if (loading || checkingPermissions) {
     return <div className="text-center py-20">
       {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
     </div>;
   }
 
-  // عرض محتوى لوحة التحكم فقط إذا كان المستخدم مسؤولًا
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
@@ -72,6 +70,13 @@ const Dashboard: React.FC = () => {
           : `Welcome to the admin dashboard (${user?.email})`
         }
       </p>
+      <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-md">
+        <p className="text-green-800">
+          {language === 'ar' 
+            ? 'تم تسجيل دخولك بنجاح كمشرف!' 
+            : 'You have successfully logged in as an admin!'}
+        </p>
+      </div>
     </div>
   );
 };
