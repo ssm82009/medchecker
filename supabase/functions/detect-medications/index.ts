@@ -42,9 +42,12 @@ serve(async (req) => {
         console.error('Error fetching AI settings:', error);
       } else if (data?.value) {
         // Get API key and model from settings
-        OPENAI_API_KEY = data.value.apiKey || '';
-        model = data.value.model || 'gpt-4o-mini';
+        const settings = data.value;
+        OPENAI_API_KEY = settings.apiKey || '';
+        model = settings.model || 'gpt-4o-mini';
         console.log(`Using model from database: ${model}`);
+        
+        // IMPORTANT: Never log the API key itself
       }
     }
 

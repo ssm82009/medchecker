@@ -14,13 +14,11 @@ import { Json } from '@/integrations/supabase/types';
 const AISettings = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [aiSettings, setAiSettings] = useLocalStorage<AISettingsType>('aiSettings', { 
-    apiKey: '', 
-    model: 'gpt-4o-mini' 
-  });
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
   const [isLoading, setIsLoading] = useState(true);
+  const [apiKeyMasked, setApiKeyMasked] = useState<boolean>(true);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch AI settings from the database when component mounts
@@ -46,13 +44,19 @@ const AISettings = () => {
             // Use our safe parsing function
             const parsedSettings = safelyParseAISettings(value as Record<string, Json>);
             
-            console.log('Fetched AI settings from database:', parsedSettings);
+            // Never log the API key
+            console.log('Fetched AI settings from database');
             
-            setApiKey(parsedSettings.apiKey || '');
+            // Only store if API key exists, never display the actual key
+            if (parsedSettings.apiKey) {
+              setHasApiKey(true);
+              setApiKey('•'.repeat(16)); // Masked placeholder for UI
+            } else {
+              setApiKey('');
+              setHasApiKey(false);
+            }
+            
             setModel(parsedSettings.model || 'gpt-4o-mini');
-            
-            // Update localStorage
-            setAiSettings(parsedSettings);
           }
         }
       } catch (error) {
@@ -66,15 +70,30 @@ const AISettings = () => {
   }, []);
 
   const saveAISettings = async () => {
-    // Set current values
-    const newSettings: AISettingsType = {
-      apiKey,
-      model
-    };
+    // If the API key is masked and we already have one, don't update it
+    const keyToSave = apiKeyMasked && hasApiKey ? null : apiKey;
     
     try {
-      // Update in localStorage
-      setAiSettings(newSettings);
+      // First fetch the current settings to avoid overwriting the API key if it's masked
+      let currentSettings: AISettingsType = { apiKey: '', model };
+      
+      if (apiKeyMasked && hasApiKey) {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('type', 'ai_settings')
+          .maybeSingle();
+        
+        if (!error && data?.value) {
+          currentSettings = safelyParseAISettings(data.value as Record<string, Json>);
+        }
+      }
+      
+      // Create new settings object
+      const newSettings: AISettingsType = {
+        apiKey: keyToSave || currentSettings.apiKey,
+        model
+      };
       
       // Update in database
       const { error } = await supabase
@@ -90,6 +109,13 @@ const AISettings = () => {
         throw error;
       }
       
+      // If we successfully saved a new API key, update the UI
+      if (!apiKeyMasked && apiKey) {
+        setHasApiKey(true);
+        setApiKey('•'.repeat(16));
+        setApiKeyMasked(true);
+      }
+      
       toast({
         title: t('saveSuccess'),
         description: t('settingsSaved'),
@@ -103,6 +129,22 @@ const AISettings = () => {
         variant: 'destructive',
         duration: 5000,
       });
+    }
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value !== '•'.repeat(16)) {
+      setApiKeyMasked(false);
+      setApiKey(value);
+    }
+  };
+
+  const handleApiKeyFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Clear the field when focused if it contains the masked value
+    if (apiKeyMasked) {
+      setApiKey('');
+      setApiKeyMasked(false);
     }
   };
 
@@ -124,7 +166,8 @@ const AISettings = () => {
                   id="apiKey" 
                   type="password" 
                   value={apiKey} 
-                  onChange={(e) => setApiKey(e.target.value)} 
+                  onChange={handleApiKeyChange}
+                  onFocus={handleApiKeyFocus}
                   placeholder="sk-..." 
                 />
               </div>

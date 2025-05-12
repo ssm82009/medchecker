@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
-// تعريف نوع إعدادات الذكاء الاصطناعي
+// Define AI settings type
 export interface AISettingsType {
   apiKey: string;
   model: string;
 }
 
-// التحقق من أن القيمة تطابق نوع إعدادات الذكاء الاصطناعي
+// Validate value against AISettingsType
 export const isAISettingsType = (value: any): value is AISettingsType => {
   return (
     typeof value === 'object' &&
@@ -21,7 +21,7 @@ export const isAISettingsType = (value: any): value is AISettingsType => {
   );
 };
 
-// تحويل القيمة إلى نوع إعدادات الذكاء الاصطناعي بشكل آمن
+// Safely parse AI settings
 export const safelyParseAISettings = (value: Record<string, Json>): AISettingsType => {
   return {
     apiKey: typeof value.apiKey === 'string' ? value.apiKey : '',
@@ -30,19 +30,26 @@ export const safelyParseAISettings = (value: Record<string, Json>): AISettingsTy
 };
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
+  // Do not store sensitive data in localStorage
+  const isSensitiveKey = key === 'aiSettings';
+  
   // Make sure this useState is called within a React component
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
       return initialValue;
     }
+    
+    // For AI settings, never use localStorage
+    if (isSensitiveKey) {
+      return initialValue;
+    }
+    
     try {
-      // Get from localStorage first
+      // Get from localStorage for non-sensitive data
       const item = window.localStorage.getItem(key);
       if (item) {
         return JSON.parse(item);
       }
-      
-      // If this is the AI settings key, we'll try to fetch from database in useEffect
       return initialValue;
     } catch (error) {
       console.error(error);
@@ -50,7 +57,7 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     }
   });
 
-  // For AI settings, also check the database
+  // For AI settings, fetch from database
   useEffect(() => {
     const fetchFromDatabase = async () => {
       if (key === 'aiSettings') {
@@ -67,18 +74,19 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
           }
           
           if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-            console.log('Found AI settings in database:', data.value);
+            console.log('Found AI settings in database');
             
             // Safe type cast with validation
             const jsonValue = data.value as Record<string, Json>;
             
-            // Create a proper object that matches type T
-            // This ensures we have the right shape before setting it
-            const typedValue = safelyParseAISettings(jsonValue) as unknown as T;
+            // Create a proper object that matches type T but never expose API key in state
+            // We're only storing model in client state
+            const sanitizedSettings = {
+              model: typeof jsonValue.model === 'string' ? jsonValue.model : 'gpt-4o-mini',
+              apiKey: '' // Never store the API key in client state
+            } as unknown as T;
             
-            setStoredValue(typedValue);
-            // Update localStorage with the database value
-            window.localStorage.setItem(key, JSON.stringify(typedValue));
+            setStoredValue(sanitizedSettings);
           } else {
             console.log('No AI settings found in database or invalid format');
           }
@@ -91,17 +99,12 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     fetchFromDatabase();
   }, [key]);
 
+  // Only update localStorage for non-sensitive data
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isSensitiveKey) {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
-      
-      // For AI settings, also update the database
-      if (key === 'aiSettings') {
-        // Don't update the database here, as it should be done explicitly
-        // in the Admin component to avoid unwanted updates
-      }
     }
-  }, [key, storedValue]);
+  }, [key, storedValue, isSensitiveKey]);
 
   return [storedValue, setStoredValue] as const;
 };
