@@ -167,7 +167,19 @@ export const useSubscription = () => {
     }
   }, [effectiveUserId, sessionChecking, loading, language, toast]);
 
-  // Enhanced payment success handler to include plan details and user ID
+  // Calculate the expiry date based on plan type
+  const calculateExpiryDate = (planCode: string): string => {
+    const now = new Date();
+    if (planCode === 'pro12' || planCode === 'annual') {
+      // Add 1 year for annual plans
+      return new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+    } else {
+      // Add 1 month for monthly plans
+      return new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+    }
+  };
+
+  // Enhanced payment success handler to include plan details, user ID, and expiry date
   const enhancedPaymentSuccess = async (details: any) => {
     try {
       // Check for active session before proceeding
@@ -192,14 +204,18 @@ export const useSubscription = () => {
       console.log("Enhanced payment success with effective user ID:", effectiveUserId);
       console.log("Active session confirmed before payment processing:", activeSession.user.id);
       
-      // Add price, plan code, and user ID to details object
+      // Calculate expiry date based on plan type
+      const expiryDate = calculateExpiryDate(selectedPlan?.code || 'pro');
+      
+      // Add price, plan code, expiry date, and user ID to details object
       const enhancedDetails = {
         ...details,
         price: selectedPlan?.price,
         planCode: selectedPlan?.code,
         currency: paypalSettings?.currency,
         userId: effectiveUserId,
-        sessionUserId: activeSession.user.id
+        sessionUserId: activeSession.user.id,
+        expiryDate: expiryDate
       };
       
       if (!isMountedRef.current) return;

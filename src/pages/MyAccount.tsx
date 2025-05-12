@@ -30,6 +30,7 @@ const MyAccount: React.FC = () => {
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
+  const [historyFetchAttempted, setHistoryFetchAttempted] = useState(false);
   
   // Add a reference to track mounted state and timer reference
   const isMountedRef = useRef(true);
@@ -208,6 +209,7 @@ const MyAccount: React.FC = () => {
     } finally {
       if (isMountedRef.current) {
         setFetchingHistory(false);
+        setHistoryFetchAttempted(true);
       }
     }
   }, [user, language, toast]);
@@ -217,13 +219,14 @@ const MyAccount: React.FC = () => {
     if (user && transactions.length === 0 && !fetchingTransactions) {
       fetchTransactions();
     }
-    
-    // Fetch search history when activeTab is 'history'
-    if (user && activeTab === 'history' && !fetchingHistory && searchHistory.length === 0) {
+  }, [user, transactions.length, fetchingTransactions, fetchTransactions]);
+
+  // Only fetch search history when actively viewing that tab
+  useEffect(() => {
+    if (user && activeTab === 'history' && !fetchingHistory && !historyFetchAttempted) {
       fetchSearchHistory();
     }
-  }, [user, transactions.length, fetchingTransactions, fetchTransactions, 
-      activeTab, fetchSearchHistory, fetchingHistory, searchHistory.length]);
+  }, [user, activeTab, fetchSearchHistory, fetchingHistory, historyFetchAttempted]);
 
   const handleChangePassword = async () => {
     setChangeStatus('');
@@ -275,6 +278,7 @@ const MyAccount: React.FC = () => {
       title: language === 'ar' ? 'جاري التحديث' : 'Refreshing',
       description: language === 'ar' ? 'جاري تحديث سجل البحث...' : 'Refreshing search history...',
     });
+    setHistoryFetchAttempted(false);
     fetchSearchHistory();
   };
 

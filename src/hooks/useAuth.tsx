@@ -43,6 +43,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Function to calculate expiry date based on plan type
+  const calculateExpiryDate = (planCode: string): string => {
+    const now = new Date();
+    if (planCode === 'pro12' || planCode === 'annual') {
+      // Add 1 year for annual plans
+      return new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+    } else {
+      // Add 1 month for monthly plans
+      return new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+    }
+  };
+
   useEffect(() => {
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -88,8 +100,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!userError && userData && userData.plan_code) {
         console.log("Found plan in users table:", userData.plan_code);
         
-        // Update user object with plan_code
-        setUser(prevUser => prevUser ? { ...prevUser, plan_code: userData.plan_code } : null);
+        // Calculate expiry date based on plan type
+        const expiryDate = calculateExpiryDate(userData.plan_code);
+        
+        // Update user object with plan_code and expiry_date
+        setUser(prevUser => prevUser ? { 
+          ...prevUser, 
+          plan_code: userData.plan_code,
+          plan_expiry_date: expiryDate
+        } : null);
+        
+        // Update the users table with the expiry date
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ plan_expiry_date: expiryDate })
+          .eq('auth_uid', user.id);
+        
+        if (updateError) {
+          console.error("Error updating expiry date:", updateError);
+        }
         
         // Fetch plan details
         const { data: planData, error: planError } = await supabase
@@ -162,8 +191,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Get plan code from latest transaction and update user
             const latestPlanCode = userTransactions[0].plan_code;
             
-            // Update user record with plan code if needed
-            await updateUserPlanCode(latestPlanCode);
+            // Calculate expiry date based on plan type
+            const expiryDate = calculateExpiryDate(latestPlanCode);
+            
+            // Update user record with plan code and expiry date
+            await updateUserPlanCode(latestPlanCode, expiryDate);
             
             // Fetch plan details
             const { data: planData, error: planError } = await supabase
@@ -187,8 +219,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Latest transaction found with plan:", latestPlanCode);
       
-      // Update user record with plan code if needed
-      await updateUserPlanCode(latestPlanCode);
+      // Calculate expiry date based on plan type
+      const expiryDate = calculateExpiryDate(latestPlanCode);
+      
+      // Update user record with plan code and expiry date
+      await updateUserPlanCode(latestPlanCode, expiryDate);
       
       // Fetch plan details
       const { data: planData, error: planError } = await supabase
@@ -206,15 +241,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // Helper function to update user's plan code
-  const updateUserPlanCode = async (planCode: string) => {
+  // Helper function to update user's plan code and expiry date
+  const updateUserPlanCode = async (planCode: string, expiryDate: string) => {
     if (!user?.id || !planCode) return;
     
     try {
       // Check if user record exists
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
-        .select('id, plan_code')
+        .select('id, plan_code, plan_expiry_date')
         .eq('auth_uid', user.id)
         .maybeSingle();
       
@@ -225,25 +260,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (existingUser) {
         // Update existing record if plan_code is different
-        if (existingUser.plan_code !== planCode) {
+        if (existingUser.plan_code !== planCode || !existingUser.plan_expiry_date) {
           console.log("Updating user plan_code from", existingUser.plan_code, "to", planCode);
+          console.log("Setting expiry date to:", expiryDate);
           
           const { error: updateError } = await supabase
             .from('users')
-            .update({ plan_code: planCode })
+            .update({ 
+              plan_code: planCode,
+              plan_expiry_date: expiryDate
+            })
             .eq('auth_uid', user.id);
           
           if (updateError) {
             console.error("Error updating user plan:", updateError);
           } else {
-            console.log("User plan_code updated successfully");
+            console.log("User plan_code and expiry_date updated successfully");
             // Update local user state
-            setUser(prevUser => prevUser ? { ...prevUser, plan_code: planCode } : null);
+            setUser(prevUser => prevUser ? { 
+              ...prevUser, 
+              plan_code: planCode,
+              plan_expiry_date: expiryDate
+            } : null);
           }
         }
       } else {
         // Insert new user record if it doesn't exist
         console.log("Creating new user record with plan_code:", planCode);
+        console.log("Setting expiry date to:", expiryDate);
         
         const { error: insertError } = await supabase
           .from('users')
@@ -251,15 +295,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             auth_uid: user.id, 
             email: user.email, 
             plan_code: planCode,
+            plan_expiry_date: expiryDate,
             password: 'oauth-user' // placeholder for OAuth users
           });
         
         if (insertError) {
           console.error("Error inserting user plan:", insertError);
         } else {
-          console.log("User record created with plan_code");
+          console.log("User record created with plan_code and expiry_date");
           // Update local user state
-          setUser(prevUser => prevUser ? { ...prevUser, plan_code: planCode } : null);
+          setUser(prevUser => prevUser ? { 
+            ...prevUser, 
+            plan_code: planCode,
+            plan_expiry_date: expiryDate
+          } : null);
         }
       }
     } catch (error) {
