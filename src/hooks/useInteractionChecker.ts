@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
@@ -222,29 +221,43 @@ export const useInteractionChecker = () => {
         };
       }
       
-      setResult(parsedResult);
-      
       // After successful check, store search history if user is premium
-      if (result && user?.id && isPremium()) {
+      if (user?.id && isPremium()) {
         try {
           // Extract medication names for the search history
           const medicationNames = medications
             .filter(med => med.name && med.name.trim() !== '')
             .map(med => med.name);
           
-          // Create a record of this search
-          await supabase.from('search_history').insert({
+          // Create a record of this search with stringified result data
+          const searchData = {
             user_id: user.id,
             search_query: medicationNames.join(', '),
-            search_results: JSON.stringify(result)
-          });
+            search_results: parsedResult // Store directly as JSON
+          };
           
-          console.log('Search history recorded for premium user');
+          console.log('Recording search history with data:', searchData);
+          
+          const { data: historyData, error: historyError } = await supabase
+            .from('search_history')
+            .insert(searchData)
+            .select();
+          
+          if (historyError) {
+            console.error('Error recording search history:', historyError);
+          } else {
+            console.log('Search history recorded successfully:', historyData);
+          }
         } catch (error) {
           console.error('Error recording search history:', error);
           // Don't fail the main operation if history recording fails
         }
+      } else {
+        console.log('Search history not recorded - user not premium or not logged in:', 
+          { userId: user?.id, isPremium: isPremium() });
       }
+      
+      setResult(parsedResult);
     } catch (error) {
       console.error('Error checking interactions:', error);
       setApiKeyError(true);

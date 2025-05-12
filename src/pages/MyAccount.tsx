@@ -202,8 +202,11 @@ const MyAccount: React.FC = () => {
           });
         }
       } else if (data && isMountedRef.current) {
+        console.log('Search history data received:', data);
+        if (Array.isArray(data) && data.length === 0) {
+          console.log('No search history found for this user');
+        }
         setSearchHistory(data as SearchHistory[]);
-        console.log('Search history found:', data);
       }
     } catch (error) {
       console.error('Error in fetchSearchHistory:', error);
@@ -225,9 +228,19 @@ const MyAccount: React.FC = () => {
   // Only fetch search history when actively viewing that tab
   useEffect(() => {
     if (user && activeTab === 'history' && !fetchingHistory && !historyFetchAttempted) {
+      console.log('Triggering search history fetch for tab:', activeTab);
       fetchSearchHistory();
     }
-  }, [user, activeTab, fetchSearchHistory, fetchingHistory, historyFetchAttempted]);
+  }, [user, activeTab, fetchSearchHistory, historyFetchAttempted]);
+
+  useEffect(() => {
+    if (activeTab === 'history' && user?.plan_code && user.plan_code !== 'visitor') {
+      console.log('Tab changed to history, refreshing data if needed');
+      if (!fetchingHistory && searchHistory.length === 0) {
+        fetchSearchHistory();
+      }
+    }
+  }, [activeTab, user, fetchSearchHistory, fetchingHistory, searchHistory.length]);
 
   const handleChangePassword = async () => {
     setChangeStatus('');
