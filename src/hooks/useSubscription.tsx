@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +24,7 @@ export const useSubscription = () => {
   // Track if we have a valid Supabase session
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [sessionChecking, setSessionChecking] = useState<boolean>(true);
+  const [sessionInitialized, setSessionInitialized] = useState<boolean>(false);
   
   useEffect(() => {
     // Set isMountedRef to true when component mounts
@@ -36,8 +36,10 @@ export const useSubscription = () => {
     };
   }, []);
   
-  // Use the improved function to check for active session
+  // Use the improved function to check for active session - only once
   useEffect(() => {
+    if (sessionInitialized) return;
+    
     const initializeSession = async () => {
       try {
         if (!isMountedRef.current) return;
@@ -69,6 +71,7 @@ export const useSubscription = () => {
       } finally {
         if (isMountedRef.current) {
           setSessionChecking(false);
+          setSessionInitialized(true);
         }
       }
     };
@@ -102,7 +105,7 @@ export const useSubscription = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [language, toast]);
+  }, [language, toast, sessionInitialized]);
   
   // Use our hooks to fetch data and manage state
   const { 

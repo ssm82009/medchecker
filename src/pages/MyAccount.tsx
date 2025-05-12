@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,7 @@ const MyAccount: React.FC = () => {
   const [fetchingHistory, setFetchingHistory] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
   const [historyFetchAttempted, setHistoryFetchAttempted] = useState(false);
+  const [planDataFetched, setPlanDataFetched] = useState(false);
   
   // Add a reference to track mounted state and timer reference
   const isMountedRef = useRef(true);
@@ -49,7 +49,7 @@ const MyAccount: React.FC = () => {
   }, []);
 
   const fetchPlanData = useCallback(async () => {
-    if (!user || !isMountedRef.current) return;
+    if (!user || !isMountedRef.current || planDataFetched) return;
     
     setLoading(true);
     try {
@@ -70,6 +70,7 @@ const MyAccount: React.FC = () => {
       } else if (planData && isMountedRef.current) {
         console.log("Fetched plan data:", planData);
         setPlan(planData);
+        setPlanDataFetched(true);
       }
     } catch (error) {
       console.error("Error in fetchPlanData:", error);
@@ -78,15 +79,15 @@ const MyAccount: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [user, fetchLatestPlan]);
+  }, [user, fetchLatestPlan, planDataFetched]);
 
   // Only fetch data when the user or shouldRefreshPlan changes
   useEffect(() => {
-    if (user && (shouldRefreshPlan || !plan)) {
+    if (user && (shouldRefreshPlan || !planDataFetched)) {
       fetchPlanData();
       setShouldRefreshPlan(false);
     }
-  }, [user, shouldRefreshPlan, fetchPlanData, plan]);
+  }, [user, shouldRefreshPlan, fetchPlanData, planDataFetched]);
 
   // Fetch transaction history
   const fetchTransactions = useCallback(async () => {
@@ -196,7 +197,7 @@ const MyAccount: React.FC = () => {
         if (isMountedRef.current) {
           toast({
             title: language === 'ar' ? 'خطأ' : 'Error',
-            description: language === 'ar' ? 'خطأ في جلب سجل البحث' : 'Error fetching search history',
+            description: language === 'ar' ? 'خ��أ في جلب سجل البحث' : 'Error fetching search history',
             variant: 'destructive'
           });
         }
@@ -287,6 +288,7 @@ const MyAccount: React.FC = () => {
       title: language === 'ar' ? 'جاري التحديث' : 'Refreshing',
       description: language === 'ar' ? 'جاري تحديث بيانات الباقة...' : 'Refreshing plan data...',
     });
+    setPlanDataFetched(false);
     setShouldRefreshPlan(true);
   };
 

@@ -1,4 +1,3 @@
-
 export interface PlanType {
   id: string;
   code: string;
@@ -70,10 +69,11 @@ export interface Transaction {
   metadata?: any;
 }
 
+// Add the SearchHistory interface that's being imported in MyAccount.tsx
 export interface SearchHistory {
   id: string;
   user_id: string;
   search_query: string;
-  search_results: any;
+  search_results: any[];
   created_at: string;
 }

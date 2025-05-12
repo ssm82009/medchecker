@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, createContext } from 'react';
+import { useEffect, useState, useContext, createContext, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -41,7 +41,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userProfile, setUserProfile] = useState(null);
   const [userPlan, setUserPlan] = useState(null);
   const [error, setError] = useState<string | null>(null);
+  const [planRefreshInProgress, setPlanRefreshInProgress] = useState(false);
+  const isMountedRef = useRef(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Function to calculate expiry date based on plan type
   const calculateExpiryDate = (planCode: string): string => {
@@ -59,65 +69,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
-      setSession(session);
-      setUser(session?.user ? {
-        id: session.user.id,
-        email: session.user.email || '',
-        role: session.user.user_metadata?.role || 'user',
-        auth_uid: session.user.id
-      } : null);
-      setLoading(false);
+      if (isMountedRef.current) {
+        setSession(session);
+        setUser(session?.user ? {
+          id: session.user.id,
+          email: session.user.email || '',
+          role: session.user.user_metadata?.role || 'user',
+          auth_uid: session.user.id
+        } : null);
+        setLoading(false);
+      }
     };
 
     getInitialSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ? {
-        id: session.user.id,
-        email: session.user.email || '',
-        role: session.user.user_metadata?.role || 'user',
-        auth_uid: session.user.id
-      } : null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMountedRef.current) {
+        setSession(session);
+        setUser(session?.user ? {
+          id: session.user.id,
+          email: session.user.email || '',
+          role: session.user.user_metadata?.role || 'user',
+          auth_uid: session.user.id
+        } : null);
+      }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Add a function to fetch latest plan from transactions
-  const fetchLatestPlan = async () => {
-    if (!user?.id) return;
+  const fetchLatestPlan = useCallback(async () => {
+    if (!user?.id || !isMountedRef.current || planRefreshInProgress) return;
     
     try {
       console.log("Fetching latest plan for user:", user.id);
+      setPlanRefreshInProgress(true);
       
       // First try to get the user's plan from the users table
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('plan_code, auth_uid')
+        .select('plan_code, auth_uid, plan_expiry_date')
         .eq('auth_uid', user.id)
         .maybeSingle();
       
       // If we found plan data in the users table, update user and fetch plan details
-      if (!userError && userData && userData.plan_code) {
+      if (!userError && userData && userData.plan_code && isMountedRef.current) {
         console.log("Found plan in users table:", userData.plan_code);
         
-        // Calculate expiry date based on plan type
-        const expiryDate = calculateExpiryDate(userData.plan_code);
+        // Check if we already have an expiry date
+        let expiryDate = userData.plan_expiry_date;
+        
+        // If no expiry date, calculate it based on plan type
+        if (!expiryDate) {
+          expiryDate = calculateExpiryDate(userData.plan_code);
+          
+          // Update the users table with the expiry date
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ plan_expiry_date: expiryDate })
+            .eq('auth_uid', user.id);
+          
+          if (updateError) {
+            console.error("Error updating expiry date:", updateError);
+          }
+        }
         
         // Update user object with plan_code and expiry_date
-        setUser(prevUser => prevUser ? { 
-          ...prevUser, 
-          plan_code: userData.plan_code,
-          plan_expiry_date: expiryDate
-        } : null);
-        
-        // Update the users table with the expiry date
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ plan_expiry_date: expiryDate })
-          .eq('auth_uid', user.id);
-        
-        if (updateError) {
-          console.error("Error updating expiry date:", updateError);
+        if (isMountedRef.current) {
+          setUser(prevUser => prevUser ? { 
+            ...prevUser, 
+            plan_code: userData.plan_code,
+            plan_expiry_date: expiryDate
+          } : null);
         }
         
         // Fetch plan details
@@ -127,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('code', userData.plan_code)
           .maybeSingle();
         
-        if (!planError && planData) {
+        if (!planError && planData && isMountedRef.current) {
           setUserPlan(planData);
           console.log("Set user plan from users table:", planData);
           return;
@@ -135,111 +161,117 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // If we didn't find or couldn't set plan from users table, check transactions
-      console.log("Checking latest plan from transactions...");
-      
-      // Get the latest completed transaction
-      const { data: txnData, error: txnError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      if (txnError) {
-        console.error("Error fetching transactions:", txnError);
-        return;
-      }
-      
-      // If no transactions found by ID, try looking by email in metadata
-      if (!txnData || txnData.length === 0) {
-        console.log("No transactions found by ID, checking metadata...");
+      if (isMountedRef.current) {
+        console.log("Checking latest plan from transactions...");
         
-        const { data: metadataTransactions, error: metadataError } = await supabase
+        // Get the latest completed transaction
+        const { data: txnData, error: txnError } = await supabase
           .from('transactions')
           .select('*')
+          .eq('user_id', user.id)
           .eq('status', 'completed')
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(1);
         
-        if (!metadataError && metadataTransactions) {
-          // Filter transactions by user email in metadata using safe access
-          const userTransactions = metadataTransactions.filter(tx => {
-            // Safely check if metadata exists and has user_email or payer.email_address property
-            if (tx.metadata && typeof tx.metadata === 'object') {
-              // Check if user_email exists in metadata
-              const metadataObj = tx.metadata as Record<string, any>;
-              
-              // Check for direct user_email property
-              if (typeof metadataObj.user_email === 'string' && metadataObj.user_email === user.email) {
-                return true;
-              }
-              
-              // Check for payer.email_address property
-              if (metadataObj.payer && typeof metadataObj.payer === 'object' && 
-                  typeof metadataObj.payer.email_address === 'string' && 
-                  metadataObj.payer.email_address === user.email) {
-                return true;
-              }
-            }
-            return false;
-          });
+        if (txnError) {
+          console.error("Error fetching transactions:", txnError);
+          return;
+        }
+        
+        // If no transactions found by ID, try looking by email in metadata
+        if (!txnData || txnData.length === 0) {
+          console.log("No transactions found by ID, checking metadata...");
           
-          if (userTransactions.length > 0) {
-            console.log("Found transactions in metadata:", userTransactions[0]);
+          const { data: metadataTransactions, error: metadataError } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (!metadataError && metadataTransactions && isMountedRef.current) {
+            // Filter transactions by user email in metadata using safe access
+            const userTransactions = metadataTransactions.filter(tx => {
+              // Safely check if metadata exists and has user_email or payer.email_address property
+              if (tx.metadata && typeof tx.metadata === 'object') {
+                // Check if user_email exists in metadata
+                const metadataObj = tx.metadata as Record<string, any>;
+                
+                // Check for direct user_email property
+                if (typeof metadataObj.user_email === 'string' && metadataObj.user_email === user.email) {
+                  return true;
+                }
+                
+                // Check for payer.email_address property
+                if (metadataObj.payer && typeof metadataObj.payer === 'object' && 
+                    typeof metadataObj.payer.email_address === 'string' && 
+                    metadataObj.payer.email_address === user.email) {
+                  return true;
+                }
+              }
+              return false;
+            });
             
-            // Get plan code from latest transaction and update user
-            const latestPlanCode = userTransactions[0].plan_code;
-            
-            // Calculate expiry date based on plan type
-            const expiryDate = calculateExpiryDate(latestPlanCode);
-            
-            // Update user record with plan code and expiry date
-            await updateUserPlanCode(latestPlanCode, expiryDate);
-            
-            // Fetch plan details
-            const { data: planData, error: planError } = await supabase
-              .from('plans')
-              .select('*')
-              .eq('code', latestPlanCode)
-              .maybeSingle();
-            
-            if (!planError && planData) {
-              setUserPlan(planData);
-              console.log("Set user plan from transaction metadata:", planData);
+            if (userTransactions.length > 0 && isMountedRef.current) {
+              console.log("Found transactions in metadata:", userTransactions[0]);
+              
+              // Get plan code from latest transaction and update user
+              const latestPlanCode = userTransactions[0].plan_code;
+              
+              // Calculate expiry date based on plan type
+              const expiryDate = calculateExpiryDate(latestPlanCode);
+              
+              // Update user record with plan code and expiry date
+              await updateUserPlanCode(latestPlanCode, expiryDate);
+              
+              // Fetch plan details
+              const { data: planData, error: planError } = await supabase
+                .from('plans')
+                .select('*')
+                .eq('code', latestPlanCode)
+                .maybeSingle();
+              
+              if (!planError && planData && isMountedRef.current) {
+                setUserPlan(planData);
+                console.log("Set user plan from transaction metadata:", planData);
+              }
             }
           }
+          return;
         }
-        return;
-      }
-      
-      // Get plan code from latest transaction and update user
-      const latestTransaction = txnData[0];
-      const latestPlanCode = latestTransaction.plan_code;
-      
-      console.log("Latest transaction found with plan:", latestPlanCode);
-      
-      // Calculate expiry date based on plan type
-      const expiryDate = calculateExpiryDate(latestPlanCode);
-      
-      // Update user record with plan code and expiry date
-      await updateUserPlanCode(latestPlanCode, expiryDate);
-      
-      // Fetch plan details
-      const { data: planData, error: planError } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('code', latestPlanCode)
-        .maybeSingle();
-      
-      if (!planError && planData) {
-        setUserPlan(planData);
-        console.log("Set user plan from transactions:", planData);
+        
+        // Get plan code from latest transaction and update user
+        const latestTransaction = txnData[0];
+        const latestPlanCode = latestTransaction.plan_code;
+        
+        console.log("Latest transaction found with plan:", latestPlanCode);
+        
+        // Calculate expiry date based on plan type
+        const expiryDate = calculateExpiryDate(latestPlanCode);
+        
+        // Update user record with plan code and expiry date
+        await updateUserPlanCode(latestPlanCode, expiryDate);
+        
+        // Fetch plan details
+        const { data: planData, error: planError } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('code', latestPlanCode)
+          .maybeSingle();
+        
+        if (!planError && planData && isMountedRef.current) {
+          setUserPlan(planData);
+          console.log("Set user plan from transactions:", planData);
+        }
       }
     } catch (error) {
       console.error("Error in fetchLatestPlan:", error);
+    } finally {
+      if (isMountedRef.current) {
+        setPlanRefreshInProgress(false);
+      }
     }
-  };
+  }, [user, planRefreshInProgress]);
   
   // Helper function to update user's plan code and expiry date
   const updateUserPlanCode = async (planCode: string, expiryDate: string) => {
@@ -342,14 +374,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserProfile();
   }, [user]);
 
+  // Prevent useEffect from running more than once by using a ref to track if it's already run
+  const planEffectRun = useRef(false);
+  
   // This effect runs when user profile changes to fetch the plan
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !planEffectRun.current) {
+      planEffectRun.current = true;
       fetchLatestPlan();
-    } else {
+    } else if (!user) {
       setUserPlan(null);
+      planEffectRun.current = false;
     }
-  }, [user]);
+  }, [user, fetchLatestPlan]);
 
   const signOut = async () => {
     try {
