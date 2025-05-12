@@ -116,7 +116,7 @@ export const useAuth = () => {
       const { data, error: fetchError } = await supabase
         .from('users')
         .select('id, auth_uid, email, role, plan_code') // Remove is_active as it doesn't exist
-        .eq('id', String(user.id)) // Ensure id is a string
+        .eq('id', user.id) // Pass the ID as a string directly, no need to convert it
         .single();
 
       if (fetchError) {
