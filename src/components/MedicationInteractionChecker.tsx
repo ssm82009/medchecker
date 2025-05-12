@@ -37,7 +37,7 @@ const MedicationInteractionChecker: React.FC = () => {
   
   const { user } = useAuth();
   const [userPlan, setUserPlan] = useState<'visitor' | 'basic' | 'pro'>('visitor');
-  const [maxMedications, setMaxMedications] = useState(2);
+  const [maxMedications, setMaxMedications] = useState(2); // Default for visitor
 
   const navigate = useNavigate();
   const [showLimitDialog, setShowLimitDialog] = useState(false);
@@ -46,13 +46,26 @@ const MedicationInteractionChecker: React.FC = () => {
   useEffect(() => {
     const fetchPlan = async () => {
       let planCode = user?.plan_code || 'visitor';
-      // جلب الخطة من Supabase للتأكد من وجودها
+      // Fetch plan from Supabase to ensure it exists and is current
       const { data, error } = await supabase.from('plans').select('code').eq('code', planCode).maybeSingle();
-      if (data && data.code) planCode = data.code;
-      setUserPlan(planCode as 'visitor' | 'basic' | 'pro');
-      if (planCode === 'pro') setMaxMedications(10);
-      else if (planCode === 'basic') setMaxMedications(5);
-      else setMaxMedications(2);
+      
+      if (error) {
+        console.error('Error fetching plan:', error);
+        // Keep default plan if there's an error
+      } else if (data && data.code) {
+        planCode = data.code;
+      }
+      // If user has no plan_code or plan not found, it defaults to 'visitor'
+
+      setUserPlan(planCode as 'visitor' | 'basic' | 'pro' | 'pro12');
+
+      if (planCode === 'pro' || planCode === 'pro12') {
+        setMaxMedications(10);
+      } else if (planCode === 'basic') {
+        setMaxMedications(5);
+      } else {
+        setMaxMedications(2); // Visitor plan
+      }
     };
     fetchPlan();
   }, [user]);
@@ -132,11 +145,12 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   const handleImageScanClick = () => {
-    if (userPlan !== 'pro') {
+    if (userPlan !== 'pro' && userPlan !== 'pro12') {
       setShowUpgradeDialog(true);
       return;
     }
-    // trigger image scan (ImageToTextScanner will handle it)
+    // Logic to trigger image scan is handled by ImageToTextScanner's internal state or props
+    // This function primarily serves as a gatekeeper based on userPlan.
   };
 
   return (
@@ -173,6 +187,7 @@ const MedicationInteractionChecker: React.FC = () => {
                 variant="outline" 
                 onClick={addMedication} 
                 className="w-full group hover:bg-primary/5 hover:text-primary transition-colors text-gray-600"
+                disabled={medications.length >= maxMedications}
               >
                 <Plus className={`h-4 w-4 ${dir === 'rtl' ? 'ml-2' : 'mr-2'} group-hover:scale-110 transition-transform`} />
                 {t('addMedication')}
@@ -182,8 +197,16 @@ const MedicationInteractionChecker: React.FC = () => {
                 <p className="text-sm font-medium mb-2 flex items-center text-gray-700">
                   {t('scanMedicationsFromImage')}
                 </p>
-                <div onClick={handleImageScanClick} style={{ cursor: userPlan === 'pro' ? 'pointer' : 'not-allowed', opacity: userPlan === 'pro' ? 1 : 0.7 }}>
-                  <ImageToTextScanner onTextDetected={handleMedicationsDetected} canUse={userPlan === 'pro'} />
+                <div onClick={handleImageScanClick} 
+                     style={{
+                       cursor: (userPlan === 'pro' || userPlan === 'pro12') ? 'pointer' : 'not-allowed', 
+                       opacity: (userPlan === 'pro' || userPlan === 'pro12') ? 1 : 0.7 
+                     }}
+                     role="button" // Added for accessibility
+                     tabIndex={0} // Added for accessibility
+                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleImageScanClick(); }} // Added for accessibility
+                >
+                  <ImageToTextScanner onTextDetected={handleMedicationsDetected} canUse={userPlan === 'pro' || userPlan === 'pro12'} />
                 </div>
               </div>
 

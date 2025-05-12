@@ -29,8 +29,8 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({ status, message, onRetry 
             ? 'تمت ترقية حسابك للباقة الاحترافية. يمكنك الآن الاستفادة من جميع المميزات.' 
             : 'Your account has been upgraded to the professional plan. You can now enjoy all premium features.'}
         </div>
-        <Button className="mt-4 w-full" onClick={() => navigate('/dashboard')}>
-          {language === 'ar' ? 'الانتقال للوحة التحكم' : 'Go to Dashboard'}
+        <Button className="mt-4 w-full" onClick={() => navigate('/my-account')}>
+          {language === 'ar' ? 'الانتقال إلى حسابي' : 'Go to My Account'}
         </Button>
       </div>
     );

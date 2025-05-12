@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { checkAndGetSession } from '@/utils/paymentUtils';
 
 export const useSubscription = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth(); // Destructure refreshUser here
   const navigate = useNavigate();
   const { language } = useTranslation();
   const { toast } = useToast();
@@ -147,6 +147,7 @@ export const useSubscription = () => {
       // التحقق من وجود جلسة نشطة قبل المتابعة
       const sessionCheck = await checkAndGetSession(language);
       
+      // Inside the useEffect where you check session
       if (!sessionCheck.success) {
         console.error("No active session detected before payment processing");
         handlePaymentError(sessionCheck.message);
@@ -177,6 +178,11 @@ export const useSubscription = () => {
       };
       
       await handlePaymentSuccess(enhancedDetails);
+      // After successful payment and database update, refresh the user data
+      if (refreshUser) {
+        await refreshUser();
+        console.log('User data refreshed after successful subscription.');
+      }
     } catch (error) {
       console.error("Error in enhancedPaymentSuccess:", error);
       handlePaymentError(String(error));

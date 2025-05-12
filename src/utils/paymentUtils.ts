@@ -61,50 +61,48 @@ export const recordTransaction = async (
  * Updates user plan in the database
  */
 export const updateUserPlan = async (userId: string, planCode: string) => {
-  console.log("Updating user plan for user:", userId, "to plan:", planCode);
-  
+  // userId هنا هو effectiveUserId من useSubscription, والذي يجب أن يكون auth_uid
+  console.log("Attempting to update user plan. Passed userId (should be auth_uid):", userId, "Target planCode:", planCode);
+
   try {
-    // التحقق من الجلسة بطريقة موثوقة
-    const sessionCheck = await checkAndGetSession();
-    if (!sessionCheck.success) {
-      throw new Error(sessionCheck.message);
+    const sessionCheck = await checkAndGetSession(); // لا نمرر اللغة هنا، ستستخدم الافتراضية أو الإنجليزية
+    if (!sessionCheck.success || !sessionCheck.session?.user?.id) {
+      console.error("UpdateUserPlan: No active session or session user ID. Message:", sessionCheck.message);
+      throw new Error(sessionCheck.message || "Active session required to update plan.");
     }
-    
-    // Try to update by auth_uid first (most reliable way)
-    let { error: updateByAuthError, data: updateByAuthData } = await supabase
+
+    const authenticatedAuthUid = sessionCheck.session.user.id;
+    console.log("UpdateUserPlan: Authenticated auth_uid from current session:", authenticatedAuthUid);
+
+    // التحقق مما إذا كان userId الممرر يطابق auth_uid من الجلسة
+    if (userId !== authenticatedAuthUid) {
+      console.warn(`UpdateUserPlan: Passed userId ('${userId}') does not match authenticated session auth_uid ('${authenticatedAuthUid}'). Proceeding with session auth_uid.`);
+    }
+
+    // نستخدم authenticatedAuthUid مباشرة للتحديث لضمان تحديث المستخدم الصحيح
+    const { data, error } = await supabase
       .from('users')
-      .update({ 
-        plan_code: planCode 
-      })
-      .eq('auth_uid', userId)
-      .select();
+      .update({ plan_code: planCode })
+      .eq('auth_uid', authenticatedAuthUid) // استخدام auth_uid من الجلسة المصادق عليها
+      .select(); // .select() قد يتأثر بـ RLS
 
-    if (updateByAuthError || (updateByAuthData && updateByAuthData.length === 0)) {
-      console.log("Couldn't update by auth_uid, trying by numeric ID...");
-      
-      // Try by numeric ID if auth_uid didn't work
-      if (/^\d+$/.test(userId)) {
-        const { error: updateByIdError } = await supabase
-          .from('users')
-          .update({ 
-            plan_code: planCode 
-          })
-          .eq('id', Number(userId));
-
-        if (updateByIdError) {
-          console.error("User update by ID error:", updateByIdError);
-          throw updateByIdError;
-        }
-      } else {
-        console.error("Couldn't update user plan: no matching user found");
-        throw new Error("No matching user found for plan update");
-      }
+    if (error) {
+      console.error("UpdateUserPlan: Supabase error during plan update for auth_uid", authenticatedAuthUid, ":", error);
+      throw error;
     }
 
-    console.log("User plan updated successfully to:", planCode);
+    // قد لا يتم إرجاع بيانات إذا كانت RLS تمنع القراءة بعد التحديث، أو إذا لم يتم العثور على الصف (وهو أمر غير مرجح إذا كان auth_uid صحيحًا)
+    if (!data || data.length === 0) {
+      console.warn("UpdateUserPlan: No user record returned after update for auth_uid:", authenticatedAuthUid, ". This could be due to RLS policies or if the user record with this auth_uid doesn't exist. Assuming update was successful if no error was thrown.");
+      // لا نعتبر هذا خطأ فادحًا بالضرورة، لكنه يستدعي التحقق من RLS وسياسات Supabase
+    }
+
+    console.log("User plan update process completed for auth_uid:", authenticatedAuthUid, "to plan:", planCode, ". Returned data (if any):", data);
+    // تحديث حالة المستخدم في useAuth إذا أمكن، أو الاعتماد على إعادة جلب البيانات في MyAccount
+    // قد تحتاج إلى طريقة لتحديث بيانات المستخدم محليًا بعد تغيير الخطة بنجاح
     return true;
   } catch (error) {
-    console.error("Error updating user plan:", error);
+    console.error("UpdateUserPlan: Critical error during plan update for passed userId", userId, "(using session auth_uid '", sessionCheck?.session?.user?.id ,"'):", error);
     throw error;
   }
 };

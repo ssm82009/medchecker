@@ -9,17 +9,32 @@ import { User } from '@/hooks/useAuth';
 interface AuthenticationErrorProps {
   language: string;
   user: User | null;
+  sessionValid: boolean; // Add sessionValid prop
 }
 
-const AuthenticationError: React.FC<AuthenticationErrorProps> = ({ language, user }) => {
+const AuthenticationError: React.FC<AuthenticationErrorProps> = ({ language, user, sessionValid }) => {
   const navigate = useNavigate();
   
+  // Determine the message based on user and sessionValid state
+  let title = language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required';
+  let primaryMessage = language === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first';
+  let secondaryMessage = language === 'ar' ? 'يجب عليك تسجيل الدخول أو إنشاء حساب جديد للاشتراك في الباقة الاحترافية.' : 'You need to login or create an account to subscribe to the professional plan.';
+
+  if (user && !user.id) {
+    primaryMessage = language === 'ar' ? 'بيانات المستخدم غير مكتملة' : 'Incomplete user data';
+    secondaryMessage = language === 'ar' ? 'تعذر العثور على معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' : 'User ID is missing. Please log out and log in again.';
+  } else if (!sessionValid && !user) { // If session is not valid and no user (implies session expired or inactive)
+    title = language === 'ar' ? 'الجلسة غير نشطة' : 'Session Inactive';
+    primaryMessage = language === 'ar' ? 'انتهت صلاحية جلستك أو أصبحت غير نشطة.' : 'Your session has expired or is inactive.';
+    secondaryMessage = language === 'ar' ? 'يرجى تسجيل الدخول مرة أخرى للمتابعة.' : 'Please login again to continue.';
+  }
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
         <CardHeader className="text-center border-b pb-4">
           <CardTitle className="text-2xl font-bold text-primary">
-            {language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required'}
+            {title}
           </CardTitle>
         </CardHeader>
         <CardContent className="py-6">
@@ -27,18 +42,10 @@ const AuthenticationError: React.FC<AuthenticationErrorProps> = ({ language, use
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-1" />
             <div>
               <h3 className="font-medium text-amber-800 mb-1">
-                {language === 'ar' 
-                  ? user ? 'بيانات المستخدم غير مكتملة' : 'يرجى تسجيل الدخول أولاً'
-                  : user ? 'Incomplete user data' : 'Please login first'}
+                {primaryMessage}
               </h3>
               <p className="text-amber-700 text-sm">
-                {language === 'ar' 
-                  ? user 
-                    ? 'تعذر العثور على معرف المستخدم. يرجى تسجيل الخروج وإعادة تسجيل الدخول.' 
-                    : 'يجب عليك تسجيل الدخول أو إنشاء حساب جديد للاشتراك في الباقة الاحترافية.'
-                  : user 
-                    ? 'User ID is missing. Please log out and log in again.' 
-                    : 'You need to login or create an account to subscribe to the professional plan.'}
+                {secondaryMessage}
               </p>
             </div>
           </div>

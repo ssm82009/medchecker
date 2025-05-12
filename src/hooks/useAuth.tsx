@@ -48,36 +48,29 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Query to find user with matching email and password
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, auth_uid, email, role, password, plan_code')
-        .eq('email', email)
-        .eq('password', password)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error in login query:', error);
-        throw new Error('Error verifying credentials');
-      }
-      
-      if (!data) {
+      // Use Supabase Auth to sign in
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
         throw new Error('Invalid email or password');
       }
-      
-      // Save user data to localStorage, ensuring ID is a string
+      // Fetch user profile from users table
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('id, auth_uid, email, role, plan_code, is_active')
+        .eq('auth_uid', data.user.id)
+        .maybeSingle();
+      if (profileError || !profile) {
+        throw new Error('User profile not found');
+      }
       const userData: User = {
-        id: String(data.id), // Always convert ID to string
-        email: data.email,
-        role: data.role,
-        plan_code: data.plan_code || 'visitor',
-        is_active: true, // Set default value since column doesn't exist yet
-        auth_uid: data.auth_uid || null,
+        id: String(profile.id),
+        email: profile.email,
+        role: profile.role,
+        plan_code: profile.plan_code || 'visitor',
+        is_active: profile.is_active !== undefined ? profile.is_active : true,
+        auth_uid: profile.auth_uid || data.user.id,
       };
-      
-      console.log("Successfully logged in with ID:", userData.id, "Type:", typeof userData.id);
       setUser(userData);
       return true;
     } catch (err) {
@@ -89,9 +82,52 @@ export const useAuth = () => {
     }
   };
 
+
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
+  };
+
+  const refreshUser = async () => {
+    if (!user || !user.id) {
+      console.warn('Cannot refresh user: no user data available.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('users')
+        .select('id, auth_uid, email, role, plan_code, is_active') // Ensure all relevant fields are selected
+        .eq('id', user.id) // Assuming user.id is the primary key in your users table
+        .single();
+
+      if (fetchError) {
+        console.error('Error refreshing user data:', fetchError);
+        setError('Failed to refresh user data.');
+        return;
+      }
+
+      if (data) {
+        const updatedUserData: User = {
+          id: String(data.id),
+          email: data.email,
+          role: data.role,
+          plan_code: data.plan_code || 'visitor',
+          is_active: data.is_active !== undefined ? data.is_active : true, // Handle potential undefined is_active
+          auth_uid: data.auth_uid || user.auth_uid, // Preserve auth_uid if not returned or use existing
+        };
+        setUser(updatedUserData);
+        console.log('User data refreshed:', updatedUserData);
+      } else {
+        console.warn('No data returned when refreshing user.');
+        // Optionally handle this case, e.g., by logging the user out if their record is gone
+      }
+    } catch (err) {
+      console.error('Critical error during user refresh:', err);
+      setError(err instanceof Error ? err.message : 'User refresh failed critically');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isAdmin = () => {
@@ -99,5 +135,5 @@ export const useAuth = () => {
     return user?.role === 'admin';
   };
 
-  return { user, login, logout, loading, error, isAdmin };
+  return { user, login, logout, loading, error, isAdmin, refreshUser };
 };

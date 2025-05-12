@@ -10,6 +10,7 @@ import AuthenticationError from '@/components/subscription/AuthenticationError';
 import SubscriptionLoader from '@/components/subscription/SubscriptionLoader';
 import PlanError from '@/components/subscription/PlanError';
 import SubscriptionCard from '@/components/subscription/SubscriptionCard';
+// Removed: import { checkAndGetSession } from '@/utils/paymentUtils'; // No longer directly used here in the old way
 
 const Subscribe: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +20,10 @@ const Subscribe: React.FC = () => {
   const { toast } = useToast();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [sessionValid, setSessionValid] = useState(false);
+  // New states for more robust session checking
+  const [initialSessionApiCallDone, setInitialSessionApiCallDone] = useState(false);
+  const [authStateListenerProcessedInitial, setAuthStateListenerProcessedInitial] = useState(false);
+
   const {
     paypalSettings,
     loading,
@@ -45,52 +50,67 @@ const Subscribe: React.FC = () => {
     };
   }, []);
 
-  // Check for Supabase session directly on component mount
+  // Unified session checking logic
   useEffect(() => {
-    const checkSupabaseSession = async () => {
-      try {
-        console.log("Checking Supabase session...");
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Supabase session error:", error);
-          setSessionValid(false);
-        } else if (data.session) {
-          console.log("Active Supabase session found:", data.session.user.id);
-          setSessionValid(true);
-        } else {
-          console.log("No active Supabase session");
-          setSessionValid(false);
-        }
-      } catch (e) {
-        console.error("Exception in Supabase session check:", e);
-        setSessionValid(false);
-      } finally {
-        setSessionChecked(true);
-      }
-    };
-    
-    checkSupabaseSession();
-  }, []);
+    let isMounted = true;
 
-  // Monitor Supabase session changes
-  useEffect(() => {
+    // 1. Initial check with supabase.auth.getSession()
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        console.error("Error getting initial session:", error);
+        // Do not set sessionValid to false here yet, let onAuthStateChange be the primary source
+      }
+      // If session exists from getSession, we can tentatively set sessionValid
+      // but onAuthStateChange will confirm or override.
+      if (session) {
+        setSessionValid(true);
+      }
+      setInitialSessionApiCallDone(true);
+    });
+
+    // 2. Listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
       console.log("Auth state change event:", event, "Session:", session ? "exists" : "none");
       setSessionValid(!!session);
-      setSessionChecked(true);
+      setAuthStateListenerProcessedInitial(true);
     });
-    
+
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Runs once on mount
+
+  // Determine overall sessionChecked status
+  useEffect(() => {
+    // We consider the session check complete if:
+    // A) The user object from useAuth is populated (fastest positive confirmation)
+    // OR
+    // B) Both the initial getSession API call has finished AND the onAuthStateChange listener has processed at least once.
+    if (user || (initialSessionApiCallDone && authStateListenerProcessedInitial)) {
+      setSessionChecked(true);
+    }
+  }, [user, initialSessionApiCallDone, authStateListenerProcessedInitial]);
 
   // Only redirect to login if we've finished checking and found no valid session or user
   useEffect(() => {
-    if (sessionChecked && !sessionValid && !user) {
-      console.log("No valid session or user, redirecting to login");
-      navigate('/login', { state: { returnUrl: '/subscribe' } });
+    const supabaseUserId = user ? String(user.id) : null;
+
+    if (sessionChecked && !sessionValid) {
+      console.log("No valid session, checking user context...");
+      const shouldRedirect = !user || 
+        (user && (!user.id || (supabaseUserId && supabaseUserId !== String(user.id))));
+      if (shouldRedirect) {
+        console.log("Session/user mismatch, redirecting to login");
+        navigate('/login', { 
+          state: { 
+            returnUrl: '/subscribe',
+            sessionStatus: 'expired'
+          } 
+        });
+      }
     }
   }, [sessionChecked, sessionValid, user, navigate]);
 
@@ -108,9 +128,16 @@ const Subscribe: React.FC = () => {
     return <SubscriptionLoader language={language} />;
   }
 
-  // Don't show authentication error if we're still checking
-  if (!sessionValid && !user) {
-    return <AuthenticationError language={language} user={user} />;
+  // Show authentication error only if session check is complete and no user is found
+  if (sessionChecked && !user) {
+    return <AuthenticationError language={language} user={user} sessionValid={sessionValid} />;
+  }
+
+  // If session is not yet valid but a user object exists (e.g. from local state),
+  // and we are still loading plans or PayPal settings, show loader.
+  // This prevents showing auth error prematurely if session validation is slow.
+  if ((!sessionValid && user && loading) || loading) {
+    return <SubscriptionLoader language={language} />;
   }
 
   if (loading) {

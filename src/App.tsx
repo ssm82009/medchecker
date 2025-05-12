@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -40,13 +40,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Public route that redirects to dashboard if already logged in
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const location = useLocation(); // Import useLocation from react-router-dom
   
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : "/dashboard";
+    return <Navigate to={returnUrl} replace />;
   }
   
   return <>{children}</>;

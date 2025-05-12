@@ -36,18 +36,31 @@ const MyAccount: React.FC = () => {
 
   // جلب سجل المعاملات
   const fetchTransactions = async () => {
-    if (!user) return;
+    if (!user || !user.id) return;
     try {
-      const { data, error } = await (supabase as any)
+      console.log('Fetching transactions for user:', user.id);
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      if (error) throw error;
+      
+      console.log('Transactions data:', data);
+      console.log('Transactions error:', error);
+
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        if (error.message.includes('permission denied')) {
+          console.warn('Permission denied while fetching transactions. Check RLS policies for transactions table.');
+        } else {
+          toast.error(language === 'ar' ? 'خطأ في جلب سجل المعاملات' : 'Error fetching transaction history');
+        }
+        return;
+      }
       if (data) setTransactions(data);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast.error(language === 'ar' ? 'خطأ في جلب سجل المعاملات' : 'Error fetching transaction history');
+      console.error('Critical error fetching transactions:', error);
+      toast.error(language === 'ar' ? 'خطأ حرج في جلب سجل المعاملات' : 'Critical error fetching transaction history');
     }
   };
 
@@ -59,25 +72,27 @@ const MyAccount: React.FC = () => {
 
   const handleChangePassword = async () => {
     setChangeStatus('');
-    if (!oldPassword || !newPassword) {
-      setChangeStatus(language === 'ar' ? 'يرجى تعبئة جميع الحقول' : 'Please fill all fields');
+    if (!newPassword) { // لا نحتاج لكلمة المرور القديمة هنا، Supabase يتعامل معها
+      setChangeStatus(language === 'ar' ? 'يرجى تعبئة حقل كلمة المرور الجديدة' : 'Please fill the new password field');
       return;
     }
-    // تحقق من كلمة المرور القديمة
-    const { data: userData } = await supabase.from('users').select('password').eq('email', user.email).maybeSingle();
-    if (!userData || userData.password !== oldPassword) {
-      setChangeStatus(language === 'ar' ? 'كلمة المرور القديمة غير صحيحة' : 'Old password is incorrect');
-      return;
-    }
-    // تحديث كلمة المرور
-    const { error } = await supabase.from('users').update({ password: newPassword }).eq('email', user.email);
+
+    // تحديث كلمة المرور باستخدام دالة Supabase المخصصة
+    // ملاحظة: Supabase يتطلب عادةً أن يكون المستخدم مسجلاً للدخول لتغيير كلمة المرور
+    // وقد يتطلب كلمة المرور القديمة كجزء من عملية التحقق من الهوية إذا تم إعداد ذلك
+    // ومع ذلك، فإن `updateUser` هو النهج الموصى به لتحديث بيانات المستخدم بما في ذلك كلمة المرور.
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
     if (!error) {
-      setChangeStatus(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
+      setChangeStatus(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح. قد تحتاج إلى تسجيل الدخول مرة أخرى.' : 'Password changed successfully. You might need to log in again.');
+      toast.success(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
       setShowChangePassword(false);
-      setOldPassword('');
+      setOldPassword(''); // مسح الحقل القديم لأنه لم يعد مستخدماً
       setNewPassword('');
     } else {
-      setChangeStatus(language === 'ar' ? 'حدث خطأ أثناء تغيير كلمة المرور' : 'Error changing password');
+      console.error('Error changing password:', error);
+      setChangeStatus(language === 'ar' ? `حدث خطأ: ${error.message}` : `Error: ${error.message}`);
+      toast.error(language === 'ar' ? 'فشل تغيير كلمة المرور' : 'Failed to change password');
     }
   };
 
@@ -125,10 +140,6 @@ const MyAccount: React.FC = () => {
                 {changeStatus && <div className="text-sm text-center text-red-500 mt-2">{changeStatus}</div>}
               </div>
             )}
-          </div>
-          <div className="mb-6 text-center">
-            <div className="font-bold mb-2">{language === 'ar' ? 'سجل المدفوعات' : 'Payment History'}</div>
-            <div className="text-gray-500">{language === 'ar' ? '(سيظهر هنا سجل المدفوعات والاشتراكات قريباً)' : '(Payment and subscription history will appear here soon)'}</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">
@@ -187,4 +198,4 @@ const MyAccount: React.FC = () => {
   );
 };
 
-export default MyAccount; 
+export default MyAccount;

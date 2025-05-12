@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface LoginFormValues {
 const Login: React.FC = () => {
   const { t, dir } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, error, loading, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   
@@ -30,11 +31,12 @@ const Login: React.FC = () => {
   });
 
   useEffect(() => {
-    // If user is already logged in, redirect to home
+    // If user is already logged in, redirect to home or returnUrl
     if (user) {
-      navigate('/');
+      const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : '/';
+      navigate(returnUrl);
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.state]);
 
   const handleSubmit = async (values: LoginFormValues) => {
     try {
@@ -44,8 +46,9 @@ const Login: React.FC = () => {
           title: t('loginSuccess'),
           description: t('welcomeBack'),
         });
+        const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : '/';
         setTimeout(() => {
-          navigate('/');
+          navigate(returnUrl);
         }, 500);
       } else {
         toast({
@@ -68,12 +71,41 @@ const Login: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
+  const handleLogin = async (credentials) => {
+    const { user, error } = await supabase.auth.signInWithPassword(credentials);
+  
+    if (error) {
+      // Handle login error
+      return;
+    }
+  
+    if (user) {
+      // هنا قد يكون هناك منطق إضافي لجلب الدور
+      // const { data: profileData, error: profileError } = await supabase
+      //   .from('profiles') // أو 'users'
+      //   .select('role')
+      //   .eq('id', user.id) // أو 'auth_uid'
+      //   .single();
+  
+      // !! تحقق هنا: هل يوجد شرط يمنع المستخدم إذا لم يكن دوره 'admin'؟
+      // مثال على منطق خاطئ قد يسبب المشكلة:
+      // if (profileData && profileData.role !== 'admin') {
+      //   toast.error('فقط المسؤولون يمكنهم تسجيل الدخول'); // هذا سيمنع المستخدم العادي
+      //   await supabase.auth.signOut(); // تسجيل الخروج
+      //   return;
+      // }
+  
+      // إذا كان كل شيء على ما يرام، قم بإعادة التوجيه
+      navigate('/some-default-page-after-login');
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir={dir}>
       <Card className="w-full max-w-md border-primary/10 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">{t('login')}</CardTitle>
-          <CardDescription className="text-center">{t('adminPanel')}</CardDescription>
+          <CardDescription className="text-center">{t('forUsers')}</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>

@@ -43,7 +43,7 @@ const ar = {
   login: 'تسجيل الدخول',
   loginButton: 'تسجيل الدخول',
   logout: 'تسجيل الخروج',
-  adminPanel: 'لوحة الإدارة',
+  forUsers: 'دخول الأعضاء المسجلين ',
   loginSuccess: 'تم تسجيل الدخول بنجاح',
   loginFailed: 'فشل تسجيل الدخول',
   welcomeBack: 'مرحبًا بعودتك!',
