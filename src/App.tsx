@@ -3,12 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth, AuthProvider } from "./hooks/useAuth";
 import { useState } from "react";
 import { useTranslation } from "./hooks/useTranslation";
 import Navbar from "./components/Navbar";
@@ -40,7 +40,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Public route that redirects to dashboard if already logged in
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const location = useLocation(); // Import useLocation from react-router-dom
+  const location = useLocation();
   
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -58,40 +58,36 @@ function AppRoutes() {
   const { dir, language } = useTranslation();
   
   return (
-    <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
-        <Navbar />
-        <div className="container mx-auto px-4 flex-grow pt-8"> 
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            } />
-            <Route path="/about" element={<StaticPage pageKey="about" />} />
-            <Route path="/terms" element={<StaticPage pageKey="terms" />} />
-            <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
-            <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
-            <Route path="/contact" element={<StaticPage pageKey="contact" />} />
-            {/* Subscribe page is accessible to all but handles auth internally */}
-            <Route path="/subscribe" element={<Subscribe />} />
-            <Route path="/my-account" element={<MyAccount />} />
-            <Route path="/simple-signup" element={<SimpleSignup />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Footer />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-400/15 via-purple-500/15 to-orange-400/15">
+      <Navbar />
+      <div className="container mx-auto px-4 flex-grow pt-8"> 
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
+          <Route path="/about" element={<StaticPage pageKey="about" />} />
+          <Route path="/terms" element={<StaticPage pageKey="terms" />} />
+          <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
+          <Route path="/copyright" element={<StaticPage pageKey="copyright" />} />
+          <Route path="/contact" element={<StaticPage pageKey="contact" />} />
+          {/* Subscribe page is accessible to all but handles auth internally */}
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/my-account" element={<MyAccount />} />
+          <Route path="/simple-signup" element={<SimpleSignup />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </div>
-      <Toaster />
-      <Sonner />
-    </BrowserRouter>
+      <Footer />
+    </div>
   );
 }
 
@@ -99,8 +95,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppRoutes />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </TooltipProvider>
+      <Toaster />
+      <Sonner />
     </QueryClientProvider>
   );
 }
