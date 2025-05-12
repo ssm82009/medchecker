@@ -1,6 +1,6 @@
 
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePaymentData } from '@/hooks/usePaymentData';
@@ -16,6 +16,9 @@ export const useSubscription = () => {
   const { language } = useTranslation();
   const { toast } = useToast();
   
+  // Add isMounted ref to prevent state updates after unmounting
+  const isMountedRef = useRef(true);
+  
   // Default to monthly plan (pro)
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('pro');
   
@@ -23,17 +26,25 @@ export const useSubscription = () => {
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [sessionChecking, setSessionChecking] = useState<boolean>(true);
   
+  useEffect(() => {
+    // Set isMountedRef to true when component mounts
+    isMountedRef.current = true;
+    
+    // Return cleanup function to set isMountedRef to false when component unmounts
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
   // Use the improved function to check for active session
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates after unmount
-
     const initializeSession = async () => {
       try {
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
         setSessionChecking(true);
         const sessionCheck = await checkAndGetSession(language);
         
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
         
         if (sessionCheck.success) {
           console.log("Active Supabase session confirmed in useSubscription:", 
@@ -43,18 +54,20 @@ export const useSubscription = () => {
           console.log("Session check failed:", sessionCheck.message);
           setSupabaseUserId(null);
           
-          toast({
-            title: language === 'ar' ? 'تنبيه بخصوص الجلسة' : 'Session Alert',
-            description: sessionCheck.message,
-            variant: 'destructive'
-          });
+          if (isMountedRef.current) {
+            toast({
+              title: language === 'ar' ? 'تنبيه بخصوص الجلسة' : 'Session Alert',
+              description: sessionCheck.message,
+              variant: 'destructive'
+            });
+          }
         }
       } catch (e) {
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
         console.error("Exception in Supabase auth check:", e);
         setSupabaseUserId(null);
       } finally {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setSessionChecking(false);
         }
       }
@@ -64,7 +77,7 @@ export const useSubscription = () => {
     
     // Set up a listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
       console.log("Auth state changed in useSubscription:", event);
       
       if (session) {
@@ -75,7 +88,7 @@ export const useSubscription = () => {
         console.log("No session from auth state change");
         
         // Try to refresh the session without redirecting
-        if (isMounted) {
+        if (isMountedRef.current) {
           const refreshCheck = await checkAndGetSession(language);
           if (refreshCheck.success) {
             setSupabaseUserId(refreshCheck.session.user.id);
@@ -87,7 +100,6 @@ export const useSubscription = () => {
     });
     
     return () => {
-      isMounted = false; // Prevent state updates after unmount
       subscription.unsubscribe();
     };
   }, [language, toast]);
@@ -113,6 +125,7 @@ export const useSubscription = () => {
 
   // Always use one-time payments
   useEffect(() => {
+    if (!isMountedRef.current) return;
     setPaymentType('one_time');
   }, []);
 
@@ -121,6 +134,7 @@ export const useSubscription = () => {
   
   // If we have plans but the selected plan isn't found, select the first one
   useEffect(() => {
+    if (!isMountedRef.current) return;
     if (plans && plans.length > 0 && !selectedPlan) {
       console.log("No selected plan found, defaulting to first available plan:", plans[0].code);
       setSelectedPlanCode(plans[0].code);
@@ -138,6 +152,7 @@ export const useSubscription = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
   useEffect(() => {
+    if (!isMountedRef.current) return;
     if (!sessionChecking && !effectiveUserId && !loading) {
       setShowLoginPrompt(true);
       toast({
@@ -187,15 +202,18 @@ export const useSubscription = () => {
         sessionUserId: activeSession.user.id
       };
       
+      if (!isMountedRef.current) return;
+      
       await handlePaymentSuccess(enhancedDetails);
       
       // After successful payment, refresh user data and plan information
-      if (refreshUser && fetchLatestPlan) {
+      if (refreshUser && fetchLatestPlan && isMountedRef.current) {
         await refreshUser();
         await fetchLatestPlan();
         console.log('User data and plan refreshed after successful subscription.');
       }
     } catch (error) {
+      if (!isMountedRef.current) return;
       console.error("Error in enhancedPaymentSuccess:", error);
       handlePaymentError(String(error));
     }

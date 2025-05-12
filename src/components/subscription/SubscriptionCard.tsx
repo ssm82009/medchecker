@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -47,10 +47,21 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   showLoginPrompt = false,
 }) => {
   const navigate = useNavigate();
+  const isMountedRef = useRef(true);
+  
+  // Track component mount status
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   // Double-check Supabase session on component mount
   useEffect(() => {
     const checkSession = async () => {
+      if (!isMountedRef.current) return;
+      
       const { data } = await supabase.auth.getSession();
       console.log("[SubscriptionCard] Session check:", data.session ? "Active" : "None");
       

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/hooks/use-toast';
 import { Transaction } from '../types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
@@ -14,47 +15,74 @@ const MyAccount: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   const [plan, setPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [changeStatus, setChangeStatus] = useState<string>('');
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fetchingTransactions, setFetchingTransactions] = useState(false);
-  const [shouldRefreshPlan, setShouldRefreshPlan] = useState(true);
+  const [shouldRefreshPlan, setShouldRefreshPlan] = useState(false);
+  
+  // Add a reference to track mounted state and timer reference
+  const isMountedRef = useRef(true);
+  const refreshTimerRef = useRef<number | null>(null);
 
+  // Clear any pending timers when component unmounts
   useEffect(() => {
-    const fetchData = async () => {
-      if (!shouldRefreshPlan) return;
-      
-      setLoading(true);
-      if (user) {
-        try {
-          // Fetch plan data using auth hook's fetchLatestPlan
-          await fetchLatestPlan();
-          
-          // Then get the plan details
-          const { data: planData } = await supabase
-            .from('plans')
-            .select('*')
-            .eq('code', user.plan_code || 'visitor')
-            .maybeSingle();
-          
-          setPlan(planData);
-        } catch (error) {
-          console.error("Error fetching plan data:", error);
-        }
-      }
-      setLoading(false);
-      setShouldRefreshPlan(false); // Reset the flag
-    };
+    isMountedRef.current = true;
     
-    fetchData();
-  }, [user, fetchLatestPlan, shouldRefreshPlan]);
+    return () => {
+      isMountedRef.current = false;
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, []);
+
+  const fetchPlanData = useCallback(async () => {
+    if (!user || !isMountedRef.current) return;
+    
+    setLoading(true);
+    try {
+      console.log("Fetching plan data for user:", user.id);
+      
+      // Fetch plan data using auth hook's fetchLatestPlan
+      await fetchLatestPlan();
+      
+      // Then get the plan details
+      const { data: planData, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('code', user.plan_code || 'visitor')
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error fetching plan:", error);
+      } else if (planData && isMountedRef.current) {
+        console.log("Fetched plan data:", planData);
+        setPlan(planData);
+      }
+    } catch (error) {
+      console.error("Error in fetchPlanData:", error);
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [user, fetchLatestPlan]);
+
+  // Only fetch data when the user or shouldRefreshPlan changes
+  useEffect(() => {
+    if (user && (shouldRefreshPlan || !plan)) {
+      fetchPlanData();
+      setShouldRefreshPlan(false);
+    }
+  }, [user, shouldRefreshPlan, fetchPlanData, plan]);
 
   // Fetch transaction history
-  const fetchTransactions = async () => {
-    if (!user || !user.id) return;
+  const fetchTransactions = useCallback(async () => {
+    if (!user?.id || !isMountedRef.current) return;
     
     setFetchingTransactions(true);
     
@@ -70,15 +98,15 @@ const MyAccount: React.FC = () => {
         
       console.log('Transactions by auth_uid query result:', { data: authData, error: authError });
       
-      if (!authError && authData && authData.length > 0) {
-        setTransactions(authData);
+      if (!authError && authData && authData.length > 0 && isMountedRef.current) {
+        setTransactions(authData as Transaction[]);
         console.log('Transactions found using auth_uid:', authData);
         setFetchingTransactions(false);
         return;
       }
       
       // If no transactions found by id, try looking by email in metadata
-      if (user.email) {
+      if (user.email && isMountedRef.current) {
         console.log('Searching in metadata for email:', user.email);
         
         const { data: metadataTransactions, error: metadataError } = await supabase
@@ -86,7 +114,7 @@ const MyAccount: React.FC = () => {
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (!metadataError && metadataTransactions) {
+        if (!metadataError && metadataTransactions && isMountedRef.current) {
           // Filter transactions by user email in metadata
           const userTransactions = metadataTransactions.filter(tx => {
             // Safely check if metadata exists and has user_email or payer.email_address property
@@ -109,8 +137,8 @@ const MyAccount: React.FC = () => {
             return false;
           });
           
-          if (userTransactions.length > 0) {
-            setTransactions(userTransactions);
+          if (userTransactions.length > 0 && isMountedRef.current) {
+            setTransactions(userTransactions as Transaction[]);
             console.log('Transactions found in metadata:', userTransactions);
             setFetchingTransactions(false);
             return;
@@ -118,23 +146,33 @@ const MyAccount: React.FC = () => {
         }
       }
       
-      setTransactions([]);
-      console.log('No transactions found for this user');
+      if (isMountedRef.current) {
+        setTransactions([]);
+        console.log('No transactions found for this user');
+      }
       
     } catch (error) {
       console.error('Critical error fetching transactions:', error);
-      toast.error(language === 'ar' ? 'خطأ حرج في جلب سجل المعاملات' : 'Critical error fetching transaction history');
+      if (isMountedRef.current) {
+        toast({
+          title: language === 'ar' ? 'خطأ' : 'Error',
+          description: language === 'ar' ? 'خطأ حرج في جلب سجل المعاملات' : 'Critical error fetching transaction history',
+          variant: 'destructive'
+        });
+      }
     } finally {
-      setFetchingTransactions(false);
+      if (isMountedRef.current) {
+        setFetchingTransactions(false);
+      }
     }
-  };
+  }, [user, language, toast]);
 
-  // Fetch transactions when user loads, but only once
+  // Fetch transactions when user is available, but only once
   useEffect(() => {
-    if (user) {
+    if (user && transactions.length === 0 && !fetchingTransactions) {
       fetchTransactions();
     }
-  }, [user]);
+  }, [user, transactions.length, fetchingTransactions, fetchTransactions]);
 
   const handleChangePassword = async () => {
     setChangeStatus('');
@@ -148,14 +186,22 @@ const MyAccount: React.FC = () => {
 
     if (!error) {
       setChangeStatus(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح. قد تحتاج إلى تسجيل الدخول مرة أخرى.' : 'Password changed successfully. You might need to log in again.');
-      toast.success(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
+      toast({
+        title: language === 'ar' ? 'نجاح' : 'Success',
+        description: language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully',
+        variant: 'default'
+      });
       setShowChangePassword(false);
       setOldPassword('');
       setNewPassword('');
     } else {
       console.error('Error changing password:', error);
       setChangeStatus(language === 'ar' ? `حدث خطأ: ${error.message}` : `Error: ${error.message}`);
-      toast.error(language === 'ar' ? 'فشل تغيير كلمة المرور' : 'Failed to change password');
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'فشل تغيير كلمة المرور' : 'Failed to change password',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -165,26 +211,32 @@ const MyAccount: React.FC = () => {
   };
 
   const handleRefreshTransactions = () => {
-    toast.success(language === 'ar' ? 'جاري تحديث سجل المعاملات...' : 'Refreshing transaction history...');
+    toast({
+      title: language === 'ar' ? 'جاري التحديث' : 'Refreshing',
+      description: language === 'ar' ? 'جاري تحديث سجل المعاملات...' : 'Refreshing transaction history...',
+    });
     fetchTransactions();
-    setShouldRefreshPlan(true); // Set flag to refresh plan data
+    setShouldRefreshPlan(true);
   };
 
   const handleRefreshPlanOnly = () => {
-    toast.success(language === 'ar' ? 'جاري تحديث بيانات الباقة...' : 'Refreshing plan data...');
+    toast({
+      title: language === 'ar' ? 'جاري التحديث' : 'Refreshing',
+      description: language === 'ar' ? 'جاري تحديث بيانات الباقة...' : 'Refreshing plan data...',
+    });
     setShouldRefreshPlan(true);
   };
 
   // Helper function to determine billing period display based on plan code
   const getBillingPeriodDisplay = (planCode: string) => {
     if (planCode === 'pro12' || planCode === 'annual') {
-      return 'سنة';
+      return language === 'ar' ? 'سنة' : 'year';
     }
-    return 'شهر';
+    return language === 'ar' ? 'شهر' : 'month';
   };
 
   if (!user) return <div className="text-center py-20">{language === 'ar' ? 'يجب تسجيل الدخول لعرض هذه الصفحة' : 'You must be logged in to view this page'}</div>;
-  if (loading) return <div className="text-center py-20">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
+  if (loading && !plan) return <div className="text-center py-20">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
@@ -214,8 +266,10 @@ const MyAccount: React.FC = () => {
               </Button>
             )}
             <div className="mt-4">
-              <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly}>
-                {language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data'}
+              <Button variant="outline" size="sm" onClick={handleRefreshPlanOnly} disabled={loading}>
+                {loading 
+                  ? (language === 'ar' ? 'جاري التحديث...' : 'Refreshing...') 
+                  : (language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data')}
               </Button>
             </div>
           </div>
@@ -264,7 +318,7 @@ const MyAccount: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(transactions as Transaction[]).map((transaction) => (
+                  {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-medium">
                         {new Date(transaction.created_at).toLocaleDateString()}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,12 @@ interface AuthenticationErrorProps {
 
 const AuthenticationError: React.FC<AuthenticationErrorProps> = ({ language, user, sessionValid }) => {
   const navigate = useNavigate();
+  const renderedRef = useRef(false);
+  
+  useEffect(() => {
+    console.log("[AuthenticationError] Rendered with session valid:", sessionValid);
+    renderedRef.current = true; // Mark component as rendered
+  }, [sessionValid]);
   
   // Determine the message based on user and sessionValid state
   let title = language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required';
