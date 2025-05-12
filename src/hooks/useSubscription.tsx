@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { checkAndGetSession } from '@/utils/paymentUtils';
 
 export const useSubscription = () => {
-  const { user, refreshUser } = useAuth(); // Destructure refreshUser here
+  const { user, refreshUser, fetchLatestPlan } = useAuth(); // Include fetchLatestPlan from useAuth
   const navigate = useNavigate();
   const { language } = useTranslation();
   const { toast } = useToast();
@@ -23,7 +23,7 @@ export const useSubscription = () => {
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [sessionChecking, setSessionChecking] = useState<boolean>(true);
   
-  // استخدام الوظيفة المحسنة للتحقق من وجود جلسة نشطة
+  // Use the improved function to check for active session
   useEffect(() => {
     const initializeSession = async () => {
       try {
@@ -38,7 +38,6 @@ export const useSubscription = () => {
           console.log("Session check failed:", sessionCheck.message);
           setSupabaseUserId(null);
           
-          // إظهار رسالة فقط دون إعادة توجيه
           toast({
             title: language === 'ar' ? 'تنبيه بخصوص الجلسة' : 'Session Alert',
             description: sessionCheck.message,
@@ -55,7 +54,7 @@ export const useSubscription = () => {
     
     initializeSession();
     
-    // إعداد مستمع لتغييرات حالة المصادقة
+    // Set up a listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed in useSubscription:", event);
       
@@ -66,7 +65,7 @@ export const useSubscription = () => {
         setSupabaseUserId(null);
         console.log("No session from auth state change");
         
-        // محاولة تحديث الجلسة دون إعادة توجيه
+        // Try to refresh the session without redirecting
         const refreshCheck = await checkAndGetSession(language);
         if (refreshCheck.success) {
           setSupabaseUserId(refreshCheck.session.user.id);
@@ -81,7 +80,7 @@ export const useSubscription = () => {
     };
   }, [language, toast]);
   
-  // Use our new hooks to fetch data and manage state
+  // Use our hooks to fetch data and manage state
   const { 
     paypalSettings, 
     plans,
@@ -123,7 +122,7 @@ export const useSubscription = () => {
   console.log("User from auth hook:", user?.id ? `${user.id} (${typeof user.id})` : "not available");
   console.log("User from Supabase session:", supabaseUserId || "not available");
 
-  // نعرض للمستخدم خيار تسجيل الدخول إذا كانوا غير مسجلين ولكن بدون إعادة توجيه تلقائية
+  // Show login prompt if user is not logged in
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
   useEffect(() => {
@@ -141,20 +140,19 @@ export const useSubscription = () => {
     }
   }, [effectiveUserId, sessionChecking, loading, language, toast]);
 
-  // تحسين معالج نجاح الدفع ليشمل تفاصيل الخطة ومعرف المستخدم
+  // Enhanced payment success handler to include plan details and user ID
   const enhancedPaymentSuccess = async (details: any) => {
     try {
-      // التحقق من وجود جلسة نشطة قبل المتابعة
+      // Check for active session before proceeding
       const sessionCheck = await checkAndGetSession(language);
       
-      // Inside the useEffect where you check session
       if (!sessionCheck.success) {
         console.error("No active session detected before payment processing");
         handlePaymentError(sessionCheck.message);
         return;
       }
       
-      // التأكد من وجود معرف مستخدم
+      // Ensure we have a user ID
       if (!effectiveUserId) {
         console.error("No effective user ID available in useSubscription");
         handlePaymentError(language === 'ar' 
@@ -167,7 +165,7 @@ export const useSubscription = () => {
       console.log("Enhanced payment success with effective user ID:", effectiveUserId);
       console.log("Active session confirmed before payment processing:", activeSession.user.id);
       
-      // إضافة السعر ورمز الخطة ومعرف المستخدم إلى كائن التفاصيل
+      // Add price, plan code, and user ID to details object
       const enhancedDetails = {
         ...details,
         price: selectedPlan?.price,
@@ -178,10 +176,12 @@ export const useSubscription = () => {
       };
       
       await handlePaymentSuccess(enhancedDetails);
-      // After successful payment and database update, refresh the user data
-      if (refreshUser) {
+      
+      // After successful payment, refresh user data and plan information
+      if (refreshUser && fetchLatestPlan) {
         await refreshUser();
-        console.log('User data refreshed after successful subscription.');
+        await fetchLatestPlan();
+        console.log('User data and plan refreshed after successful subscription.');
       }
     } catch (error) {
       console.error("Error in enhancedPaymentSuccess:", error);
@@ -205,7 +205,7 @@ export const useSubscription = () => {
     handlePaymentSuccess: enhancedPaymentSuccess,
     handlePaymentError,
     resetPaymentStatus,
-    userId: effectiveUserId, // إرجاع معرف المستخدم الفعلي
-    showLoginPrompt // إضافة مؤشر لعرض نافذة تسجيل الدخول
+    userId: effectiveUserId,
+    showLoginPrompt
   };
 };

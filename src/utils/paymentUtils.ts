@@ -17,7 +17,7 @@ export const recordTransaction = async (
   console.log("Recording transaction for user:", userId);
   
   try {
-    // التحقق من الجلسة بطريقة موثوقة
+    // Check session reliably
     const sessionCheck = await checkAndGetSession(language);
     if (!sessionCheck.success) {
       throw new Error(sessionCheck.message);
@@ -51,6 +51,10 @@ export const recordTransaction = async (
     }
 
     console.log("Transaction recorded successfully");
+    
+    // After recording transaction, immediately update user plan in database
+    await updateUserPlan(userId, planCode);
+    
     return true;
   } catch (error) {
     console.error("Error recording transaction:", error);
@@ -62,7 +66,6 @@ export const recordTransaction = async (
  * Updates user plan in the database
  */
 export const updateUserPlan = async (userId: string, planCode: string) => {
-  // userId هنا هو effectiveUserId من useSubscription, والذي يجب أن يكون auth_uid
   console.log("Attempting to update user plan. Passed userId (should be auth_uid):", userId, "Target planCode:", planCode);
 
   try {
@@ -75,32 +78,60 @@ export const updateUserPlan = async (userId: string, planCode: string) => {
     const authenticatedAuthUid = sessionCheck.session.user.id;
     console.log("UpdateUserPlan: Authenticated auth_uid from current session:", authenticatedAuthUid);
 
-    // التحقق مما إذا كان userId الممرر يطابق auth_uid من الجلسة
+    // Check if the passed userId matches the authenticated auth_uid
     if (userId !== authenticatedAuthUid) {
       console.warn(`UpdateUserPlan: Passed userId ('${userId}') does not match authenticated session auth_uid ('${authenticatedAuthUid}'). Proceeding with session auth_uid.`);
     }
 
-    // نستخدم authenticatedAuthUid مباشرة للتحديث لضمان تحديث المستخدم الصحيح
-    const { data, error } = await supabase
+    // First check if user exists
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .update({ plan_code: planCode })
-      .eq('auth_uid', authenticatedAuthUid) // استخدام auth_uid من الجلسة المصادق عليها
-      .select(); // .select() قد يتأثر بـ RLS
-
-    if (error) {
-      console.error("UpdateUserPlan: Supabase error during plan update for auth_uid", authenticatedAuthUid, ":", error);
-      throw error;
+      .select('id, email, plan_code')
+      .eq('auth_uid', authenticatedAuthUid)
+      .maybeSingle();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error("UpdateUserPlan: Error checking if user exists:", checkError);
+      throw checkError;
+    }
+    
+    // Get email from session
+    const userEmail = sessionCheck.session.user.email;
+    
+    if (existingUser) {
+      console.log("UpdateUserPlan: User found, updating plan:", existingUser);
+      // User exists, update plan
+      const { error } = await supabase
+        .from('users')
+        .update({ plan_code: planCode })
+        .eq('auth_uid', authenticatedAuthUid);
+      
+      if (error) {
+        console.error("UpdateUserPlan: Error updating plan:", error);
+        throw error;
+      }
+      
+      console.log("UpdateUserPlan: Plan updated successfully");
+    } else {
+      console.log("UpdateUserPlan: User not found, creating new user with plan");
+      // User doesn't exist, create new user with plan
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          auth_uid: authenticatedAuthUid,
+          email: userEmail,
+          password: 'oauth-user', // Placeholder for OAuth users
+          plan_code: planCode
+        });
+      
+      if (error) {
+        console.error("UpdateUserPlan: Error creating user with plan:", error);
+        throw error;
+      }
+      
+      console.log("UpdateUserPlan: User created with plan successfully");
     }
 
-    // قد لا يتم إرجاع بيانات إذا كانت RLS تمنع القراءة بعد التحديث، أو إذا لم يتم العثور على الصف (وهو أمر غير مرجح إذا كان auth_uid صحيحًا)
-    if (!data || data.length === 0) {
-      console.warn("UpdateUserPlan: No user record returned after update for auth_uid:", authenticatedAuthUid, ". This could be due to RLS policies or if the user record with this auth_uid doesn't exist. Assuming update was successful if no error was thrown.");
-      // لا نعتبر هذا خطأ فادحًا بالضرورة، لكنه يستدعي التحقق من RLS وسياسات Supabase
-    }
-
-    console.log("User plan update process completed for auth_uid:", authenticatedAuthUid, "to plan:", planCode, ". Returned data (if any):", data);
-    // تحديث حالة المستخدم في useAuth إذا أمكن، أو الاعتماد على إعادة جلب البيانات في MyAccount
-    // قد تحتاج إلى طريقة لتحديث بيانات المستخدم محليًا بعد تغيير الخطة بنجاح
     return true;
   } catch (error) {
     console.error("UpdateUserPlan: Critical error during plan update for passed userId", userId, ":", error);
@@ -130,15 +161,14 @@ export const validatePrice = (price: number): boolean => {
 };
 
 /**
- * وظيفة محسنة للتحقق من وجود جلسة نشطة
- * تقوم بإجراء محاولات للحصول على الجلسة بدون إعادة توجيه المستخدم
+ * Improved function to check for active session
  */
 export const checkAndGetSession = async (language: string = 'en') => {
   try {
-    // محاولة جلب الجلسة الحالية
+    // Try to get current session
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
-    // التحقق من وجود خطأ
+    // Check for error
     if (sessionError) {
       console.error("Session error in checkAndGetSession:", sessionError);
       return {
@@ -150,7 +180,7 @@ export const checkAndGetSession = async (language: string = 'en') => {
       };
     }
     
-    // التحقق من وجود جلسة
+    // Check if session exists
     if (sessionData.session) {
       console.log("Active session found:", sessionData.session.user.id);
       return {
@@ -160,11 +190,11 @@ export const checkAndGetSession = async (language: string = 'en') => {
       };
     }
     
-    // محاولة تحديث الجلسة
+    // Try to refresh session
     console.log("No active session found, attempting to refresh...");
     const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
     
-    // التحقق من نجاح تحديث الجلسة
+    // Check if session refresh was successful
     if (!refreshError && refreshData.session) {
       console.log("Session refreshed successfully:", refreshData.session.user.id);
       return {
@@ -174,14 +204,14 @@ export const checkAndGetSession = async (language: string = 'en') => {
       };
     }
     
-    // فشل تحديث الجلسة
+    // Session refresh failed
     if (refreshError) {
       console.error("Session refresh failed:", refreshError);
     } else {
       console.error("Session refresh returned no session");
     }
 
-    // محاولة أخيرة للتحقق من الجلسة
+    // One final check for session
     const { data: finalCheck } = await supabase.auth.getSession();
     if (finalCheck.session) {
       console.log("Session found after final check:", finalCheck.session.user.id);
@@ -192,7 +222,7 @@ export const checkAndGetSession = async (language: string = 'en') => {
       };
     }
     
-    // لا توجد جلسة نشطة
+    // No active session
     return {
       success: false,
       message: language === 'ar' 
@@ -213,8 +243,7 @@ export const checkAndGetSession = async (language: string = 'en') => {
 };
 
 /**
- * وظيفة مساعدة لاستدعاء الوظيفة القديمة للتوافق مع الكود القديم
- * ستعمل كجسر بين الكود القديم والجديد
+ * Helper function for backward compatibility with older code
  */
 export const verifyActiveSession = async (): Promise<boolean> => {
   const result = await checkAndGetSession();

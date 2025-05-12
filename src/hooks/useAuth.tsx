@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>; // Added login method
   error: string | null; // Add error field
   refreshUser: () => Promise<void>; // Add refreshUser method
+  fetchLatestPlan: () => Promise<void>; // New method to fetch latest plan
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,6 +67,187 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  // Add a function to fetch latest plan from transactions
+  const fetchLatestPlan = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log("Fetching latest plan for user:", user.id);
+      
+      // First try to get the user's plan from the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('plan_code, auth_uid')
+        .eq('auth_uid', user.id)
+        .maybeSingle();
+      
+      // If we found plan data in the users table, update user and fetch plan details
+      if (!userError && userData && userData.plan_code) {
+        console.log("Found plan in users table:", userData.plan_code);
+        
+        // Update user object with plan_code
+        setUser(prevUser => prevUser ? { ...prevUser, plan_code: userData.plan_code } : null);
+        
+        // Fetch plan details
+        const { data: planData, error: planError } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('code', userData.plan_code)
+          .maybeSingle();
+        
+        if (!planError && planData) {
+          setUserPlan(planData);
+          console.log("Set user plan from users table:", planData);
+          return;
+        }
+      }
+      
+      // If we didn't find or couldn't set plan from users table, check transactions
+      console.log("Checking latest plan from transactions...");
+      
+      // Get the latest completed transaction
+      const { data: txnData, error: txnError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (txnError) {
+        console.error("Error fetching transactions:", txnError);
+        return;
+      }
+      
+      // If no transactions found, try looking by email in metadata
+      if (!txnData || txnData.length === 0) {
+        console.log("No transactions found by ID, checking metadata...");
+        
+        const { data: metadataTransactions, error: metadataError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (!metadataError && metadataTransactions) {
+          // Filter transactions by user email in metadata
+          const userTransactions = metadataTransactions.filter(tx => 
+            tx.metadata?.user_email === user.email || 
+            tx.metadata?.payer?.email_address === user.email
+          );
+          
+          if (userTransactions.length > 0) {
+            console.log("Found transactions in metadata:", userTransactions[0]);
+            
+            // Get plan code from latest transaction and update user
+            const latestPlanCode = userTransactions[0].plan_code;
+            
+            // Update user record with plan code if needed
+            await updateUserPlanCode(latestPlanCode);
+            
+            // Fetch plan details
+            const { data: planData, error: planError } = await supabase
+              .from('plans')
+              .select('*')
+              .eq('code', latestPlanCode)
+              .maybeSingle();
+            
+            if (!planError && planData) {
+              setUserPlan(planData);
+              console.log("Set user plan from transaction metadata:", planData);
+            }
+          }
+        }
+        return;
+      }
+      
+      // Get plan code from latest transaction and update user
+      const latestTransaction = txnData[0];
+      const latestPlanCode = latestTransaction.plan_code;
+      
+      console.log("Latest transaction found with plan:", latestPlanCode);
+      
+      // Update user record with plan code if needed
+      await updateUserPlanCode(latestPlanCode);
+      
+      // Fetch plan details
+      const { data: planData, error: planError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('code', latestPlanCode)
+        .maybeSingle();
+      
+      if (!planError && planData) {
+        setUserPlan(planData);
+        console.log("Set user plan from transactions:", planData);
+      }
+    } catch (error) {
+      console.error("Error in fetchLatestPlan:", error);
+    }
+  };
+  
+  // Helper function to update user's plan code
+  const updateUserPlanCode = async (planCode: string) => {
+    if (!user?.id || !planCode) return;
+    
+    try {
+      // Check if user record exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, plan_code')
+        .eq('auth_uid', user.id)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking user:", checkError);
+        return;
+      }
+      
+      if (existingUser) {
+        // Update existing record if plan_code is different
+        if (existingUser.plan_code !== planCode) {
+          console.log("Updating user plan_code from", existingUser.plan_code, "to", planCode);
+          
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ plan_code: planCode })
+            .eq('auth_uid', user.id);
+          
+          if (updateError) {
+            console.error("Error updating user plan:", updateError);
+          } else {
+            console.log("User plan_code updated successfully");
+            // Update local user state
+            setUser(prevUser => prevUser ? { ...prevUser, plan_code: planCode } : null);
+          }
+        }
+      } else {
+        // Insert new user record if it doesn't exist
+        console.log("Creating new user record with plan_code:", planCode);
+        
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({ 
+            auth_uid: user.id, 
+            email: user.email, 
+            plan_code: planCode,
+            password: 'oauth-user' // placeholder for OAuth users
+          });
+        
+        if (insertError) {
+          console.error("Error inserting user plan:", insertError);
+        } else {
+          console.log("User record created with plan_code");
+          // Update local user state
+          setUser(prevUser => prevUser ? { ...prevUser, plan_code: planCode } : null);
+        }
+      }
+    } catch (error) {
+      console.error("Error in updateUserPlanCode:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
@@ -91,49 +274,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserProfile();
   }, [user]);
 
+  // This effect runs when user profile changes to fetch the plan
   useEffect(() => {
-    const fetchUserPlan = async () => {
-      if (userProfile) {
-        try {
-          const { data: userDetails, error } = await supabase
-            .from('users')
-            .select('plan_code')
-            .eq('auth_uid', userProfile.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user plan:', error);
-            setUserPlan(null);
-          } else {
-            const planCode = userDetails?.plan_code;
-            if (planCode) {
-              const { data: planData, error: planError } = await supabase
-                .from('plans')
-                .select('*')
-                .eq('code', planCode)
-                .single();
-              
-              if (planError) {
-                console.error('Error fetching plan details:', planError);
-                setUserPlan(null);
-              } else {
-                setUserPlan(planData);
-              }
-            } else {
-              setUserPlan(null);
-            }
-          }
-        } catch (error) {
-          console.error('Unexpected error fetching user plan:', error);
-          setUserPlan(null);
-        }
-      } else {
-        setUserPlan(null);
-      }
-    };
-
-    fetchUserPlan();
-  }, [userProfile]);
+    if (user?.id) {
+      fetchLatestPlan();
+    } else {
+      setUserPlan(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     try {
@@ -175,7 +323,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userPlan) return false;
     const planCodeString = userPlan.code || '';
     
-    // Fix: Remove toString() since planCodeString is already a string
     return planCodeString.includes('premium') || planCodeString.includes('pro');
   };
 
@@ -223,41 +370,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: refreshedSession.user.user_metadata?.role || 'user'
         });
         
-        // Re-fetch user profile and plan if needed
-        if (refreshedSession.user.id) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', refreshedSession.user.id)
-              .single();
-              
-            if (profile) {
-              setUserProfile(profile);
-            }
-            
-            // Fetch updated plan information
-            const { data: userDetails } = await supabase
-              .from('users')
-              .select('plan_code')
-              .eq('auth_uid', refreshedSession.user.id)
-              .single();
-              
-            if (userDetails?.plan_code) {
-              const { data: planData } = await supabase
-                .from('plans')
-                .select('*')
-                .eq('code', userDetails.plan_code)
-                .single();
-                
-              if (planData) {
-                setUserPlan(planData);
-              }
-            }
-          } catch (error) {
-            console.error('Error refreshing user data:', error);
-          }
-        }
+        // Re-fetch user profile and plan
+        await fetchLatestPlan();
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
@@ -279,7 +393,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAdmin,
       login,
       error,
-      refreshUser
+      refreshUser,
+      fetchLatestPlan
     }}>
       {children}
     </AuthContext.Provider>

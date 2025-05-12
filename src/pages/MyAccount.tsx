@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'react-hot-toast';
 import { Transaction } from '../types';
-import { Database } from '../types/database.types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 const MyAccount: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, fetchLatestPlan } = useAuth();
   const navigate = useNavigate();
   const { language } = useTranslation();
   const [plan, setPlan] = useState<any>(null);
@@ -27,16 +27,24 @@ const MyAccount: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       if (user) {
-        // جلب بيانات الخطة
-        const { data: planData } = await supabase.from('plans').select('*').eq('code', user.plan_code || 'visitor').maybeSingle();
+        // Fetch plan data using auth hook's fetchLatestPlan
+        await fetchLatestPlan();
+        
+        // Then get the plan details
+        const { data: planData } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('code', user.plan_code || 'visitor')
+          .maybeSingle();
+        
         setPlan(planData);
       }
       setLoading(false);
     };
     fetchData();
-  }, [user]);
+  }, [user, fetchLatestPlan]);
 
-  // جلب سجل المعاملات - تحسين الوظيفة
+  // Fetch transaction history
   const fetchTransactions = async () => {
     if (!user || !user.id) return;
     
@@ -44,59 +52,50 @@ const MyAccount: React.FC = () => {
     
     try {
       console.log('Fetching transactions for user:', user.id, 'Type:', typeof user.id);
-      console.log('User auth_uid:', user.auth_uid, 'Type:', typeof user.auth_uid);
       
-      // محاولة استعلام بواسطة auth_uid أولاً (إذا كان متوفرًا)
-      if (user.auth_uid) {
-        const { data: authData, error: authError } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.auth_uid)
-          .order('created_at', { ascending: false });
-          
-        console.log('Transactions by auth_uid query result:', { data: authData, error: authError });
-        
-        if (!authError && authData && authData.length > 0) {
-          setTransactions(authData);
-          console.log('Transactions found using auth_uid:', authData);
-          setFetchingTransactions(false);
-          return;
-        }
-      }
-      
-      // محاولة استعلام بواسطة id إذا لم ينجح auth_uid
-      const { data, error } = await supabase
+      // Try to find transactions by user id (auth_uid)
+      const { data: authData, error: authError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+        
+      console.log('Transactions by auth_uid query result:', { data: authData, error: authError });
       
-      console.log('Transactions by regular id query result:', { data, error });
-      
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        toast.error(language === 'ar' ? 'خطأ في جلب سجل المعاملات' : 'Error fetching transaction history');
-      } else if (data) {
-        setTransactions(data);
-        console.log('Transactions found using regular id:', data);
+      if (!authError && authData && authData.length > 0) {
+        setTransactions(authData);
+        console.log('Transactions found using auth_uid:', authData);
+        setFetchingTransactions(false);
+        return;
       }
       
-      // إذا لم يتم العثور على معاملات، ابحث في metadata
-      if ((!data || data.length === 0) && user.email) {
+      // If no transactions found by id, try looking by email in metadata
+      if (user.email) {
         console.log('Searching in metadata for email:', user.email);
         
         const { data: metadataTransactions, error: metadataError } = await supabase
           .from('transactions')
           .select('*')
-          .textSearch('metadata', user.email);
+          .order('created_at', { ascending: false });
           
-        console.log('Metadata search results:', { data: metadataTransactions, error: metadataError });
-        
-        if (!metadataError && metadataTransactions && metadataTransactions.length > 0) {
-          setTransactions(metadataTransactions);
-          console.log('Transactions found in metadata:', metadataTransactions);
+        if (!metadataError && metadataTransactions) {
+          // Filter transactions by user email in metadata
+          const userTransactions = metadataTransactions.filter(tx => 
+            tx.metadata?.user_email === user.email || 
+            tx.metadata?.payer?.email_address === user.email
+          );
+          
+          if (userTransactions.length > 0) {
+            setTransactions(userTransactions);
+            console.log('Transactions found in metadata:', userTransactions);
+            setFetchingTransactions(false);
+            return;
+          }
         }
       }
+      
+      setTransactions([]);
+      console.log('No transactions found for this user');
       
     } catch (error) {
       console.error('Critical error fetching transactions:', error);
@@ -106,6 +105,7 @@ const MyAccount: React.FC = () => {
     }
   };
 
+  // Fetch transactions when user loads
   useEffect(() => {
     if (user) {
       fetchTransactions();
@@ -114,19 +114,19 @@ const MyAccount: React.FC = () => {
 
   const handleChangePassword = async () => {
     setChangeStatus('');
-    if (!newPassword) { // لا نحتاج لكلمة المرور القديمة هنا، Supabase يتعامل معها
+    if (!newPassword) { 
       setChangeStatus(language === 'ar' ? 'يرجى تعبئة حقل كلمة المرور الجديدة' : 'Please fill the new password field');
       return;
     }
 
-    // تحديث كلمة المرور باستخدام دالة Supabase المخصصة
+    // Update password using Supabase
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (!error) {
       setChangeStatus(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح. قد تحتاج إلى تسجيل الدخول مرة أخرى.' : 'Password changed successfully. You might need to log in again.');
       toast.success(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
       setShowChangePassword(false);
-      setOldPassword(''); // مسح الحقل القديم لأنه لم يعد مستخدماً
+      setOldPassword('');
       setNewPassword('');
     } else {
       console.error('Error changing password:', error);
@@ -137,13 +137,13 @@ const MyAccount: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    // تحديث الكاش (يمكنك إضافة أي منطق إضافي لمسح بيانات أخرى إذا لزم الأمر)
     navigate('/');
   };
 
   const handleRefreshTransactions = () => {
     toast.success(language === 'ar' ? 'جاري تحديث سجل المعاملات...' : 'Refreshing transaction history...');
     fetchTransactions();
+    fetchLatestPlan(); // Also refresh the plan data
   };
 
   // Helper function to determine billing period display based on plan code
@@ -184,6 +184,11 @@ const MyAccount: React.FC = () => {
                 {language === 'ar' ? 'ترقية إلى الباقة الاحترافية' : 'Upgrade to Pro Plan'}
               </Button>
             )}
+            <div className="mt-4">
+              <Button variant="outline" size="sm" onClick={fetchLatestPlan}>
+                {language === 'ar' ? 'تحديث بيانات الباقة' : 'Refresh Plan Data'}
+              </Button>
+            </div>
           </div>
           <div className="mb-6 text-center">
             <Button variant="outline" onClick={() => setShowChangePassword(v => !v)}>
