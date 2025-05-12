@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { createWorker, PSM, RecognizeResult } from 'tesseract.js';
-import { Camera, Image as ImageIcon, ArrowDown } from 'lucide-react';
+import { Camera, Image as ImageIcon, ArrowDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageToTextScannerProps {
   onTextDetected: (text: string) => void;
@@ -20,9 +21,9 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const enhanceImage = (file: File, maxWidth = 800): Promise<Blob> => {
+  const compressImage = async (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
     return new Promise((resolve) => {
-      const img = new window.Image();
+      const img = new Image();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
       
@@ -33,15 +34,9 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
         
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        // تحويل للصورة الرمادية grayscale
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < imgData.data.length; i += 4) {
-          const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = avg;
-        }
-        ctx.putImageData(imgData, 0, 0);
-        
-        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9);
+        // Convert to data URL with quality parameter
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
       };
       
       img.src = URL.createObjectURL(file);
@@ -51,17 +46,15 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
   const updateStatusMessage = () => {
     const messages = language === 'ar' 
       ? [
-          "⏳ جاري قراءة النص...",
-          "🔍 نحاول فهم الحروف...",
-          "📋 التحليل جاري...",
-          "🧠 نعالج البيانات...",
-          "📑 يتم استخراج الأدوية..."
+          "⏳ جاري معالجة الصورة بالذكاء الاصطناعي...",
+          "🔍 نحاول التعرف على الأدوية في الصورة...",
+          "🧠 نعالج البيانات باستخدام الذكاء الاصطناعي...",
+          "📑 يتم تحديد الأدوية..."
         ]
       : [
-          "⏳ Reading text...",
-          "🔍 Trying to understand characters...",
-          "📋 Analysis in progress...",
-          "🧠 Processing data...",
+          "⏳ Processing image with AI...",
+          "🔍 Trying to identify medications in the image...",
+          "🧠 Processing data with AI...",
           "📑 Extracting medications..."
         ];
     
@@ -77,18 +70,17 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
     setIsScanning(true);
     
     try {
-      const enhancedBlob = await enhanceImage(file);
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        recognizeText(dataUrl);
-      };
-      
-      reader.readAsDataURL(enhancedBlob);
+      // Compress and convert the image to a data URL
+      const dataUrl = await compressImage(file);
+      detectMedications(dataUrl);
     } catch (error) {
       console.error('Error processing image:', error);
       setIsScanning(false);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'فشل معالجة الصورة' : 'Failed to process image',
+        variant: "destructive"
+      });
     }
   };
 
@@ -106,7 +98,7 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
     }
   };
 
-  const removeImage = () => {
+  const resetImage = () => {
     setProgress(0);
     setIsScanning(false);
     setStatusMessage('');
@@ -144,113 +136,44 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
     }
   };
 
-  const extractMedicationNames = (result: RecognizeResult): string[] => {
-    if (!result.data.words || result.data.words.length === 0) {
-      return extractMedicationNamesFromText(result.data.text);
-    }
-    
-    const blacklist = [
-      'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
-      'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
-      'capsule', 'capsules', 'suspension', 'cream', 'gel', 'injection',
-      'syrup', 'ointment', 'lotion', 'drop', 'drops', 'spray'
-    ];
-
-    const blacklistRegex = new RegExp(blacklist.join('|'), 'i');
-    
-    // Fix: Get image height from the bounding box of the page
-    const imageHeight = result.data.words.reduce((maxY, word) => 
-      Math.max(maxY, word.bbox.y1), 0) || 1000;
-    
-    const topThird = imageHeight / 3;
-    
-    const potentialMedicationNames = result.data.words
-      .filter(word => {
-        const isInTopPart = word.bbox.y0 < topThird;
-        const wordHeight = word.bbox.y1 - word.bbox.y0;
-        const isLargeText = wordHeight > 20;
-        const doesNotContainBlacklist = !blacklistRegex.test(word.text.toLowerCase());
-        const matchesMedicationNamePattern = /^[A-Z][a-zA-Z0-9-]{2,}$/.test(word.text);
-        
-        return isInTopPart && doesNotContainBlacklist && (isLargeText || matchesMedicationNamePattern);
-      })
-      .map(word => word.text.trim())
-      .filter(text => text.length > 2);
-    
-    if (potentialMedicationNames.length === 0) {
-      return extractMedicationNamesFromText(result.data.text);
-    }
-    
-    return [...new Set(potentialMedicationNames)];
-  };
-
-  const extractMedicationNamesFromText = (text: string): string[] => {
-    if (!text) return [];
-    
-    const lines = text.split('\n');
-    
-    const blacklist = [
-      'mg', 'tablet', 'tablets', 'sachet', 'sachets', 'relief', 'solution',
-      'hour', 'hours', 'eyes', 'nose', 'itchy', 'skin', 'rash', 'relief',
-      'capsule', 'capsules', 'suspension', 'cream', 'gel', 'injection'
-    ];
-    
-    let potentialMedications = lines
-      .map(line => line.trim())
-      .filter(line => 
-        line.length > 2 && 
-        line.length < 30 && 
-        !blacklist.some(term => line.toLowerCase().includes(term)) &&
-        !/^\d+$/.test(line)
-      );
-    
-    if (potentialMedications.length > 3) {
-      potentialMedications = potentialMedications.slice(0, 3);
-    }
-    
-    return potentialMedications;
-  };
-
-  const recognizeText = async (imageData: string) => {
+  const detectMedications = async (imageDataUrl: string) => {
+    setProgress(20);
     setIsScanning(true);
-    setProgress(0);
-    
+
     try {
-      const worker = await createWorker({
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setProgress(Math.floor(m.progress * 100));
-          } else if (m.status === 'loading tesseract core') {
-            setProgress(5);
-          } else if (m.status === 'initializing tesseract') {
-            setProgress(15);
-          } else if (m.status === 'loading language traineddata') {
-            setProgress(30);
-          } else if (m.status === 'initializing api') {
-            setProgress(50);
-          }
-        },
-      });
-      
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
-      
-      await worker.setParameters({
-        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+      // Simulating progress for better UX
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 80) return prev + 5;
+          return prev;
+        });
+      }, 500);
+
+      // Call the Supabase edge function to detect medications in the image
+      const { data, error } = await supabase.functions.invoke('detect-medications', {
+        body: { image: imageDataUrl }
       });
 
-      const result = await worker.recognize(imageData);
+      clearInterval(progressInterval);
+      setProgress(90);
+
+      if (error) {
+        console.error('Error calling detect-medications function:', error);
+        throw new Error(error.message);
+      }
+
+      console.log('AI detection response:', data);
       
-      const medicationNames = extractMedicationNames(result);
+      const medications = data?.medications || [];
       
-      if (medicationNames.length > 0) {
-        onTextDetected(medicationNames.join(','));
+      if (medications.length > 0) {
+        onTextDetected(medications.join(','));
         
         toast({
-          title: language === 'ar' ? 'تم التعرف على النص' : 'Text detected',
+          title: language === 'ar' ? 'تم التعرف على الأدوية' : 'Medications detected',
           description: language === 'ar' 
-            ? `تم العثور على ${medicationNames.length} أدوية محتملة` 
-            : `Found ${medicationNames.length} potential medications`,
+            ? `تم العثور على ${medications.length} أدوية محتملة` 
+            : `Found ${medications.length} potential medications`,
         });
         
         scrollToMedicationInputs();
@@ -258,16 +181,13 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
         toast({
           title: language === 'ar' ? 'تحذير' : 'Warning',
           description: language === 'ar' 
-            ? 'لم يتم العثور على أي نص واضح، حاول التقاط صورة أوضح' 
-            : 'No clear text found, try taking a clearer picture',
+            ? 'لم يتم العثور على أي أدوية، حاول التقاط صورة أوضح تظهر أسماء الأدوية' 
+            : 'No medications found, try taking a clearer picture showing medication names',
           variant: "destructive"
         });
       }
-      
-      await worker.terminate();
-      
     } catch (error) {
-      console.error('Error recognizing text:', error);
+      console.error('Error detecting medications:', error);
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' 
@@ -276,8 +196,8 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
         variant: "destructive"
       });
     } finally {
-      setIsScanning(false);
       setProgress(100);
+      setIsScanning(false);
     }
   };
 
@@ -286,8 +206,8 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
       <div className="text-xs font-light text-orange-500 mb-3 flex items-center justify-center opacity-70">
         <ArrowDown className="h-3 w-3 mr-1" />
         {language === 'ar' 
-          ? 'التقط صورة لعلبة الدواء بالأحرف الإنجليزية للحصول على أفضل النتائج' 
-          : 'Take a picture of the medication box with English text for best results'}
+          ? 'التقط صورة لعلبة الدواء للتعرف على الاسم بالذكاء الاصطناعي' 
+          : 'Take a picture of medication box for AI-powered name detection'}
       </div>
       
       <div className="flex gap-2 mb-2">
@@ -344,8 +264,8 @@ const ImageToTextScanner: React.FC<ImageToTextScannerProps> = ({ onTextDetected,
       )}
       
       {progress === 100 && !isScanning && (
-        <div className="text-xs text-green-600 mb-2">
-          {t("imageAnalysisComplete")}
+        <div className="text-xs text-green-600 mb-2 flex items-center justify-center">
+          {language === 'ar' ? 'تم تحليل الصورة بنجاح' : 'Image analysis complete'}
         </div>
       )}
     </div>

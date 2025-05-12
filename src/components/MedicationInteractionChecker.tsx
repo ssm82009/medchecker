@@ -148,13 +148,12 @@ const MedicationInteractionChecker: React.FC = () => {
   };
 
   const handleImageScanClick = () => {
-    // Updated to fix the type comparison error with pro12
+    // Check if user has Pro or Pro12 plan
     if (userPlan !== 'pro' && userPlan !== 'pro12') {
       setShowUpgradeDialog(true);
       return;
     }
     // Logic to trigger image scan is handled by ImageToTextScanner's internal state or props
-    // This function primarily serves as a gatekeeper based on userPlan.
   };
 
   return (
@@ -203,7 +202,6 @@ const MedicationInteractionChecker: React.FC = () => {
                 </p>
                 <div onClick={handleImageScanClick} 
                      style={{
-                       // Updated to fix the type comparison error with pro12
                        cursor: (userPlan === 'pro' || userPlan === 'pro12') ? 'pointer' : 'not-allowed', 
                        opacity: (userPlan === 'pro' || userPlan === 'pro12') ? 1 : 0.7 
                      }}
@@ -213,7 +211,6 @@ const MedicationInteractionChecker: React.FC = () => {
                 >
                   <ImageToTextScanner 
                     onTextDetected={handleMedicationsDetected} 
-                    // Updated to fix the type comparison error with pro12
                     canUse={userPlan === 'pro' || userPlan === 'pro12'} 
                   />
                 </div>
@@ -274,7 +271,7 @@ const MedicationInteractionChecker: React.FC = () => {
           <div className="py-2 text-center text-red-500">
             {user
               ? (language === 'ar'
-                ? `لا يمكنك إضافة أكثر من ${maxMedications} أدوية في هذه الباقة. للترقية إلى الباقة الاحترافية اضغط زر الترقية.`
+                ? `لا يمكنك إضافة أكثر من ${maxMedications} أدوية في هذه الباقة. للترق��ة إلى الباقة الاحترافية اضغط زر الترقية.`
                 : `You can't add more than ${maxMedications} medications in this plan. To upgrade, click the upgrade button.`)
               : (language === 'ar'
                 ? `لا يمكنك إضافة أكثر من ${maxMedications} أدوية في هذه الباقة. لإضافة المزيد يرجى تسجيل حساب أو الترقية إلى باقة أعلى.`
@@ -303,8 +300,8 @@ const MedicationInteractionChecker: React.FC = () => {
           </DialogHeader>
           <div className="py-2 text-center">
             {language === 'ar'
-              ? 'للاستفادة من البحث بالصور، يرجى الترقية إلى الباقة الاحترافية.'
-              : 'To use image search, please upgrade to the Pro plan.'}
+              ? 'للاستفادة من التعرف على الأدوية بالذكاء الاصطناعي، يرجى الترقية إلى الباقة الاحترافية.'
+              : 'To use AI-powered medication detection, please upgrade to the Pro plan.'}
           </div>
           <DialogFooter>
             {user ? (
