@@ -18,6 +18,7 @@ import Signup from "./pages/Signup";
 import Subscribe from "./pages/Subscribe";
 import MyAccount from "./pages/MyAccount";
 import SimpleSignup from "./pages/SimpleSignup";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,31 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin route component that checks if user has admin role
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isAdmin } = useAuth();
+  const { language } = useTranslation();
+  
+  // Show loading state
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">
+      {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+    </div>;
+  }
+  
+  // Redirect if not logged in
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect to home if user is not an admin
+  if (!isAdmin()) {
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -69,9 +95,9 @@ function AppRoutes() {
             </PublicRoute>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Admin />
-            </ProtectedRoute>
+            <AdminRoute>
+              <Dashboard />
+            </AdminRoute>
           } />
           <Route path="/about" element={<StaticPage pageKey="about" />} />
           <Route path="/terms" element={<StaticPage pageKey="terms" />} />

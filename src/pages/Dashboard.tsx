@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth'; 
 import { useTranslation } from '@/hooks/useTranslation'; 
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -23,36 +22,22 @@ const Dashboard: React.FC = () => {
           return;
         }
         
-        try {
-          // Double-check the user's role directly from the database
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('role')
-            .eq('auth_uid', user.id)
-            .single();
+        // Check if user role is admin
+        if (user.role !== 'admin') {
+          // If user is not an admin, show message and redirect
+          console.log('User is not an admin, redirecting', user);
           
-          console.log('Database user role check:', userData);
+          toast({
+            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+            description: language === 'ar' 
+              ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
+              : 'You do not have permission to access this page',
+            variant: 'destructive'
+          });
           
-          // Check user role from database or fallback to user object
-          const actualRole = userData?.role || user.role;
-          
-          if (actualRole !== 'admin') {
-            // If user is not an admin, show message and redirect
-            console.log('User is not an admin, redirecting', user);
-            console.log('Role in user object:', user.role);
-            console.log('Role from database:', actualRole);
-            
-            toast({
-              title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-              description: language === 'ar' 
-                ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
-                : 'You do not have permission to access this page',
-              variant: 'destructive'
-            });
-            navigate('/my-account');
-          }
-        } catch (error) {
-          console.error('Error checking admin status:', error);
+          // Redirect to home page
+          navigate('/');
+          return;
         }
         
         // Permission checking is complete
