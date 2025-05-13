@@ -1,6 +1,6 @@
 
 // اسم وإصدار الكاش
-const CACHE_NAME = 'dawaa-amen-cache-v1';
+const CACHE_NAME = 'dawaa-amen-cache-v2';
 
 // الملفات التي سيتم تخزينها في الكاش
 const urlsToCache = [
@@ -23,56 +23,104 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  // تفعيل مباشرة بدون انتظار
+  self.skipWaiting();
 });
 
-// استراتيجية الكاش المحسنة: فقط طلبات GET
+// استراتيجية الكاش المحسنة: استخدام النسخة الأحدث من الشبكة وتجنب الكاش للبيانات الديناميكية
 self.addEventListener('fetch', event => {
   // تجاهل طلبات غير GET مثل PATCH و POST
   if (event.request.method !== 'GET') {
     return;
   }
-
-  event.respondWith(
-    // محاولة الحصول على الاستجابة من الكاش أولاً
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        // إرجاع النسخة المخزنة مؤقتاً إذا كانت موجودة
-        return cachedResponse;
-      }
-
-      // إذا لم تكن موجودة في الكاش، طلب من الشبكة
-      return fetch(event.request).then(response => {
-        // التحقق من أن الاستجابة صالحة
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        // نسخ الاستجابة لأن الاستجابة هي تيار ويمكن استخدامه مرة واحدة فقط
-        const responseToCache = response.clone();
-
-        // تخزين الاستجابة في الكاش
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return response;
-      });
-    })
-  );
+  
+  const url = new URL(event.request.url);
+  
+  // تحديد ما إذا كان الطلب للحصول على بيانات ديناميكية (API calls)
+  const isDynamicRequest = url.pathname.includes('/rest/v1/') || 
+                         url.pathname.includes('/auth/') ||
+                         url.pathname.includes('/storage/');
+  
+  if (isDynamicRequest) {
+    // استراتيجية "الشبكة أولاً" للبيانات الديناميكية - دائمًا استخدام البيانات المحدثة من الخادم
+    event.respondWith(
+      fetch(event.request)
+        .catch(error => {
+          console.error('فشل الطلب الديناميكي:', error);
+          // محاولة استخدام الكاش فقط إذا فشل الاتصال بالشبكة
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // استراتيجية "الكاش ثم الشبكة" للأصول الثابتة
+    event.respondWith(
+      caches.match(event.request)
+        .then(cachedResponse => {
+          // إعادة النسخة المخزنة مؤقتًا إذا كانت موجودة
+          const fetchPromise = fetch(event.request)
+            .then(networkResponse => {
+              // تحديث الكاش بالنسخة الجديدة
+              if (networkResponse && networkResponse.status === 200) {
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME)
+                  .then(cache => {
+                    cache.put(event.request, responseToCache);
+                  });
+              }
+              return networkResponse;
+            })
+            .catch(() => {
+              console.log('استخدام الكاش بسبب فشل الاتصال بالشبكة');
+              return cachedResponse;
+            });
+          
+          // إعادة النسخة المخزنة أولاً ثم تحديثها بنسخة الشبكة
+          return cachedResponse || fetchPromise;
+        })
+    );
+  }
 });
 
-// حذف الكاش القديم عند تحديث Service Worker
+// تنظيف الكاش القديم عند تحديث Service Worker وتفعيل مباشر
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  console.log('تم تنشيط Service Worker الجديد');
+  
+  // مسح جميع الكاش القديم
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
+            console.log('حذف الكاش القديم:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // المطالبة بالسيطرة على جميع الصفحات المفتوحة دون الحاجة إلى تحديث
+      return self.clients.claim();
     })
   );
+});
+
+// استمع إلى رسائل من التطبيق
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_ALL_CACHE') {
+    console.log('تم استلام طلب مسح الكاش');
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('تم مسح جميع الكاش بنجاح');
+        // إرسال تأكيد إلى التطبيق
+        if (event.source && event.source.postMessage) {
+          event.source.postMessage({ type: 'CACHE_CLEARED' });
+        }
+      })
+    );
+  }
 });

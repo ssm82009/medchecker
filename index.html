@@ -24,6 +24,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <!-- منع الكاش في المتصفح -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://yourdomain.com" />
@@ -53,10 +58,35 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js').then(registration => {
+          navigator.serviceWorker.register('/service-worker.js', { 
+            scope: '/' // التأكد من الوصول لكل الموقع
+          }).then(registration => {
             console.log('ServiceWorker تم التسجيل بنجاح:', registration.scope);
+            
+            // تحديث service worker فوراً
+            registration.update();
+            
+            // مراقبة حالة التحديث
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              console.log('تم العثور على تحديث جديد للـ service worker');
+              
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  console.log('حالة ServiceWorker الجديد:', newWorker.state);
+                });
+              }
+            });
+            
           }).catch(error => {
             console.log('فشل تسجيل ServiceWorker:', error);
+          });
+          
+          // التعامل مع التحديثات
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('تم تحديث الصفحة بواسطة service worker جديد');
+            // عند تغيير المتحكم، يمكننا تحديث الصفحة لضمان استخدام أحدث نسخة
+            // window.location.reload();
           });
         });
       }
