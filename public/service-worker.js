@@ -1,6 +1,5 @@
-
 // اسم وإصدار الكاش
-const CACHE_NAME = 'dawaa-amen-cache-v4';
+const CACHE_NAME = 'dawaa-amen-cache-v5';
 
 // الملفات التي سيتم تخزينها في الكاش
 const urlsToCache = [
@@ -16,135 +15,123 @@ const urlsToCache = [
 
 // تثبيت Service Worker وتخزين الملفات في الكاش
 self.addEventListener('install', event => {
-  console.log('Service Worker: Installing...');
+  console.log('[Service Worker] Installing...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('تم فتح الكاش');
-        return cache.addAll(urlsToCache);
+        console.log('[Service Worker] Caching app shell');
+        return cache.addAll(urlsToCache).then(() => {
+          console.log('[Service Worker] All resources have been cached');
+        });
+      })
+      .catch(error => {
+        console.error('[Service Worker] Cache installation failed:', error);
       })
   );
-  
-  // تفعيل مباشرة بدون انتظار
-  self.skipWaiting();
 });
 
-// تنظيف الكاش القديم عند تحديث Service Worker وتفعيل مباشر
+// تنظيف الكاش القديم عند التفعيل
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activating...');
+  console.log('[Service Worker] Activating...');
   
-  // مسح جميع الكاش القديم
+  const cacheWhitelist = [CACHE_NAME];
+  
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('حذف الكاش القديم:', cacheName);
+          if (!cacheWhitelist.includes(cacheName)) {
+            console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      // المطالبة بالسيطرة على جميع الصفحات المفتوحة دون الحاجة إلى تحديث
-      console.log('Service Worker: Now controlling all clients');
+    })
+    .then(() => {
+      console.log('[Service Worker] Claiming clients');
       return self.clients.claim();
     })
   );
 });
 
-// استراتيجية الكاش المحسنة: استخدام النسخة الأحدث من الشبكة وتجنب الكاش للبيانات الديناميكية
+// معالجة طلبات الشبكة
 self.addEventListener('fetch', event => {
-  // تجاهل طلبات غير GET مثل PATCH و POST
+  // تجاهل الطلبات غير GET
   if (event.request.method !== 'GET') {
     return;
   }
+
+  const requestUrl = new URL(event.request.url);
   
-  const url = new URL(event.request.url);
-  
-  // إضافة رأس التحكم في الكاش للطلبات الديناميكية
-  const dynamicHeaders = new Headers(event.request.headers);
-  
-  // تحديد ما إذا كان الطلب للحصول على بيانات ديناميكية (API calls)
-  const isDynamicRequest = url.pathname.includes('/rest/v1/') || 
-                         url.pathname.includes('/auth/') ||
-                         url.pathname.includes('/storage/') ||
-                         url.pathname.includes('/admin') ||
-                         url.pathname.includes('/dashboard');
-  
-  // إضافة رقم عشوائي للطلبات الديناميكية لتجاوز الكاش
+  // تحديد ما إذا كان الطلب للحصول على بيانات ديناميكية
+  const isDynamicRequest = requestUrl.pathname.includes('/rest/v1/') || 
+                         requestUrl.pathname.includes('/auth/') ||
+                         requestUrl.pathname.includes('/storage/') ||
+                         requestUrl.pathname.includes('/admin') ||
+                         requestUrl.pathname.includes('/dashboard');
+
   if (isDynamicRequest) {
-    dynamicHeaders.append('Cache-Control', 'no-cache, no-store, must-revalidate');
-    dynamicHeaders.append('Pragma', 'no-cache');
-    dynamicHeaders.append('Expires', '0');
-    
-    // إنشاء طلب جديد مع الرؤوس المحدثة
-    const modifiedRequest = new Request(
-      `${url.origin}${url.pathname}${url.search}${url.search ? '&' : '?'}_nocache=${Date.now()}`,
-      {
-        method: event.request.method,
-        headers: dynamicHeaders,
-        mode: event.request.mode,
-        credentials: event.request.credentials,
-        redirect: event.request.redirect
-      }
-    );
-    
-    // استراتيجية "الشبكة أولاً" للبيانات الديناميكية
+    // استراتيجية "الشبكة فقط" للطلبات الديناميكية
     event.respondWith(
-      fetch(modifiedRequest)
+      fetch(event.request)
         .catch(error => {
-          console.error('فشل الطلب الديناميكي:', error);
-          // محاولة استخدام الكاش فقط إذا فشل الاتصال بالشبكة
-          return caches.match(event.request);
+          console.error('[Service Worker] Dynamic request failed:', error);
+          return new Response('Network error', {
+            status: 408,
+            statusText: 'Network error'
+          });
         })
     );
   } else {
-    // استراتيجية "الكاش ثم الشبكة" للأصول الثابتة
+    // استراتيجية "الكاش ثم الشبكة" للمحتوى الثابت
     event.respondWith(
       caches.match(event.request)
         .then(cachedResponse => {
-          // إعادة النسخة المخزنة مؤقتًا إذا كانت موجودة
+          // حاول الحصول من الشبكة أولاً
           const fetchPromise = fetch(event.request)
             .then(networkResponse => {
-              // تحديث الكاش بالنسخة الجديدة
+              // تحديث الكاش إذا كانت الاستجابة صالحة
               if (networkResponse && networkResponse.status === 200) {
                 const responseToCache = networkResponse.clone();
                 caches.open(CACHE_NAME)
-                  .then(cache => {
-                    cache.put(event.request, responseToCache);
+                  .then(cache => cache.put(event.request, responseToCache))
+                  .catch(error => {
+                    console.error('[Service Worker] Cache update failed:', error);
                   });
               }
               return networkResponse;
             })
             .catch(() => {
-              console.log('استخدام الكاش بسبب فشل الاتصال بالشبكة');
-              return cachedResponse;
+              // استخدم الكاش إذا فشل الاتصال بالشبكة
+              return cachedResponse || new Response('Offline content', {
+                status: 503,
+                statusText: 'Service Unavailable'
+              });
             });
-          
-          // إعادة النسخة المخزنة أولاً ثم تحديثها بنسخة الشبكة
+
+          // إرجاع الكاش الموجود إذا كان متاحاً، أو انتظر الاستجابة من الشبكة
           return cachedResponse || fetchPromise;
         })
     );
   }
 });
 
-// استمع إلى رسائل من التطبيق لتنظيف الكاش
-self.addEventListener('message', (event) => {
+// معالجة رسائل التطبيق
+self.addEventListener('message', event => {
   if (event.data && event.data.type === 'CLEAR_ALL_CACHE') {
-    console.log('تم استلام طلب مسح الكاش');
+    console.log('[Service Worker] Received cache clear request');
     event.waitUntil(
-      caches.keys().then((cacheNames) => {
+      caches.keys().then(cacheNames => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            console.log(`مسح الكاش: ${cacheName}`);
+          cacheNames.map(cacheName => {
             return caches.delete(cacheName);
           })
         );
-      }).then(() => {
-        console.log('تم مسح جميع الكاش بنجاح');
-        // إرسال تأكيد إلى التطبيق
-        if (event.source && event.source.postMessage) {
+      })
+      .then(() => {
+        console.log('[Service Worker] All caches cleared');
+        if (event.source) {
           event.source.postMessage({ type: 'CACHE_CLEARED' });
         }
       })
@@ -152,7 +139,7 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// تسجيل الدخول للتشخيص
-self.addEventListener('error', function(event) {
-  console.error('Service Worker Error:', event.message, event.error);
+// تسجيل الأخطاء
+self.addEventListener('error', event => {
+  console.error('[Service Worker] Error:', event.error);
 });
