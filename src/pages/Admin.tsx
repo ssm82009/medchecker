@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard, History } from 'lucide-react';
 import AISettings from '@/components/admin/AISettings';
 import LogoSettings from '@/components/admin/LogoSettings';
@@ -8,6 +8,10 @@ import PlansManager from '@/components/admin/PlansManager';
 import UsersManager from '@/components/admin/UsersManager';
 import PaypalSettings from '@/components/admin/PaypalSettings';
 import TransactionsManager from '@/components/admin/TransactionsManager';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const adminSections = [
   { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },
@@ -21,6 +25,64 @@ const adminSections = [
 
 const Admin: React.FC = () => {
   const [activeSection, setActiveSection] = useState('ai');
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { language } = useTranslation();
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
+  
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!loading) {
+        console.log('Admin Page - Checking admin status');
+        
+        if (!user) {
+          console.log('Admin Page - No user found, redirecting to login');
+          toast({
+            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+            description: language === 'ar' 
+              ? 'يجب تسجيل الدخول للوصول إلى لوحة المشرف' 
+              : 'You must be logged in to access the admin panel',
+            variant: 'destructive'
+          });
+          navigate('/login');
+          return;
+        }
+        
+        console.log("Admin Page - Current user:", user);
+        console.log("Admin Page - User role:", user.role);
+        
+        // التحقق من صلاحيات المشرف
+        let isAdminUser = user.role === 'admin';
+        
+        console.log("Admin Page - Is admin:", isAdminUser);
+        
+        if (!isAdminUser) {
+          console.log('Admin Page - User is not an admin, redirecting');
+          
+          toast({
+            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+            description: language === 'ar' 
+              ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
+              : 'You do not have permission to access this page',
+            variant: 'destructive'
+          });
+          
+          navigate('/');
+          return;
+        }
+        
+        setCheckingPermissions(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user, loading, navigate, language]);
+
+  if (loading || checkingPermissions) {
+    return <div className="flex h-screen items-center justify-center">
+      {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+    </div>;
+  }
   
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">

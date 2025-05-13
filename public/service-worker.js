@@ -1,6 +1,6 @@
 
 // اسم وإصدار الكاش
-const CACHE_NAME = 'dawaa-amen-cache-v2';
+const CACHE_NAME = 'dawaa-amen-cache-v3';
 
 // الملفات التي سيتم تخزينها في الكاش
 const urlsToCache = [
@@ -16,6 +16,8 @@ const urlsToCache = [
 
 // تثبيت Service Worker وتخزين الملفات في الكاش
 self.addEventListener('install', event => {
+  console.log('Service Worker: Installing...');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -23,8 +25,32 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  
   // تفعيل مباشرة بدون انتظار
   self.skipWaiting();
+});
+
+// تنظيف الكاش القديم عند تحديث Service Worker وتفعيل مباشر
+self.addEventListener('activate', event => {
+  console.log('Service Worker: Activating...');
+  
+  // مسح جميع الكاش القديم
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('حذف الكاش القديم:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      // المطالبة بالسيطرة على جميع الصفحات المفتوحة دون الحاجة إلى تحديث
+      console.log('Service Worker: Now controlling all clients');
+      return self.clients.claim();
+    })
+  );
 });
 
 // استراتيجية الكاش المحسنة: استخدام النسخة الأحدث من الشبكة وتجنب الكاش للبيانات الديناميكية
@@ -36,15 +62,37 @@ self.addEventListener('fetch', event => {
   
   const url = new URL(event.request.url);
   
+  // إضافة رأس التحكم في الكاش للطلبات الديناميكية
+  const dynamicHeaders = new Headers(event.request.headers);
+  
   // تحديد ما إذا كان الطلب للحصول على بيانات ديناميكية (API calls)
   const isDynamicRequest = url.pathname.includes('/rest/v1/') || 
                          url.pathname.includes('/auth/') ||
-                         url.pathname.includes('/storage/');
+                         url.pathname.includes('/storage/') ||
+                         url.pathname.includes('/admin') ||
+                         url.pathname.includes('/dashboard');
   
+  // إضافة رقم عشوائي للطلبات الديناميكية لتجاوز الكاش
   if (isDynamicRequest) {
-    // استراتيجية "الشبكة أولاً" للبيانات الديناميكية - دائمًا استخدام البيانات المحدثة من الخادم
+    dynamicHeaders.append('Cache-Control', 'no-cache, no-store, must-revalidate');
+    dynamicHeaders.append('Pragma', 'no-cache');
+    dynamicHeaders.append('Expires', '0');
+    
+    // إنشاء طلب جديد مع الرؤوس المحدثة
+    const modifiedRequest = new Request(
+      `${url.origin}${url.pathname}${url.search}${url.search ? '&' : '?'}_nocache=${Date.now()}`,
+      {
+        method: event.request.method,
+        headers: dynamicHeaders,
+        mode: event.request.mode,
+        credentials: event.request.credentials,
+        redirect: event.request.redirect
+      }
+    );
+    
+    // استراتيجية "الشبكة أولاً" للبيانات الديناميكية
     event.respondWith(
-      fetch(event.request)
+      fetch(modifiedRequest)
         .catch(error => {
           console.error('فشل الطلب الديناميكي:', error);
           // محاولة استخدام الكاش فقط إذا فشل الاتصال بالشبكة
@@ -81,29 +129,7 @@ self.addEventListener('fetch', event => {
   }
 });
 
-// تنظيف الكاش القديم عند تحديث Service Worker وتفعيل مباشر
-self.addEventListener('activate', event => {
-  console.log('تم تنشيط Service Worker الجديد');
-  
-  // مسح جميع الكاش القديم
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('حذف الكاش القديم:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      // المطالبة بالسيطرة على جميع الصفحات المفتوحة دون الحاجة إلى تحديث
-      return self.clients.claim();
-    })
-  );
-});
-
-// استمع إلى رسائل من التطبيق
+// استمع إلى رسائل من التطبيق لتنظيف الكاش
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CLEAR_ALL_CACHE') {
     console.log('تم استلام طلب مسح الكاش');
@@ -111,6 +137,7 @@ self.addEventListener('message', (event) => {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
+            console.log(`مسح الكاش: ${cacheName}`);
             return caches.delete(cacheName);
           })
         );
@@ -123,4 +150,9 @@ self.addEventListener('message', (event) => {
       })
     );
   }
+});
+
+// تسجيل الدخول للتشخيص
+self.addEventListener('error', function(event) {
+  console.error('Service Worker Error:', event.message, event.error);
 });

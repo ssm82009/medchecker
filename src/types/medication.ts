@@ -27,3 +27,8 @@ export interface InteractionResult {
   alternatives?: string[];
   ageWarnings?: string[];
 }
+
+export interface CacheInfo {
+  lastUpdated: number;
+  version: string;
+}
