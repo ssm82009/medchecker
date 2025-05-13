@@ -1,6 +1,6 @@
 
 // اسم وإصدار الكاش
-const CACHE_NAME = 'dawaa-amen-cache-v3';
+const CACHE_NAME = 'dawaa-amen-cache-v4';
 
 // الملفات التي سيتم تخزينها في الكاش
 const urlsToCache = [
