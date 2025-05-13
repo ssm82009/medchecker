@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth'; 
 import { useTranslation } from '@/hooks/useTranslation'; 
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -14,47 +15,47 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!loading) {
-        console.log('Dashboard - Checking admin status, loading complete');
-        
+        // Only check permissions once loading is complete
         if (!user) {
-          console.log('Dashboard - No user found, redirecting to login');
+          // If no user is logged in, redirect to login page
+          console.log('No user found, redirecting to login');
           navigate('/login');
           return;
         }
         
-        console.log("Dashboard - Current user:", user);
-        console.log("Dashboard - User role:", user.role);
-        console.log("Dashboard - User auth data:", user);
-        
-        // Check for admin role - need to handle both cases where role might be 'admin' or user might
-        // have app_metadata.provider='email' - this is the key issue we need to fix
-        let isAdminUser = false;
-        
-        // First check if role is directly set to 'admin'
-        if (user.role === 'admin') {
-          console.log("Dashboard - User has admin role set directly");
-          isAdminUser = true;
-        } 
-        
-        console.log("Dashboard - Final admin status:", isAdminUser);
-        
-        if (!isAdminUser) {
-          console.log('Dashboard - User is not an admin, redirecting');
+        try {
+          // Double-check the user's role directly from the database
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('role')
+            .eq('auth_uid', user.id)
+            .single();
           
-          toast({
-            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-            description: language === 'ar' 
-              ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
-              : 'You do not have permission to access this page',
-            variant: 'destructive'
-          });
+          console.log('Database user role check:', userData);
           
-          navigate('/');
-          return;
-        } else {
-          console.log('Dashboard - User is admin, access granted');
+          // Check user role from database or fallback to user object
+          const actualRole = userData?.role || user.role;
+          
+          if (actualRole !== 'admin') {
+            // If user is not an admin, show message and redirect
+            console.log('User is not an admin, redirecting', user);
+            console.log('Role in user object:', user.role);
+            console.log('Role from database:', actualRole);
+            
+            toast({
+              title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+              description: language === 'ar' 
+                ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
+                : 'You do not have permission to access this page',
+              variant: 'destructive'
+            });
+            navigate('/my-account');
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
         }
         
+        // Permission checking is complete
         setCheckingPermissions(false);
       }
     };
@@ -62,12 +63,14 @@ const Dashboard: React.FC = () => {
     checkAdminStatus();
   }, [user, loading, navigate, language]);
 
+  // Show loading state while checking permissions
   if (loading || checkingPermissions) {
     return <div className="text-center py-20">
       {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
     </div>;
   }
 
+  // Only render dashboard content if user is an admin
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
@@ -75,17 +78,10 @@ const Dashboard: React.FC = () => {
       </h1>
       <p>
         {language === 'ar' 
-          ? `مرحباً بك في لوحة التحكم الخاصة بالمسؤولين (${user?.email})` 
-          : `Welcome to the admin dashboard (${user?.email})`
+          ? 'مرحباً بك في لوحة التحكم الخاصة بالمسؤولين.' 
+          : 'Welcome to the admin dashboard.'
         }
       </p>
-      <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-md">
-        <p className="text-green-800">
-          {language === 'ar' 
-            ? 'تم تسجيل دخولك بنجاح كمشرف!' 
-            : 'You have successfully logged in as an admin!'}
-        </p>
-      </div>
     </div>
   );
 };
