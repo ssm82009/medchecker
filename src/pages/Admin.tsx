@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard, History } from 'lucide-react';
 import AISettings from '@/components/admin/AISettings';
 import LogoSettings from '@/components/admin/LogoSettings';
@@ -8,10 +8,6 @@ import PlansManager from '@/components/admin/PlansManager';
 import UsersManager from '@/components/admin/UsersManager';
 import PaypalSettings from '@/components/admin/PaypalSettings';
 import TransactionsManager from '@/components/admin/TransactionsManager';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const adminSections = [
   { key: 'ai', label: 'إعدادات الذكاء الاصطناعي', icon: Settings },
@@ -24,78 +20,7 @@ const adminSections = [
 ];
 
 const Admin: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const sectionFromUrl = searchParams.get('section');
-  const [activeSection, setActiveSection] = useState(sectionFromUrl || 'ai');
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const { language } = useTranslation();
-  const [checkingPermissions, setCheckingPermissions] = useState(true);
-  
-  useEffect(() => {
-    if (sectionFromUrl) {
-      setActiveSection(sectionFromUrl);
-    }
-  }, [sectionFromUrl]);
-  
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!loading) {
-        console.log('Admin Page - Checking admin status');
-        
-        if (!user) {
-          console.log('Admin Page - No user found, redirecting to login');
-          toast({
-            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-            description: language === 'ar' 
-              ? 'يجب تسجيل الدخول للوصول إلى لوحة المشرف' 
-              : 'You must be logged in to access the admin panel',
-            variant: 'destructive'
-          });
-          navigate('/login');
-          return;
-        }
-        
-        console.log("Admin Page - Current user:", user);
-        console.log("Admin Page - User role:", user.role);
-        
-        // التحقق من صلاحيات المشرف
-        let isAdminUser = user.role === 'admin';
-        
-        console.log("Admin Page - Is admin:", isAdminUser);
-        
-        if (!isAdminUser) {
-          console.log('Admin Page - User is not an admin, redirecting');
-          
-          toast({
-            title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-            description: language === 'ar' 
-              ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
-              : 'You do not have permission to access this page',
-            variant: 'destructive'
-          });
-          
-          navigate('/');
-          return;
-        }
-        
-        setCheckingPermissions(false);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [user, loading, navigate, language]);
-
-  if (loading || checkingPermissions) {
-    return <div className="flex h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-lg font-medium">
-          {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
-        </p>
-      </div>
-    </div>;
-  }
+  const [activeSection, setActiveSection] = useState('ai');
   
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50">
@@ -106,10 +31,7 @@ const Admin: React.FC = () => {
           <button
             key={section.key}
             className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-base font-medium mb-1 hover:bg-primary/10 ${activeSection === section.key ? 'bg-primary/10 text-primary font-bold' : 'text-gray-700'}`}
-            onClick={() => {
-              setActiveSection(section.key);
-              navigate(`/admin?section=${section.key}`);
-            }}
+            onClick={() => setActiveSection(section.key)}
           >
             <section.icon className="w-5 h-5" />
             {section.label}

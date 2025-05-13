@@ -19,9 +19,3 @@ export interface SearchHistory {
   search_results: Json;
   created_at: string;
 }
-
-// إضافة واجهة جديدة لمعلومات الكاش
-export interface CacheInfo {
-  lastUpdated: number;
-  version: string;
-}
