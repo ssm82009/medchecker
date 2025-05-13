@@ -9,7 +9,7 @@ import UsersManager from '@/components/admin/UsersManager';
 import PaypalSettings from '@/components/admin/PaypalSettings';
 import TransactionsManager from '@/components/admin/TransactionsManager';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -24,11 +24,19 @@ const adminSections = [
 ];
 
 const Admin: React.FC = () => {
-  const [activeSection, setActiveSection] = useState('ai');
+  const [searchParams] = useSearchParams();
+  const sectionFromUrl = searchParams.get('section');
+  const [activeSection, setActiveSection] = useState(sectionFromUrl || 'ai');
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { language } = useTranslation();
   const [checkingPermissions, setCheckingPermissions] = useState(true);
+  
+  useEffect(() => {
+    if (sectionFromUrl) {
+      setActiveSection(sectionFromUrl);
+    }
+  }, [sectionFromUrl]);
   
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -80,7 +88,12 @@ const Admin: React.FC = () => {
 
   if (loading || checkingPermissions) {
     return <div className="flex h-screen items-center justify-center">
-      {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+      <div className="text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-lg font-medium">
+          {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+        </p>
+      </div>
     </div>;
   }
   
@@ -93,7 +106,10 @@ const Admin: React.FC = () => {
           <button
             key={section.key}
             className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-base font-medium mb-1 hover:bg-primary/10 ${activeSection === section.key ? 'bg-primary/10 text-primary font-bold' : 'text-gray-700'}`}
-            onClick={() => setActiveSection(section.key)}
+            onClick={() => {
+              setActiveSection(section.key);
+              navigate(`/admin?section=${section.key}`);
+            }}
           >
             <section.icon className="w-5 h-5" />
             {section.label}

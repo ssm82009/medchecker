@@ -6,9 +6,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Settings, Users, Layers, BadgeDollarSign } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Settings, Users, Layers, BadgeDollarSign, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AISettingsType } from '@/types/medication';
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -65,25 +66,37 @@ const Dashboard: React.FC = () => {
             setLoadingSettings(true);
             
             // تحميل إعدادات الذكاء الاصطناعي
-            const { data: aiSettings } = await supabase
+            const { data: aiSettings, error: aiError } = await supabase
               .from('settings')
               .select('value')
               .eq('type', 'ai_settings')
               .maybeSingle();
               
+            if (aiError) {
+              console.error("Error fetching AI settings:", aiError);
+            }
+              
             // تحميل إعدادات الشعار
-            const { data: logoSettings } = await supabase
+            const { data: logoSettings, error: logoError } = await supabase
               .from('settings')
               .select('value')
               .eq('type', 'logo')
               .maybeSingle();
               
+            if (logoError) {
+              console.error("Error fetching logo settings:", logoError);
+            }
+              
             // تحميل إعدادات الإعلانات
-            const { data: adSettings } = await supabase
+            const { data: adSettings, error: adError } = await supabase
               .from('settings')
               .select('value')
               .eq('type', 'advertisement')
               .maybeSingle();
+              
+            if (adError) {
+              console.error("Error fetching ad settings:", adError);
+            }
               
             // تجميع الإعدادات
             setSiteSettings({
@@ -91,6 +104,16 @@ const Dashboard: React.FC = () => {
               logo: logoSettings?.value || 'دواء آمن',
               ad: adSettings?.value || 'لا يوجد إعلان محدد'
             });
+            
+            // اختبار وطباعة بيانات إعدادات الذكاء الاصطناعي
+            if (aiSettings?.value) {
+              const typedSettings = aiSettings.value as Record<string, any>;
+              const hasApiKey = !!typedSettings.apiKey;
+              console.log("Dashboard - AI settings loaded, API key exists:", hasApiKey);
+              console.log("Dashboard - AI model:", typedSettings.model || 'غير محدد');
+            } else {
+              console.log("Dashboard - No AI settings found");
+            }
             
             setLoadingSettings(false);
           } catch (error) {
@@ -107,15 +130,25 @@ const Dashboard: React.FC = () => {
   }, [user, loading, navigate, language]);
 
   if (loading || checkingPermissions) {
-    return <div className="text-center py-20">
-      {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+    return <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+        <p className="text-lg font-medium">
+          {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
+        </p>
+      </div>
     </div>;
   }
 
   // عرض عنصر تحميل أثناء تحميل الإعدادات
   if (loadingSettings) {
-    return <div className="text-center py-20">
-      {language === 'ar' ? 'جاري تحميل إعدادات الموقع...' : 'Loading site settings...'}
+    return <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+        <p className="text-lg font-medium">
+          {language === 'ar' ? 'جاري تحميل إعدادات الموقع...' : 'Loading site settings...'}
+        </p>
+      </div>
     </div>;
   }
 
@@ -146,11 +179,11 @@ const Dashboard: React.FC = () => {
             <div className="text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="font-medium">{language === 'ar' ? 'النموذج المستخدم:' : 'Model:'}</span>
-                <span>{siteSettings.ai.model || '—'}</span>
+                <span>{siteSettings.ai?.model || '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">{language === 'ar' ? 'مفتاح API:' : 'API Key:'}</span>
-                <span>{siteSettings.ai.apiKey ? (language === 'ar' ? 'تم التعيين' : 'Set') : (language === 'ar' ? 'غير معين' : 'Not set')}</span>
+                <span>{siteSettings.ai?.apiKey ? (language === 'ar' ? 'تم التعيين' : 'Set') : (language === 'ar' ? 'غير معين' : 'Not set')}</span>
               </div>
             </div>
           </CardContent>
