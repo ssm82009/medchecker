@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Search } from 'lucide-react';
 
 const MyAccount: React.FC = () => {
-  const { user, logout, fetchLatestPlan } = useAuth();
+  const { user, logout } = useAuth(); // fetchLatestPlan removed from simplified useAuth
   const navigate = useNavigate();
   const { language } = useTranslation();
   const [plan, setPlan] = useState<any>(null);
@@ -50,46 +50,96 @@ const MyAccount: React.FC = () => {
     };
   }, []);
 
+  // State to hold user's specific plan details from 'users' table
+  const [userSubscriptionDetails, setUserSubscriptionDetails] = useState<{ plan_code: string | null; plan_expiry_date: string | null }>({ plan_code: null, plan_expiry_date: null });
+
   const fetchPlanData = useCallback(async () => {
-    if (!user || !isMountedRef.current || planDataFetched) return;
-    
+    if (!user?.id || !isMountedRef.current) return; // Removed planDataFetched from condition to allow refresh
+
     setLoading(true);
     try {
-      console.log("Fetching plan data for user:", user.id);
-      
-      // Fetch plan data using auth hook's fetchLatestPlan
-      await fetchLatestPlan();
-      
-      // Then get the plan details
-      const { data: planData, error } = await supabase
+      console.log("[MyAccount] Fetching user subscription details for user:", user.id);
+
+      // 1. Fetch plan_code and plan_expiry_date from 'users' table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('plan_code, plan_expiry_date')
+        .eq('auth_uid', user.id) // Assuming user.id from useAuth is the auth_uid
+        .single(); 
+
+      let currentPlanCode = 'visitor'; // Default to visitor
+      let currentPlanExpiryDate: string | null = null;
+
+      if (userError || !userData) {
+        console.warn("[MyAccount] Error or no data fetching user subscription details from 'users' table:", userError);
+        // Keep default 'visitor' plan if no specific user data found or on error
+        if (isMountedRef.current) {
+           setUserSubscriptionDetails({ plan_code: 'visitor', plan_expiry_date: null });
+        }       
+      } else {
+        console.log("[MyAccount] User subscription details fetched:", userData);
+        currentPlanCode = userData.plan_code || 'visitor';
+        currentPlanExpiryDate = userData.plan_expiry_date;
+        if (isMountedRef.current) {
+          setUserSubscriptionDetails({
+            plan_code: currentPlanCode,
+            plan_expiry_date: currentPlanExpiryDate,
+          });
+        }
+      }
+
+      console.log("[MyAccount] Current plan code to fetch details for:", currentPlanCode);
+
+      // 2. Fetch plan details from 'plans' table based on the plan_code
+      const { data: planDetailsData, error: planDetailsError } = await supabase
         .from('plans')
         .select('*')
-        .eq('code', user.plan_code || 'visitor')
+        .eq('code', currentPlanCode)
         .maybeSingle();
-      
-      if (error) {
-        console.error("Error fetching plan:", error);
-      } else if (planData && isMountedRef.current) {
-        console.log("Fetched plan data:", planData);
-        setPlan(planData);
+
+      if (planDetailsError) {
+        console.error("[MyAccount] Error fetching plan details from 'plans' table:", planDetailsError);
+        if (isMountedRef.current) setPlan(null); // Or a default plan object
+      } else if (planDetailsData && isMountedRef.current) {
+        console.log("[MyAccount] Plan details fetched:", planDetailsData);
+        setPlan({ 
+          ...planDetailsData, 
+          plan_expiry_date: currentPlanExpiryDate // Add expiry date to the plan object
+        });
+        setPlanDataFetched(true); // Set this flag after successful fetch
+      } else if (!planDetailsData && isMountedRef.current) {
+        // Handle case where plan code exists in users table but not in plans table (e.g. 'visitor' if not in plans)
+        console.warn(`[MyAccount] No plan details found for plan_code: ${currentPlanCode}. Setting plan to basic state.`);
+        setPlan({
+          name: currentPlanCode === 'visitor' ? (language === 'ar' ? 'زائر' : 'Visitor') : currentPlanCode,
+          description: currentPlanCode === 'visitor' ? (language === 'ar' ? 'باقة الزائر الافتراضية' : 'Default visitor plan') : '',
+          price: 0,
+          code: currentPlanCode,
+          plan_expiry_date: currentPlanExpiryDate
+        });
         setPlanDataFetched(true);
       }
     } catch (error) {
-      console.error("Error in fetchPlanData:", error);
+      console.error("[MyAccount] Error in fetchPlanData catch block:", error);
+      if (isMountedRef.current) setPlan(null); // Reset plan on critical error
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
       }
     }
-  }, [user, fetchLatestPlan, planDataFetched]);
+  }, [user?.id, language]); // Dependency on user.id and language (for default plan text)
 
-  // Only fetch data when the user or shouldRefreshPlan changes
+  // Fetch data when the user (specifically user.id) changes, or when a refresh is requested.
   useEffect(() => {
-    if (user && (shouldRefreshPlan || !planDataFetched)) {
+    // Check for user.id to ensure user is loaded from useAuth
+    if (user?.id && (shouldRefreshPlan || !planDataFetched)) {
+      console.log("[MyAccount] useEffect: Triggering fetchPlanData. shouldRefreshPlan:", shouldRefreshPlan, "planDataFetched:", planDataFetched);
       fetchPlanData();
-      setShouldRefreshPlan(false);
+      if (isMountedRef.current) {
+        setShouldRefreshPlan(false); // Reset refresh flag
+      }
     }
-  }, [user, shouldRefreshPlan, fetchPlanData, planDataFetched]);
+  }, [user?.id, shouldRefreshPlan, planDataFetched, fetchPlanData]);
 
   // Fetch transaction history
   const fetchTransactions = useCallback(async () => {
@@ -236,13 +286,14 @@ const MyAccount: React.FC = () => {
   }, [user, activeTab, fetchSearchHistory, historyFetchAttempted]);
 
   useEffect(() => {
-    if (activeTab === 'history' && user?.plan_code && user.plan_code !== 'visitor') {
-      console.log('Tab changed to history, refreshing data if needed');
-      if (!fetchingHistory && searchHistory.length === 0) {
+    if (activeTab === 'history' && userSubscriptionDetails?.plan_code && userSubscriptionDetails.plan_code !== 'visitor') {
+      console.log('[MyAccount] Tab changed to history, plan allows access. Refreshing data if needed. HistoryFetchAttempted:', historyFetchAttempted, 'SearchHistory length:', searchHistory.length);
+      // Fetch only if not already fetching, and (either history hasn't been attempted OR it was attempted but yielded no results)
+      if (!fetchingHistory && (!historyFetchAttempted || searchHistory.length === 0)) {
         fetchSearchHistory();
       }
     }
-  }, [activeTab, user, fetchSearchHistory, fetchingHistory, searchHistory.length]);
+  }, [activeTab, userSubscriptionDetails?.plan_code, fetchSearchHistory, fetchingHistory, searchHistory.length, historyFetchAttempted]);
 
   const handleChangePassword = async () => {
     setChangeStatus('');
@@ -358,10 +409,10 @@ const MyAccount: React.FC = () => {
                 >
                   {language === 'ar' ? 'المعاملات' : 'Transactions'}
                 </TabsTrigger>
-                <TabsTrigger 
+                  <TabsTrigger 
                   value="history" 
                   className="w-1/3"
-                  disabled={!user?.plan_code || user.plan_code === 'visitor'}
+                  disabled={!userSubscriptionDetails?.plan_code || userSubscriptionDetails.plan_code === 'visitor'}
                 >
                   {language === 'ar' ? 'سجل البحث' : 'Search History'}
                 </TabsTrigger>
@@ -382,14 +433,15 @@ const MyAccount: React.FC = () => {
                         : `${plan?.price} ${language === 'ar' ? 'دولار / ' + getBillingPeriodDisplay(plan?.code) : 'USD / ' + getBillingPeriodDisplay(plan?.code)}`
                       }
                     </div>
-                    {/* Display expiry date information */}
+                    {/* Display expiry date information from the fetched plan object which now includes it */}
                     <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       <span>
-                        {language === 'ar' ? 'تاريخ الانتهاء:' : 'Expires:'} {formatExpiryDate(user.plan_expiry_date)}
+                        {language === 'ar' ? 'تاريخ الانتهاء:' : 'Expires:'} {formatExpiryDate(plan?.plan_expiry_date)}
                       </span>
                     </div>
-                    {plan?.code !== 'pro' && plan?.code !== 'pro12' && plan?.code !== 'annual' && (
+                    {/* Use userSubscriptionDetails.plan_code for upgrade button logic */}
+                    {(userSubscriptionDetails?.plan_code && userSubscriptionDetails.plan_code !== 'pro' && userSubscriptionDetails.plan_code !== 'pro12' && userSubscriptionDetails.plan_code !== 'annual') && (
                       <Button className="mt-4" onClick={() => navigate('/subscribe')}>
                         {language === 'ar' ? 'ترقية إلى الباقة الاحترافية' : 'Upgrade to Pro Plan'}
                       </Button>
@@ -511,7 +563,8 @@ const MyAccount: React.FC = () => {
                     </Button>
                   </div>
                   
-                  {!user?.plan_code || user.plan_code === 'visitor' ? (
+                  {/* Check based on userSubscriptionDetails for displaying paywall message */}
+                  {!userSubscriptionDetails?.plan_code || userSubscriptionDetails.plan_code === 'visitor' ? (
                     <div className="bg-amber-50 border border-amber-300 rounded p-4 text-center">
                       <p className="font-medium text-amber-800">
                         {language === 'ar' 
