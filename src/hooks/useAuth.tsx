@@ -587,9 +587,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: refreshedSession.user.id,
                 email: refreshedSession.user.email || '',
                 role: fetchedRole,
-                auth_uid: refreshedSession.user.id,
-                email: (refreshedSession.user.email || ''), 
-                role: fetchedRole || 'user' 
+                auth_uid: refreshedSession.user.id
             } as User;
 
             if (prevUser?.id !== updatedUser.id || prevUser?.email !== updatedUser.email || prevUser?.role !== updatedUser.role || !prevUser) {
