@@ -1,85 +1,17 @@
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth'; 
+import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation'; 
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, UserCog, Layers, Users, Image as ImageIcon, BadgeDollarSign, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const { language } = useTranslation(); 
-  const [checkingPermissions, setCheckingPermissions] = useState(true);
+  const { language } = useTranslation();
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkPermissions = async () => {
-      try {
-        if (!loading) {
-          if (!user) {
-            navigate('/login');
-            return;
-          }
-
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('role')
-            .eq('auth_uid', user.id)
-            .single();
-
-          if (error) {
-            console.error('Error fetching user role:', error);
-            toast({
-              title: language === 'ar' ? 'خطأ في التحقق' : 'Verification Error',
-              description: error.message,
-              variant: 'destructive'
-            });
-            navigate('/');
-            return;
-          }
-
-          if (userData.role !== 'admin') {
-            toast({
-              title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-              description: language === 'ar' 
-                ? 'ليس لديك صلاحية الوصول لهذه الصفحة' 
-                : 'You do not have permission to access this page',
-              variant: 'destructive'
-            });
-            navigate('/');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        navigate('/');
-      } finally {
-        if (isMounted) {
-          setCheckingPermissions(false);
-        }
-      }
-    };
-
-    setCheckingPermissions(true);
-    checkPermissions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, loading, navigate, language]);
-
-  // Show loading state while checking permissions
-  if (loading || checkingPermissions) {
-    return <div className="text-center py-20">
-      {language === 'ar' ? 'جاري التحقق من الصلاحيات...' : 'Verifying permissions...'}
-    </div>;
-  }
-
+  // The admin check is now done in the ProtectedRoute component in App.tsx
+  // This component will only render if the user is an admin
+  
   const dashboardCards = [
     { 
       title: language === 'ar' ? 'إعدادات الموقع' : 'Site Settings', 

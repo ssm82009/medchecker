@@ -22,44 +22,33 @@ import SimpleSignup from "./pages/SimpleSignup";
 
 const queryClient = new QueryClient();
 
-// Protected route component
+// Simplified Protected route with minimal checks
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user } = useAuth();
+  const location = useLocation();
   
-  console.log('ProtectedRoute loading:', loading);
-  console.log('ProtectedRoute user:', user);
-  console.log('ProtectedRoute isAdmin:', isAdmin());
-
-  // Show loading state or redirect if not authenticated
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  }
-  
-  // Redirect to login if not authenticated
+  // Simplified check - just see if user exists
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ returnUrl: location.pathname }} replace />;
   }
   
-  // Redirect to home if not an admin
-  if (!isAdmin()) {
-    console.log('User is not admin, redirecting to home.');
-    return <Navigate to="/" replace />;
+  // Check if admin route but not admin
+  if (location.pathname.includes('/dashboard') || location.pathname.includes('/site-settings')) {
+    if (user.role !== 'admin') {
+      return <Navigate to="/" replace />;
+    }
   }
   
   return <>{children}</>;
 };
 
-// Public route that redirects to dashboard if already logged in
+// Simplified Public route that redirects to home if logged in
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  }
-  
   if (user) {
-    const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : "/dashboard";
+    const returnUrl = location.state && location.state.returnUrl ? location.state.returnUrl : "/";
     return <Navigate to={returnUrl} replace />;
   }
   
@@ -80,8 +69,16 @@ function AppRoutes() {
               <Login />
             </PublicRoute>
           } />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/site-settings" element={<SiteSettings />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/site-settings" element={
+            <ProtectedRoute>
+              <SiteSettings />
+            </ProtectedRoute>
+          } />
           <Route path="/about" element={<StaticPage pageKey="about" />} />
           <Route path="/terms" element={<StaticPage pageKey="terms" />} />
           <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
@@ -89,7 +86,11 @@ function AppRoutes() {
           <Route path="/contact" element={<StaticPage pageKey="contact" />} />
           {/* Subscribe page is accessible to all but handles auth internally */}
           <Route path="/subscribe" element={<Subscribe />} />
-          <Route path="/my-account" element={<MyAccount />} />
+          <Route path="/my-account" element={
+            <ProtectedRoute>
+              <MyAccount />
+            </ProtectedRoute>
+          } />
           <Route path="/simple-signup" element={<SimpleSignup />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="*" element={<NotFound />} />
