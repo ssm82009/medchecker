@@ -129,9 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // with new auth state (id, email, role, auth_uid).
             const newUser = { 
               ...baseUser, 
-              ...userPayload,
-              email: userPayload.email || '', 
-              role: userPayload.role || 'user' 
+              ...userPayload 
             } as User;
 
             if (prevUser?.id !== newUser.id || prevUser?.email !== newUser.email || prevUser?.role !== newUser.role || !prevUser) {

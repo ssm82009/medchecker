@@ -7,7 +7,8 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard"; // Changed from Admin to Dashboard
+import Dashboard from "./pages/Dashboard";
+import SiteSettings from "./pages/SiteSettings";
 import { useAuth, AuthProvider } from "./hooks/useAuth";
 import { useState } from "react";
 import { useTranslation } from "./hooks/useTranslation";
@@ -23,7 +24,7 @@ const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin } = useAuth(); // Add isAdmin here
+  const { user, loading, isAdmin } = useAuth();
   
   console.log('ProtectedRoute loading:', loading);
   console.log('ProtectedRoute user:', user);
@@ -79,7 +80,8 @@ function AppRoutes() {
               <Login />
             </PublicRoute>
           } />
-          <Route path="/dashboard" element={<Dashboard />} /> {/* Use Dashboard component */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/site-settings" element={<SiteSettings />} />
           <Route path="/about" element={<StaticPage pageKey="about" />} />
           <Route path="/terms" element={<StaticPage pageKey="terms" />} />
           <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
