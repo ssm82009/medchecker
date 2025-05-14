@@ -130,7 +130,7 @@ const Login: React.FC = () => {
                   </FormItem>
                 )}
               />
-              {/* Display authError from useAuth if it exists */}เจน
+              {/* Display authError from useAuth if it exists */}
               {authError && (
                 <div className="text-destructive text-sm">{authError}</div>
               )}
