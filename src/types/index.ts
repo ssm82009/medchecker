@@ -71,8 +71,8 @@ export interface Transaction {
 
 export interface SearchHistory {
   id: string;
-  user_id: string;
+  user_id: string | null;
   search_query: string;
-  search_results: any;
+  search_results: any; // Using 'any' for now as it's a jsonb type in the database
   created_at: string;
 }
