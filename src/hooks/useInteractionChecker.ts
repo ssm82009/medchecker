@@ -7,7 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 import { AISettingsType, Medication, PatientInfo, InteractionResult, MedicationInput } from '@/types/medication';
 import { MOCK_INTERACTIONS, MOCK_INTERACTIONS_EN } from '@/data/mockInteractions';
-import { useAuth } from '@/hooks/useAuth';
+// import { useAuth } from '@/hooks/useAuth'; // isPremium is no longer used from here
+import { useAuth } from '@/hooks/useAuth'; // Still need user for user.id
 
 export const useInteractionChecker = () => {
   const { language } = useTranslation();
@@ -16,7 +17,7 @@ export const useInteractionChecker = () => {
   const [loading, setLoading] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<boolean>(false);
   const [apiSettings, setApiSettings] = useLocalStorage<AISettingsType>('aiSettings', { apiKey: '', model: 'gpt-4o-mini' });
-  const { user, isPremium } = useAuth();
+  const { user } = useAuth(); // Removed isPremium, only user for user.id is needed now for history recording
   const [localPatientInfo, setLocalPatientInfo] = useState<PatientInfo>({
     age: '',
     weight: '',
@@ -60,7 +61,7 @@ export const useInteractionChecker = () => {
     fetchAISettings();
   }, []);
 
-  const checkInteractions = async (medications: MedicationInput[], patientInfo?: PatientInfo) => {
+  const checkInteractions = async (medications: MedicationInput[], patientInfo?: PatientInfo, isUserPremium?: boolean) => {
     const validMedications = medications.filter(med => med.name.trim() !== '');
     if (validMedications.length < 2) return;
     
@@ -223,7 +224,7 @@ export const useInteractionChecker = () => {
       }
       
       // After successful check, store search history if user is premium
-      if (user?.id && isPremium()) {
+      if (user?.id && isUserPremium) { // Use the passed isUserPremium argument
         try {
           // Extract medication names for the search history
           const medicationNames = medications
@@ -257,7 +258,7 @@ export const useInteractionChecker = () => {
         }
       } else {
         console.log('Search history not recorded - user not premium or not logged in:', 
-          { userId: user?.id, isPremium: isPremium() });
+          { userId: user?.id, isUserPremiumPassed: isUserPremium }); // Log the passed value
       }
       
       setResult(parsedResult);

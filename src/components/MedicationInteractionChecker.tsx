@@ -41,37 +41,83 @@ const MedicationInteractionChecker: React.FC = () => {
   const { user } = useAuth();
   const [userPlan, setUserPlan] = useState<PlanType>('visitor');
   const [maxMedications, setMaxMedications] = useState(2); // Default for visitor
+  const [isCurrentUserPremium, setIsCurrentUserPremium] = useState(false);
 
   const navigate = useNavigate();
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   useEffect(() => {
-    const fetchPlan = async () => {
-      let planCode = user?.plan_code || 'visitor';
-      // Fetch plan from Supabase to ensure it exists and is current
-      const { data, error } = await supabase.from('plans').select('code').eq('code', planCode).maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching plan:', error);
-        // Keep default plan if there's an error
-      } else if (data && data.code) {
-        planCode = data.code;
+    const fetchUserPlanDetails = async () => {
+      if (!user?.id) {
+        // User not logged in, apply visitor defaults
+        setUserPlan('visitor');
+        setMaxMedications(2);
+        setIsCurrentUserPremium(false);
+        return;
       }
-      // If user has no plan_code or plan not found, it defaults to 'visitor'
 
-      setUserPlan(planCode as PlanType);
+      try {
+        console.log("[MedInteractionChecker] Fetching plan_code for user:", user.id);
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('plan_code')
+          .eq('auth_uid', user.id)
+          .single();
 
-      if (planCode === 'pro' || planCode === 'pro12') {
-        setMaxMedications(10);
-      } else if (planCode === 'basic') {
-        setMaxMedications(5);
-      } else {
-        setMaxMedications(2); // Visitor plan
+        let currentPlanCode: PlanType = 'visitor'; // Default to visitor
+
+        if (userError || !userData?.plan_code) {
+          console.warn("[MedInteractionChecker] Error or no plan_code fetching from 'users' table for user:", user.id, userError);
+          // Keep default 'visitor' plan
+        } else {
+          currentPlanCode = userData.plan_code as PlanType;
+          console.log("[MedInteractionChecker] User plan_code from 'users' table:", currentPlanCode);
+        }
+        
+        // Verify plan_code against the 'plans' table to ensure it's a valid/active plan
+        // This step is good practice, though the original code also did this.
+        const { data: planData, error: planError } = await supabase
+          .from('plans')
+          .select('code')
+          .eq('code', currentPlanCode)
+          .maybeSingle();
+
+        if (planError) {
+          console.error("[MedInteractionChecker] Error verifying plan_code against 'plans' table:", planError);
+          // If error verifying, could fall back to visitor or use the code from users table cautiously
+          // For now, we use currentPlanCode (which might be from users or default visitor)
+        } else if (!planData) {
+          console.warn("[MedInteractionChecker] plan_code '${currentPlanCode}' not found in 'plans' table. Defaulting to visitor.");
+          currentPlanCode = 'visitor'; // Explicitly set to visitor if not found in plans table
+        } else {
+          // Plan code is valid and exists in plans table
+          currentPlanCode = planData.code as PlanType;
+        }
+
+        setUserPlan(currentPlanCode);
+
+        if (currentPlanCode === 'pro' || currentPlanCode === 'pro12' || currentPlanCode === 'annual') { // Added 'annual'
+          setMaxMedications(10);
+          setIsCurrentUserPremium(true);
+        } else if (currentPlanCode === 'basic') {
+          setMaxMedications(5);
+          setIsCurrentUserPremium(false);
+        } else { // Visitor or any other non-premium plan
+          setMaxMedications(2);
+          setIsCurrentUserPremium(false);
+        }
+
+      } catch (error) {
+        console.error("[MedInteractionChecker] General error in fetchUserPlanDetails:", error);
+        setUserPlan('visitor');
+        setMaxMedications(2);
+        setIsCurrentUserPremium(false);
       }
     };
-    fetchPlan();
-  }, [user]);
+
+    fetchUserPlanDetails();
+  }, [user?.id]); // Re-run if user.id changes (login/logout)
 
   const handlePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
@@ -144,7 +190,8 @@ const MedicationInteractionChecker: React.FC = () => {
   }, [result]);
 
   const handleCheckInteractions = () => {
-    checkInteractions(medications, patientInfo);
+    // Pass the determined premium status to checkInteractions
+    checkInteractions(medications, patientInfo, isCurrentUserPremium);
   };
 
   const handleImageScanClick = () => {
