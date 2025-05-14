@@ -45,6 +45,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isMountedRef = useRef(true);
   const navigate = useNavigate();
 
+    // Helper function to fetch role from 'users' table
+    const fetchUserRoleFromDb = async (authUid: string, currentSession: any): Promise<string> => {
+      console.log('Auth: fetchUserRoleFromDb called with authUid:', authUid); // Log entry
+      if (!authUid) {
+        console.log('Auth: fetchUserRoleFromDb returning early - no authUid.');
+        return 'user'; // Default role
+      }
+      try {
+        console.log('Auth: fetchUserRoleFromDb - Attempting to fetch role from Supabase for authUid:', authUid);
+        const result = await supabase
+          .from('users')
+          .select('role')
+          .eq('auth_uid', authUid)
+          .maybeSingle(); // Changed from .single() to .maybeSingle()
+
+        console.log('Auth: fetchUserRoleFromDb - Supabase call COMPLETED.'); // Log right after await
+        console.log('Auth: fetchUserRoleFromDb - Supabase RAW result:', result); // Log the raw result
+
+        const { data, error } = result; // Destructure after logging raw result
+
+        if (error) {
+          console.error('Auth: Error fetching user role from users table (Supabase error object):', error);
+          // Fallback to metadata role if user not in 'users' table or other error
+          return currentSession?.user?.user_metadata?.role || 'user';
+        }
+        
+        const roleFromDb = data?.role;
+        console.log('Auth: Role fetched from DB for', authUid, ':', roleFromDb);
+        
+        const metadataRole = currentSession?.user?.user_metadata?.role;
+        const finalRole = roleFromDb || metadataRole || 'user';
+        console.log(`Auth: fetchUserRoleFromDb - Determined role. DB: ${roleFromDb}, Metadata: ${metadataRole}, Final: ${finalRole}`);
+        return finalRole;
+      } catch (e: any) {
+        console.error('Auth: RAW Exception in fetchUserRoleFromDb:', e);
+        const metadataRole = currentSession?.user?.user_metadata?.role;
+        const fallbackRole = metadataRole || 'user';
+        console.log(`Auth: fetchUserRoleFromDb - Exception. Metadata: ${metadataRole}, Fallback: ${fallbackRole}`);
+        return fallbackRole;
+      }
+    };
+
   useEffect(() => {
     isMountedRef.current = true;
     
@@ -66,37 +108,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // This useEffect handles initial session, auth state changes, and user state updates.
+    const updateUserState = async (currentSession: any | null) => {
+      console.log('Auth: updateUserState called. Current session:', currentSession); // Log entry and session
+      if (isMountedRef.current) { // Ensure component is still mounted
+        if (currentSession?.user) {
+          console.log('Auth: updateUserState - currentSession.user exists:', currentSession.user);
+          console.log('Auth: updateUserState - currentSession.user.id:', currentSession.user.id);
+          const fetchedRole = await fetchUserRoleFromDb(currentSession.user.id, currentSession);
+          const userPayload: Partial<User> = { // Partial because plan details come from elsewhere
+            id: currentSession.user.id, // Stays as auth_uid for now.
+            email: currentSession.user.email || '',
+            role: fetchedRole,
+            auth_uid: currentSession.user.id,
+          };
+          
+          setUser(prevUser => {
+            const baseUser = prevUser || {};
+            // Create a new user object by merging previous state (like plan info) 
+            // with new auth state (id, email, role, auth_uid).
+            const newUser = { 
+              ...baseUser, 
+              ...userPayload,
+              email: userPayload.email || '', 
+              role: userPayload.role || 'user' 
+            } as User;
 
-      if (isMountedRef.current) {
-        setSession(session);
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'user',
-          auth_uid: session.user.id
-        } : null);
-        setLoading(false);
+            if (prevUser?.id !== newUser.id || prevUser?.email !== newUser.email || prevUser?.role !== newUser.role || !prevUser) {
+                 console.log('Auth: User state updated. Role from DB:', newUser.role, 'Full user:', newUser);
+                 return newUser;
+            }
+            return prevUser; 
+          });
+        } else {
+          if (user !== null) { 
+            setUser(null);
+            console.log('Auth: User state set to null.');
+          }
+        }
       }
     };
 
-    getInitialSession();
+    const initializeAuth = async () => {
+      console.log('Auth: Initializing auth...'); // Log initialization start
+      if (!isMountedRef.current) return;
+      setLoading(true);
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Auth: Error getting initial session:', error.message);
+        }
+        console.log('Auth: Initial session data directly after fetch:', initialSession); // Log initial session data
+        
+        // Set session state first
+        if (isMountedRef.current) {
+          setSession(initialSession);
+        }
+        
+        // Then attempt to update user state based on this session
+        await updateUserState(initialSession); 
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMountedRef.current) {
-        setSession(session);
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'user',
-          auth_uid: session.user.id
-        } : null);
+      } catch (e:any) {
+        console.error('Auth: Exception in initializeAuth:', e.message);
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
+    };
+
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      await updateUserState(newSession);
+      if (isMountedRef.current) setSession(newSession);
     });
 
     return () => {
-      subscription.unsubscribe();
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -450,8 +541,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Add isAdmin method that's being used in components
   const isAdmin = () => {
-    if (!user) return false;
-    return user.role === 'admin';
+    console.log('Auth: isAdmin called. User object:', JSON.stringify(user)); // Log the user object isAdmin sees
+    if (!user) {
+      console.log('Auth: isAdmin returning false (user is null/undefined).');
+      return false;
+    }
+    const result = user.role === 'admin';
+    console.log(`Auth: isAdmin check: user.role is "${user.role}", comparison with "admin" is ${result}.`);
+    return result;
   };
 
   // Add login method that's being used in Login.tsx
@@ -480,24 +577,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Add refreshUser method that's being used in useSubscription.tsx
   const refreshUser = async (): Promise<void> => {
     try {
-      // Refresh the session
       const { data: { session: refreshedSession } } = await supabase.auth.getSession();
       
-      if (refreshedSession?.user) {
-        // Update user state
-        setSession(refreshedSession);
-        setUser({
-          id: refreshedSession.user.id,
-          email: refreshedSession.user.email || '',
-          role: refreshedSession.user.user_metadata?.role || 'user',
-          auth_uid: refreshedSession.user.id
+      if (isMountedRef.current && refreshedSession?.user) {
+        const fetchedRole = await fetchUserRoleFromDb(refreshedSession.user.id, refreshedSession);
+        
+        setUser(prevUser => {
+            const baseUser = prevUser || {};
+            const updatedUser = {
+                ...baseUser,
+                id: refreshedSession.user.id,
+                email: refreshedSession.user.email || '',
+                role: fetchedRole,
+                auth_uid: refreshedSession.user.id,
+                email: (refreshedSession.user.email || ''), 
+                role: fetchedRole || 'user' 
+            } as User;
+
+            if (prevUser?.id !== updatedUser.id || prevUser?.email !== updatedUser.email || prevUser?.role !== updatedUser.role || !prevUser) {
+                console.log('Auth: User refreshed. Role from DB:', fetchedRole, 'Full user:', updatedUser);
+                return updatedUser;
+            }
+            return prevUser;
         });
         
-        // Re-fetch user profile and plan
-        await fetchLatestPlan();
+        if (isMountedRef.current) setSession(refreshedSession);
+      } else if (isMountedRef.current) {
+        if (user !== null) {
+            setUser(null);
+            setSession(null);
+            console.log('Auth: User refreshed, but no session or user found.');
+        }
       }
-    } catch (error) {
-      console.error('Error refreshing session:', error);
+    } catch (e: any) {
+      console.error('Error refreshing user session:', e.message);
     }
   };
 

@@ -13,35 +13,25 @@ const Dashboard: React.FC = () => {
   const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!loading) {
-        // Only check permissions once loading is complete
-        if (!user) {
-          // If no user is logged in, redirect to login page
-          console.log('No user found, redirecting to login');
-          navigate('/login');
-          return;
-        }
-        
-        try {
-          // Double-check the user's role directly from the database
+    let isMounted = true;
+    
+    const checkPermissions = async () => {
+      try {
+        if (!loading) {
+          if (!user) {
+            navigate('/login');
+            return;
+          }
+
           const { data: userData, error } = await supabase
             .from('users')
             .select('role')
             .eq('auth_uid', user.id)
             .single();
-          
-          console.log('Database user role check:', userData);
-          
-          // Check user role from database or fallback to user object
+
           const actualRole = userData?.role || user.role;
           
           if (actualRole !== 'admin') {
-            // If user is not an admin, show message and redirect
-            console.log('User is not an admin, redirecting', user);
-            console.log('Role in user object:', user.role);
-            console.log('Role from database:', actualRole);
-            
             toast({
               title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
               description: language === 'ar' 
@@ -51,16 +41,22 @@ const Dashboard: React.FC = () => {
             });
             navigate('/my-account');
           }
-        } catch (error) {
-          console.error('Error checking admin status:', error);
         }
-        
-        // Permission checking is complete
-        setCheckingPermissions(false);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      } finally {
+        if (isMounted) {
+          setCheckingPermissions(false);
+        }
       }
     };
-    
-    checkAdminStatus();
+
+    setCheckingPermissions(true);
+    checkPermissions();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, loading, navigate, language]);
 
   // Show loading state while checking permissions

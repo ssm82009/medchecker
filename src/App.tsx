@@ -23,15 +23,26 @@ const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth(); // Add isAdmin here
   
+  console.log('ProtectedRoute loading:', loading);
+  console.log('ProtectedRoute user:', user);
+  console.log('ProtectedRoute isAdmin:', isAdmin());
+
   // Show loading state or redirect if not authenticated
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
+  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect to home if not an admin
+  if (!isAdmin()) {
+    console.log('User is not admin, redirecting to home.');
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
