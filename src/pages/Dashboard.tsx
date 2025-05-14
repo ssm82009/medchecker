@@ -29,9 +29,18 @@ const Dashboard: React.FC = () => {
             .eq('auth_uid', user.id)
             .single();
 
-          const actualRole = userData?.role || user.role;
-          
-          if (actualRole !== 'admin') {
+          if (error) {
+            console.error('Error fetching user role:', error);
+            toast({
+              title: language === 'ar' ? 'خطأ في التحقق' : 'Verification Error',
+              description: error.message,
+              variant: 'destructive'
+            });
+            navigate('/');
+            return;
+          }
+
+          if (userData.role !== 'admin') {
             toast({
               title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
               description: language === 'ar' 
@@ -39,11 +48,12 @@ const Dashboard: React.FC = () => {
                 : 'You do not have permission to access this page',
               variant: 'destructive'
             });
-            navigate('/my-account');
+            navigate('/');
           }
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
+        navigate('/');
       } finally {
         if (isMounted) {
           setCheckingPermissions(false);

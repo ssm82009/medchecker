@@ -7,7 +7,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import Admin from "./pages/Admin";
+import Dashboard from "./pages/Dashboard"; // Changed from Admin to Dashboard
 import { useAuth, AuthProvider } from "./hooks/useAuth";
 import { useState } from "react";
 import { useTranslation } from "./hooks/useTranslation";
@@ -79,11 +79,7 @@ function AppRoutes() {
               <Login />
             </PublicRoute>
           } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Admin />
-            </ProtectedRoute>
-          } />
+          <Route path="/dashboard" element={<Dashboard />} /> {/* Use Dashboard component */}
           <Route path="/about" element={<StaticPage pageKey="about" />} />
           <Route path="/terms" element={<StaticPage pageKey="terms" />} />
           <Route path="/privacy" element={<StaticPage pageKey="privacy" />} />
