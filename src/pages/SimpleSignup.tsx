@@ -71,32 +71,30 @@ const SimpleSignup: React.FC = () => {
         return;
       }
 
-      // Here we use service role key for inserting into users table (bypassing RLS)
-      // This will be handled through a server-side function or trigger in production
-      // For development purposes, we do it directly here
+      // تحقق من عدم وجود المستخدم مسبقًا
+      const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
+      if (existing) {
+        toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use', variant: 'destructive' });
+        setLoading(false);
+        resetCaptcha();
+        return;
+      }
+      
+      // أضف المستخدم
       const { error } = await supabase.from('users').insert({
-        auth_uid: authData.user.id,
         email,
-        password, // Note: Consider encrypting this for production
+        password,
         role: 'user',
-        plan_code: 'basic'
+        plan_code: 'basic',
+        auth_uid: authData.user.id // Include auth_uid from the created auth user
       });
       
-      // Even if there's an error with the additional user data, the auth account is created
-      if (error) {
-        console.error('Error creating user record:', error);
-        // Don't block signup if user table insertion fails (this is just supplementary data)
-        toast({ 
-          title: language === 'ar' ? 'تم التسجيل بنجاح' : 'Signup Success', 
-          description: language === 'ar' ? 'تم إنشاء الحساب ولكن قد تكون هناك بعض البيانات الناقصة. يمكنك تسجيل الدخول الآن.' : 'Account created successfully, but some user data might be missing. You can now login.',
-        });
+      if (!error) {
+        toast({ title: language === 'ar' ? 'تم التسجيل' : 'Signup Success', description: language === 'ar' ? 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' : 'Account created successfully. You can now login.' });
+        navigate('/login');
       } else {
-        toast({ 
-          title: language === 'ar' ? 'تم التسجيل' : 'Signup Success', 
-          description: language === 'ar' ? 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' : 'Account created successfully. You can now login.' 
-        });
+        toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: error.message, variant: 'destructive' });
       }
-      navigate('/login');
     } catch (err: any) {
       toast({ 
         title: language === 'ar' ? 'خطأ' : 'Error', 
@@ -140,4 +138,4 @@ const SimpleSignup: React.FC = () => {
   );
 };
 
-export default SimpleSignup;
+export default SimpleSignup; 

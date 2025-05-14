@@ -46,29 +46,34 @@ const Signup: React.FC = () => {
         return;
       }
 
-      // Insert directly without checking for existing user since auth already validated
+      // تحقق من عدم وجود المستخدم مسبقًا
+      const { data: existing, error: existError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existing) {
+        toast({ title: 'خطأ', description: 'البريد الإلكتروني مستخدم بالفعل', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      // أضف المستخدم في جدول المستخدمين
       const { error } = await supabase.from('users').insert({
-        auth_uid: authData.user.id,
         email,
         password,
         role: 'user',
-        plan_code: 'basic'
+        plan_code: 'basic',
+        auth_uid: authData.user.id // Include the auth_uid from the created auth user
       });
 
-      // Even if there's an error with the additional user data, the auth account is created
-      if (error) {
-        console.error('Error creating user record:', error);
-        toast({ 
-          title: 'تم التسجيل بنجاح', 
-          description: 'تم إنشاء الحساب ولكن قد تكون هناك بعض البيانات الناقصة. يمكنك تسجيل الدخول الآن.' 
-        });
+      if (!error) {
+        toast({ title: 'تم التسجيل', description: 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' });
+        navigate('/login');
       } else {
-        toast({ 
-          title: 'تم التسجيل', 
-          description: 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.' 
-        });
+        toast({ title: 'خطأ', description: error.message, variant: 'destructive' });
       }
-      navigate('/login');
     } catch (err: any) {
       toast({ title: 'خطأ', description: err.message || 'حدث خطأ أثناء التسجيل', variant: 'destructive' });
     } finally {
@@ -99,4 +104,4 @@ const Signup: React.FC = () => {
   );
 };
 
-export default Signup;
+export default Signup; 

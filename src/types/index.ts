@@ -1,3 +1,4 @@
+
 export interface PlanType {
   id: string;
   code: string;
@@ -71,8 +72,8 @@ export interface Transaction {
 
 export interface SearchHistory {
   id: string;
-  user_id: string | null;
+  user_id: string;
   search_query: string;
-  search_results: any; // Using 'any' for now as it's a jsonb type in the database
+  search_results: any;
   created_at: string;
 }
