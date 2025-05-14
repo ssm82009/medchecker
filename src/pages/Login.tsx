@@ -23,6 +23,7 @@ const Login: React.FC = () => {
   const { login, error, loading, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loginAttempted, setLoginAttempted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<LoginFormValues>({
     defaultValues: {
@@ -40,7 +41,10 @@ const Login: React.FC = () => {
   }, [user, navigate, location.state]);
 
   const handleSubmit = async (values: LoginFormValues) => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    
     try {
+      setIsSubmitting(true);
       setLoginAttempted(true);
       console.log('Attempting login with:', values.email);
       const success = await login(values.email, values.password);
@@ -74,6 +78,8 @@ const Login: React.FC = () => {
         description: t('invalidCredentials'),
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,12 +87,14 @@ const Login: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
+  // Determine if we should show the loading state
+  const showLoading = loading || isSubmitting;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir={dir}>
       <Card className="w-full max-w-md border-primary/10 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">{t('login')}</CardTitle>
-          {/* Fix the translation key by removing it or using valid key */}
           <CardDescription className="text-center"></CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -105,6 +113,7 @@ const Login: React.FC = () => {
                         placeholder="admin@example.com"
                         className="w-full"
                         required
+                        disabled={showLoading}
                       />
                     </FormControl>
                   </FormItem>
@@ -124,12 +133,14 @@ const Login: React.FC = () => {
                           placeholder="••••••••"
                           className="w-full pr-10"
                           required
+                          disabled={showLoading}
                         />
                       </FormControl>
                       <button 
                         type="button"
                         onClick={togglePasswordVisibility}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        disabled={showLoading}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
@@ -145,12 +156,15 @@ const Login: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loading}
+                disabled={showLoading}
                 size="lg"
               >
-                {loading ? (
+                {showLoading ? (
                   <span className="flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                     {t('loading')}
                   </span>
                 ) : (

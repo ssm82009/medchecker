@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { PlanType } from '@/types/plan';
 
@@ -22,8 +22,24 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
   onApprove,
   onError
 }) => {
+  const [isClientReady, setIsClientReady] = useState(false);
+  
   // تأكد إضافي من توفر معرف المستخدم وأنه نص
   const safeUserId = userId ? String(userId) : '';
+  
+  useEffect(() => {
+    // Verify that all required props are available
+    if (paypalSettings?.clientId && plan?.price && safeUserId) {
+      setIsClientReady(true);
+    } else {
+      setIsClientReady(false);
+      console.warn("Missing required PayPal props:", { 
+        hasClientId: !!paypalSettings?.clientId,
+        hasPlanPrice: !!plan?.price,
+        hasUserId: !!safeUserId
+      });
+    }
+  }, [paypalSettings, plan, safeUserId]);
   
   if (!safeUserId) {
     console.error("No user ID available in PayPalButtonsContainer");
@@ -31,6 +47,16 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
       <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4">
         <div className="text-amber-700">
           {language === 'ar' ? 'معرف المستخدم غير متوفر' : 'User ID not available'}
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isClientReady) {
+    return (
+      <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4">
+        <div className="text-amber-700">
+          {language === 'ar' ? 'جاري تجهيز بوابة الدفع...' : 'Preparing payment gateway...'}
         </div>
       </div>
     );
@@ -47,7 +73,7 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
         components: 'buttons',
         disableFunding: 'card',
         enableFunding: 'paypal',
-        intent: 'capture', // دائما نستخدم الدفع لمرة واحدة الآن
+        intent: 'capture',
         buyerCountry: paypalSettings.mode === 'sandbox' ? 'US' : undefined
       }}
     >
@@ -59,28 +85,43 @@ const PayPalButtonsContainer: React.FC<PayPalButtonsContainerProps> = ({
           console.log("User ID for createOrder:", safeUserId, "Type:", typeof safeUserId);
           console.log("Selected plan:", plan.name, "Price:", plan.price);
           
-          return actions.order.create({
-            intent: 'CAPTURE',
-            purchase_units: [
-              {
-                amount: {
-                  value: plan.price.toString(),
-                  currency_code: paypalSettings.currency || 'USD',
+          try {
+            return actions.order.create({
+              intent: 'CAPTURE',
+              purchase_units: [
+                {
+                  amount: {
+                    value: plan.price.toString(),
+                    currency_code: paypalSettings.currency || 'USD',
+                  },
+                  description: language === 'ar' ? plan.nameAr : plan.name,
+                  custom_id: safeUserId
                 },
-                description: language === 'ar' ? plan.nameAr : plan.name,
-                custom_id: safeUserId // هذا صالح في purchase_units
-              },
-            ],
-            application_context: {
-              user_action: "PAY_NOW"
-            }
-          });
+              ],
+              application_context: {
+                user_action: "PAY_NOW"
+              }
+            });
+          } catch (err) {
+            console.error("Error creating PayPal order:", err);
+            onError(language === 'ar' 
+              ? 'فشل في إنشاء الطلب: ' + String(err)
+              : 'Failed to create order: ' + String(err));
+            throw err;
+          }
         }}
         onApprove={async (data, actions) => {
-          // تأكد دائمًا من وجود معرف المستخدم في بيانات المرسلة إلى معالج الموافقة
-          const enhancedData = { ...data, userId: safeUserId };
-          console.log("Payment approved with enhanced data:", enhancedData);
-          await onApprove(enhancedData, actions);
+          try {
+            // تأكد دائمًا من وجود معرف المستخدم في بيانات المرسلة إلى معالج الموافقة
+            const enhancedData = { ...data, userId: safeUserId };
+            console.log("Payment approved with enhanced data:", enhancedData);
+            await onApprove(enhancedData, actions);
+          } catch (err) {
+            console.error("Error in onApprove handler:", err);
+            onError(language === 'ar' 
+              ? 'فشل في معالجة الدفع: ' + String(err)
+              : 'Failed to process payment: ' + String(err));
+          }
         }}
         onError={(err) => {
           console.error('PayPal error:', err);
