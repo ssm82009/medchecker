@@ -1,5 +1,5 @@
 
-import { useToast as useShadcnToast } from "@/components/ui/use-toast";
+import { useToast as useShadcnToast } from "@/components/ui/toast";
 import { toast as sonnerToast } from "sonner";
 
 export const useToast = useShadcnToast;
@@ -18,5 +18,5 @@ export const toast = (props: any) => {
     });
   }
   
-  return useShadcnToast(props);
+  return sonnerToast(props);
 };
