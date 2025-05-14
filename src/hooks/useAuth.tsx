@@ -129,7 +129,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // with new auth state (id, email, role, auth_uid).
             const newUser = { 
               ...baseUser, 
-              ...userPayload 
+              ...userPayload,
+              email: userPayload.email || '', 
+              role: userPayload.role || 'user' 
             } as User;
 
             if (prevUser?.id !== newUser.id || prevUser?.email !== newUser.email || prevUser?.role !== newUser.role || !prevUser) {
@@ -587,7 +589,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: refreshedSession.user.id,
                 email: refreshedSession.user.email || '',
                 role: fetchedRole,
-                auth_uid: refreshedSession.user.id
+                auth_uid: refreshedSession.user.id,
+                email: (refreshedSession.user.email || ''), 
+                role: fetchedRole || 'user' 
             } as User;
 
             if (prevUser?.id !== updatedUser.id || prevUser?.email !== updatedUser.email || prevUser?.role !== updatedUser.role || !prevUser) {
