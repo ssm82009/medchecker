@@ -3,11 +3,11 @@ import React, { useEffect, useState, useContext, createContext, useCallback } fr
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-// Simplified User interface for this rebuild
+// User interface with role
 export interface AuthUser {
   id: string;
   email?: string;
-  // Role and other details can be added back incrementally
+  role?: string;
 }
 
 interface AuthContextType {

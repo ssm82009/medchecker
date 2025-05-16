@@ -74,7 +74,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir={dir}>
-      <Card className="w-full max-w-md border-primary/10 shadow-lg">
+      <Card className="w-full max-w-md border-primary/10 shadow-lg dark-mode-card">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">{t('login')}</CardTitle>
           <CardDescription className="text-center"></CardDescription>

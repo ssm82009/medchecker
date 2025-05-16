@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -83,7 +82,7 @@ const Signup: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md border-primary/10 shadow-lg">
+      <Card className="w-full max-w-md border-primary/10 shadow-lg dark-mode-card">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">إنشاء حساب جديد</CardTitle>
         </CardHeader>
@@ -104,4 +103,4 @@ const Signup: React.FC = () => {
   );
 };
 
-export default Signup; 
+export default Signup;

@@ -212,13 +212,13 @@ const MedicationInteractionChecker: React.FC = () => {
       </h1>
       
       <div className="w-full bg-transparent mt-4">
-        <Card className={`shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0`}>
-          <CardHeader className="bg-primary/5 rounded-t-lg">
-            <CardTitle className="flex items-center text-gray-700">
+        <Card className="medchecker-card shadow-lg transition-all duration-300 hover:shadow-xl bg-white/90 backdrop-blur-md mb-6 border-0">
+          <CardHeader className="card-header bg-primary/5 rounded-t-lg">
+            <CardTitle className="card-title flex items-center text-gray-700">
               <Pill className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5`} />
               {t('appTitle')}
             </CardTitle>
-            <CardDescription className="text-gray-500">{t('enterMedication')}</CardDescription>
+            <CardDescription className="card-description text-gray-500">{t('enterMedication')}</CardDescription>
           </CardHeader>
           <CardContent className={`space-y-4 pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
             <div className="space-y-4">

@@ -95,18 +95,18 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
   };
 
   return (
-    <Card id="result-card" className={`animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16 ${isDarkMode ? 'bg-[#232b3b] text-[#e3eaf3]' : ''}`} ref={resultRef}>
-      <CardHeader className={`${result.hasInteractions ? (isDarkMode ? 'bg-[#202634]' : 'bg-red-50') : (isDarkMode ? 'bg-[#1a3a2a]' : 'bg-green-50')} rounded-t-lg`}>
-        <CardTitle className="flex items-center">
+    <Card id="result-card" className={`result-card animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16`} ref={resultRef}>
+      <CardHeader className="card-header rounded-t-lg">
+        <CardTitle className="card-title flex items-center">
           {result.hasInteractions ? (
             <>
-              <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#ff6b6b]' : 'text-red-500'}`} />
-              <span className={`${isDarkMode ? 'text-[#ffb4b4]' : 'text-red-700'}`}>{t('interactionsFound')}</span>
+              <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#227bbb]' : 'text-red-500'}`} />
+              <span className={`${isDarkMode ? 'text-[#dbdde5]' : 'text-red-700'}`}>{t('interactionsFound')}</span>
             </>
           ) : (
             <>
-              <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#7fffbe]' : 'text-green-500'}`} />
-              <span className={`${isDarkMode ? 'text-[#7fffbe]' : 'text-green-700'}`}>{t('noInteractionsFound')}</span>
+              <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#146393]' : 'text-green-500'}`} />
+              <span className={`${isDarkMode ? 'text-[#dbdde5]' : 'text-green-700'}`}>{t('noInteractionsFound')}</span>
             </>
           )}
         </CardTitle>
@@ -116,7 +116,11 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             size="sm" 
             onClick={handleShare}
             disabled={isSharing}
-            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
+            className={`${
+              isDarkMode 
+                ? 'bg-[#232434] hover:bg-[#214f77] border-[#7398b4] text-[#dbdde5] disabled:bg-[#3c444c] disabled:text-[#6e7283]' 
+                : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'
+            }`}
           >
             {isSharing ? (
               <Loader className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'} animate-spin`} />
@@ -129,10 +133,14 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             variant="outline" 
             size="sm" 
             onClick={copyResults}
-            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
+            className={`${
+              isDarkMode 
+                ? 'bg-[#232434] hover:bg-[#214f77] border-[#7398b4] text-[#dbdde5]' 
+                : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'
+            }`}
           >
             {copied ? (
-              <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+              <CheckCircle className={`h-4 w-4 ${isDarkMode ? 'text-[#146393]' : 'text-green-500'} mr-1`} />
             ) : (
               <Copy className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
             )}
@@ -142,28 +150,38 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             variant="outline" 
             size="sm" 
             onClick={printResults}
-            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
+            className={`${
+              isDarkMode 
+                ? 'bg-[#232434] hover:bg-[#214f77] border-[#7398b4] text-[#dbdde5]' 
+                : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'
+            }`}
           >
             <Printer className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
             <span>{language === 'ar' ? 'طباعة' : 'Print'}</span>
           </Button>
         </div>
         {apiKeyError && (
-          <div className="mt-2 p-2 bg-gray-800 text-white rounded-md text-xs flex items-center">
-            <AlertTriangle className="h-3 w-3 mr-1 text-yellow-300" />
+          <div className={`mt-2 p-2 rounded-md text-xs flex items-center ${
+            isDarkMode ? 'bg-[#232434] text-[#dbdde5]' : 'bg-gray-800 text-white'
+          }`}>
+            <AlertTriangle className="h-3 w-3 mr-1 text-[#227bbb]" />
             {language === 'ar' 
               ? 'ملاحظة: النتائج أدناه تستند إلى بيانات تجريبية للتوضيح فقط.'
               : 'Note: Results below are based on demo data for illustration only.'}
           </div>
         )}
       </CardHeader>
-      <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+      <CardContent className={`pt-6 ${isMobile ? 'px-3' : 'px-6'} ${isDarkMode ? 'text-[#dbdde5]' : ''}`}>
         {!result.hasInteractions ? (
-          <p className="text-green-700 font-medium">{t('noInteractions')}</p>
+          <p className={`font-medium ${isDarkMode ? 'text-[#146393]' : 'text-green-700'}`}>
+            {t('noInteractions')}
+          </p>
         ) : (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold mb-2 text-red-700">{t('interactionsFound')}</h3>
+              <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-[#227bbb]' : 'text-red-700'}`}>
+                {t('interactionsFound')}
+              </h3>
               <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
                 {result.interactions?.map((interaction, i) => (
                   <li key={i} className="mb-2 text-sm">{interaction}</li>
@@ -173,7 +191,9 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             
             {result.ageWarnings && result.ageWarnings.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2 text-amber-700">{t('ageWarnings')}</h3>
+                <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-[#227bbb]' : 'text-amber-700'}`}>
+                  {t('ageWarnings')}
+                </h3>
                 <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
                   {result.ageWarnings.map((warning, i) => (
                     <li key={i} className="mb-2 text-sm">{warning}</li>
@@ -184,7 +204,9 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             
             {result.alternatives && result.alternatives.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2 text-blue-700">{t('alternatives')}</h3>
+                <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-[#227bbb]' : 'text-blue-700'}`}>
+                  {t('alternatives')}
+                </h3>
                 <ul className={`list-disc ${dir === 'rtl' ? 'pr-5' : 'pl-5'} space-y-2`}>
                   {result.alternatives.map((alternative, i) => (
                     <li key={i} className="mb-2 text-sm">{alternative}</li>
@@ -193,8 +215,14 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
               </div>
             )}
             
-            <Alert className="mt-6 bg-amber-50 border border-amber-300 text-amber-800 shadow-sm">
-              <AlertTriangle className="h-4 w-4 inline-block mr-2 text-amber-500" />
+            <Alert className={`mt-6 ${
+              isDarkMode 
+                ? 'bg-[#232434] border-[#7398b4] text-[#dbdde5]' 
+                : 'bg-amber-50 border border-amber-300 text-amber-800'
+            } shadow-sm`}>
+              <AlertTriangle className={`h-4 w-4 inline-block mr-2 ${
+                isDarkMode ? 'text-[#227bbb]' : 'text-amber-500'
+              }`} />
               <AlertDescription className="text-xs">{t('disclaimer')}</AlertDescription>
             </Alert>
           </div>

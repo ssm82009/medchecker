@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -389,7 +388,7 @@ const MyAccount: React.FC = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
-      <Card className="w-full max-w-4xl shadow-xl border-primary/10">
+      <Card className="w-full max-w-4xl shadow-xl border-primary/10 dark-mode-card">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center text-primary">
             {language === 'ar' ? 'حسابي' : 'My Account'}

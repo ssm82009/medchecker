@@ -23,35 +23,33 @@ const Navbar: React.FC = () => {
 
   return (
     <div className="sticky top-0 z-50 w-full">
-      <nav 
-        className="navbar flex items-center justify-start px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0" 
-        dir={dir}
-      >
+      <nav className="navbar flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 mb-6 shadow-md mx-0 mt-0" dir={dir}>
         {/* Logo */}
-        <div className={`navbar-brand text-xl font-bold flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first ml-auto'}`}>
+        <div className={`navbar-brand text-xl font-bold flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
           <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
             <Pill className="h-6 w-6" />
             <span>{logoText}</span>
           </Link>
         </div>
+
         {/* Menu and Dark Mode Toggle */}
-        <div className="flex items-center gap-2">
-          {/* Dark Mode Toggle */}
-          <Button
+        <div className={`flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
+          {/* Dark Mode Toggle */}          <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="hover:bg-white/10"
+            className="hover:bg-white/10 text-white hover:text-white"
           >
             {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
           </Button>
-          {/* Menu Button and Sheet */}
+
+          {/* Menu Button */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="text-white hover:bg-white/10"
+                className="text-white hover:bg-white/10 hover:text-white"
               >
                 <Menu className="h-6 w-6" />
               </Button>
@@ -62,25 +60,31 @@ const Navbar: React.FC = () => {
                 <div className="mb-4">
                   <LanguageSwitcher />
                 </div>
-                
+
                 {/* Page Links */}
                 <Button variant="outline" asChild className="w-full justify-start">
                   <Link to="/" onClick={handleLinkClick}>{t('appTitle' as any)}</Link>
                 </Button>
+
+                <Button variant="outline" asChild className="w-full justify-start">
+                  <Link to="/subscribe" onClick={handleLinkClick} className="flex items-center">
                     <CreditCard className="mr-2 h-4 w-4" />
                     {language === 'ar' ? 'الاشتراك' : 'Subscribe'}
                   </Link>
                 </Button>
-                
+
                 <Button variant="outline" asChild className="w-full justify-start">
                   <Link to="/terms" onClick={handleLinkClick}>{t('termsOfUse' as any)}</Link>
                 </Button>
+
                 <Button variant="outline" asChild className="w-full justify-start">
                   <Link to="/privacy" onClick={handleLinkClick}>{t('privacyPolicy' as any)}</Link>
                 </Button>
+
                 <Button variant="outline" asChild className="w-full justify-start">
                   <Link to="/copyright" onClick={handleLinkClick}>{t('copyright' as any)}</Link>
                 </Button>
+
                 <Button variant="outline" asChild className="w-full justify-start">
                   <Link to="/contact" onClick={handleLinkClick}>{t('contactUs' as any)}</Link>
                 </Button>
@@ -94,7 +98,9 @@ const Navbar: React.FC = () => {
                       </Button>
                     )}
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link to="/my-account" onClick={handleLinkClick}>{language === 'ar' ? 'حسابي' : 'My Account'}</Link>
+                      <Link to="/my-account" onClick={handleLinkClick}>
+                        {language === 'ar' ? 'حسابي' : 'My Account'}
+                      </Link>
                     </Button>
                     <Button 
                       variant="outline" 
@@ -109,19 +115,14 @@ const Navbar: React.FC = () => {
                   </>
                 ) : (
                   <Button variant="outline" asChild className="w-full justify-start">
-                    <Link to="/login" onClick={handleLinkClick}>{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</Link>
+                    <Link to="/login" onClick={handleLinkClick}>
+                      {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                    </Link>
                   </Button>
                 )}
               </div>
             </SheetContent>
           </Sheet>
-        </div>
-        {/* Logo */}
-        <div className={`navbar-brand text-xl font-bold flex items-center gap-2 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
-          <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
-            <Pill className="h-6 w-6" />
-            <span>{logoText}</span>
-          </Link>
         </div>
       </nav>
     </div>
