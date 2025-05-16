@@ -17,6 +17,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  isAdmin: () => boolean; // Added isAdmin to the interface
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,7 +156,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false); // Reset loading on exception
     }
   };
-  
+
+  const isAdmin = useCallback(() => {
+    return user?.role === 'admin';
+  }, [user]);
+
   // Log state changes for debugging
   useEffect(() => {
     console.log('[AuthProvider] State changed: ', { user, session, loading, error });
@@ -170,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         logout,
+        isAdmin, // Added isAdmin here
       }}
     >
       {children}

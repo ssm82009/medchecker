@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -45,44 +44,43 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 221 83% 53%;
   }
-
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 217 21% 13%; /* #181f2a */
+    --foreground: 220 20% 95%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 20% 18%; /* #232b3b */
+    --card-foreground: 220 20% 95%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 20% 18%;
+    --popover-foreground: 220 20% 95%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 212 77% 47%; /* #1a6ed8 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 25.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 20% 95%;
 
-    --muted: 240 3.7% 25.9%;
-    --muted-foreground: 240 5% 54.9%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 60%;
 
-    --accent: 250 46% 50%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 220 20% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 40%;
+    --destructive-foreground: 220 20% 95%;
 
-    --border: 240 3.7% 20.9%;
-    --input: 240 3.7% 20.9%;
-    --ring: 221 83% 53%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 212 77% 47%;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 250 95% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 25.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 25.9%;
-    --sidebar-ring: 250 95% 60%;
+    --sidebar-background: 230 15% 12%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 265 80% 60%;
+    --sidebar-primary-foreground: 220 20% 95%;
+    --sidebar-accent: 221 83% 63%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 220 10% 18%;
+    --sidebar-ring: 265 80% 60%;
   }
 }
 
@@ -95,6 +93,11 @@
   body {
     @apply bg-background text-foreground font-tajawal;
     background-image: linear-gradient(to right bottom, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.1));
+    background-attachment: fixed;
+  }
+  
+  .dark body {
+    background: linear-gradient(135deg, #181f2a 0%, #232b3b 100%) !important;
     background-attachment: fixed;
   }
   
@@ -202,6 +205,225 @@
     @apply font-bold text-white;
   }
 
+  .dark .navbar {
+    background: #181f2a !important;
+    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
+    border-bottom: 1px solid #232b3b;
+  }
+  .dark .navbar-brand {
+    color: #fff !important;
+  }
+  .dark footer {
+    background: #181f2a !important;
+    border-top: 1px solid #232b3b !important;
+  }
+  .dark footer p, .dark footer span, .dark footer a {
+    color: #b6c2d1 !important;
+  }
+  .dark .card, .dark .bg-card, .dark .rounded-lg.border.bg-card {
+    background: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
+  }
+  .dark .card input, .dark .card select, .dark .card textarea {
+    background: #181f2a !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+  .dark .card label, .dark .card .text-muted-foreground {
+    color: #7e8ba3 !important;
+  }
+  .dark .card .button, .dark .card button, .dark .card .btn, .dark .card [type="submit"] {
+    background: #1a6ed8 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px 0 rgba(26,110,216,0.10);
+    transition: background 0.2s;
+  }
+  .dark .card .button:hover, .dark .card button:hover, .dark .card .btn:hover, .dark .card [type="submit"]:hover {
+    background: #1558a5 !important;
+  }
+  .dark .card .patient-info-box {
+    background: #181f2a !important;
+    color: #e3eaf3 !important;
+    border: 1px solid #232b3b !important;
+    box-shadow: 0 1px 8px 0 rgba(0,0,0,0.10);
+  }
+  /* Dark mode for Medication Checker Card and its contents */
+  .dark .card {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.15);
+  }
+
+  .dark .card-header, 
+  .dark .card [class*="bg-primary/5"] {
+    background-color: rgba(26, 110, 216, 0.05) !important;
+  }
+
+  .dark .card-title {
+    color: #e3eaf3 !important;
+  }
+
+  .dark .card-description {
+    color: #b6c2d1 !important;
+  }
+
+  .dark .card input,
+  .dark .card select,
+  .dark .card textarea {
+    background-color: #181f2a !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+    border-color: #232b3b !important;
+  }
+  .dark .card input::placeholder,
+  .dark .card textarea::placeholder,
+  .dark .card select::placeholder {
+    color: #7e8ba3 !important;
+  }
+
+  .dark .card input:focus,
+  .dark .card textarea:focus,
+  .dark .card select:focus {
+    border-color: #1a6ed8 !important;
+    box-shadow: 0 0 0 2px rgba(26, 110, 216, 0.15) !important;
+  }
+
+  .dark .card label,
+  .dark .card .text-muted-foreground {
+    color: #7e8ba3 !important;
+  }
+  
+  .dark .card [class*="hover:bg-primary/5"]:hover {
+    background-color: rgba(26, 110, 216, 0.05) !important;
+    color: #1a6ed8 !important;
+  }
+  .dark .card button:not([disabled]),
+  .dark .card .button:not([disabled]) {
+    background-color: #1a6ed8 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px 0 rgba(26, 110, 216, 0.15) !important;
+  }
+
+  .dark .card button:hover:not([disabled]),
+  .dark .card .button:hover:not([disabled]) {
+    background-color: #1558a5 !important;
+  }
+
+  .dark .card button[variant="outline"],
+  .dark .card .button[variant="outline"] {
+    background-color: transparent !important;
+    border: 1px solid #232b3b !important;
+    color: #b6c2d1 !important;
+  }
+
+  .dark .patient-info-box,
+  .dark .card [class*="bg-gray-50"] {
+    background-color: #181f2a !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+
+  .dark .card .text-gray-700,
+  .dark .card .text-gray-600,
+  .dark .card [class*="text-gray-"] {
+    color: #b6c2d1 !important;
+  }
+
+  .dark .card [class*="border-gray-"] {
+    border-color: #232b3b !important;
+  }
+
+  .dark .card [class*="bg-white"] {
+    background-color: #232b3b !important;
+  }
+
+  .dark .card .bg-gray-800 {
+    background-color: #181f2a !important;
+  }
+
+  /* Specific Dark Mode Styles for Medication Checker Card */
+  .dark .medchecker-card {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.15);
+  }
+  .dark .medchecker-card-header,
+  .dark .medchecker-card [class*="bg-primary/5"] {
+    background-color: rgba(26, 110, 216, 0.05) !important;
+  }
+  .dark .medchecker-card-title {
+    color: #e3eaf3 !important;
+  }
+  .dark .medchecker-card-description {
+    color: #b6c2d1 !important;
+  }
+  .dark .medchecker-card input,
+  .dark .medchecker-card select,
+  .dark .medchecker-card textarea {
+    background-color: #181f2a !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+  .dark .medchecker-card input::placeholder,
+  .dark .medchecker-card textarea::placeholder,
+  .dark .medchecker-card select::placeholder {
+    color: #7e8ba3 !important;
+  }
+  .dark .medchecker-card input:focus,
+  .dark .medchecker-card textarea:focus,
+  .dark .medchecker-card select:focus {
+    border-color: #1a6ed8 !important;
+    box-shadow: 0 0 0 2px rgba(26, 110, 216, 0.15) !important;
+  }
+  .dark .medchecker-card label,
+  .dark .medchecker-card .text-muted-foreground {
+    color: #7e8ba3 !important;
+  }
+  .dark .medchecker-card .button,
+  .dark .medchecker-card button,
+  .dark .medchecker-card .btn,
+  .dark .medchecker-card [type="submit"] {
+    background: #1a6ed8 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px 0 rgba(26,110,216,0.10);
+    transition: background 0.2s;
+  }
+  .dark .medchecker-card .button:hover,
+  .dark .medchecker-card button:hover,
+  .dark .medchecker-card .btn:hover,
+  .dark .medchecker-card [type="submit"]:hover {
+    background: #1558a5 !important;
+  }
+  .dark .medchecker-card .patient-info-box,
+  .dark .medchecker-card [class*="bg-gray-50"] {
+    background: #181f2a !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+  .dark .medchecker-card .text-gray-700,
+  .dark .medchecker-card .text-gray-600,
+  .dark .medchecker-card [class*="text-gray-"] {
+    color: #b6c2d1 !important;
+  }
+  .dark .medchecker-card [class*="border-gray-"],
+  .dark .medchecker-card .border-gray-200 {
+    border-color: #232b3b !important;
+  }
+  .dark .medchecker-card [class*="bg-white"],
+  .dark .medchecker-card .bg-white {
+    background-color: #232b3b !important;
+  }
+  .dark .medchecker-card .bg-gray-800 {
+    background-color: #181f2a !important;
+  }
+
   /* Background Effects */
   .bg-gradient-animation {
     background-size: 200% 200%;
@@ -233,6 +455,194 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  /* Dark mode for result cards */
+  .dark #result-card {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+
+  .dark #result-card .CardHeader {
+    background-color: #202634 !important;
+    border-bottom: 1px solid #232b3b !important;
+  }
+
+  .dark #result-card .bg-white\/70 {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border: 1px solid #232b3b !important;
+  }
+
+  .dark #result-card .bg-white\/70:hover {
+    background-color: #181f2a !important;
+  }
+
+  .dark #result-card [class*="bg-red-50"],
+  .dark #result-card [class*="bg-green-50"] {
+    background-color: #202634 !important;
+    border-bottom: 1px solid #232b3b !important;
+  }
+
+  .dark #result-card .CardHeader button:hover,
+  .dark #result-card .CardHeader .button:hover {
+    background: #1558a5 !important;
+  }
+  .dark #result-card .CardHeader button[variant="outline"],
+  .dark #result-card .CardHeader .button[variant="outline"] {
+    background-color: transparent !important;
+    border: 1px solid #232b3b !important;
+    color: #b6c2d1 !important;
+  }
+  .dark #result-card .text-red-700,
+  .dark #result-card .text-red-600 {
+    color: #ff6b6b !important;
+  }
+  .dark #result-card .text-red-700,
+  .dark #result-card .text-green-700,
+  .dark #result-card .text-amber-700,
+  .dark #result-card .text-blue-700,
+  .dark #result-card .text-amber-800 {
+    color: #ffb4b4 !important;
+  }
+  .dark #result-card .text-blue-700 {
+    color: #7ecbff !important;
+  }
+  .dark #result-card .text-green-700 {
+    color: #7fffbe !important;
+  }
+  .dark #result-card .text-amber-700,
+  .dark #result-card .text-amber-800 {
+    color: #ffe29e !important;
+  }
+  .dark #result-card .border-amber-300 {
+    border-color: #ffe29e !important;
+  }
+  .dark #result-card .border-red-300 {
+    border-color: #ffb4b4 !important;
+  }
+  .dark #result-card .border-green-300 {
+    border-color: #7fffbe !important;
+  }
+  .dark #result-card .bg-amber-50,
+  .dark #result-card .bg-amber-100 {
+    background: #2a2730 !important;
+    color: #ffe29e !important;
+    border-color: #bfae6a !important;
+  }
+  .dark #result-card .bg-red-50,
+  .dark #result-card .bg-red-100 {
+    background: #202634 !important;
+  }
+  .dark #result-card .bg-green-50,
+  .dark #result-card .bg-green-100 {
+    background: #1a3a2a !important;
+  }
+  .dark #result-card .text-gray-700,
+  .dark #result-card .text-gray-600,
+  .dark #result-card .text-gray-500 {
+    color: #b6c2d1 !important;
+  }
+  .dark #result-card .bg-white,
+  .dark #result-card .bg-white\/70 {
+    background: #232b3b !important;
+  }
+  .dark #result-card .border-gray-200 {
+    border-color: #232b3b !important;
+  }
+  .dark #result-card .shadow-sm {
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18) !important;
+  }
+  .dark #result-card .btn,
+  .dark #result-card button,
+  .dark #result-card .bg-white\/70,
+  .dark #result-card .bg-white {
+    background: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+  .dark #result-card button:hover {
+    background: #181f2a !important;
+  }
+  .dark #result-card .alert,
+  .dark #result-card .bg-amber-50 {
+    background: #2a2730 !important;
+    color: #ffe29e !important;
+    border-color: #bfae6a !important;
+  }
+  .dark #result-card .result-action-btn {
+    background: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+  .dark #result-card .result-action-btn:hover {
+    background: #181f2a !important;
+    color: #fff !important;
+  }
+  .dark #result-card .result-alert-msg {
+    background: #1f1d25 !important;
+    color: #ffe29e !important;
+    border: 1px solid #bfae6a !important;
+  }
+
+  /* Dark mode overrides for result card */
+  .dark #result-card {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+  }
+
+  .dark #result-card .card-header {
+    background-color: #202634 !important;
+    border-bottom: 1px solid #232b3b !important;
+  }
+
+  .dark #result-card .card-header button[variant="outline"],
+  .dark #result-card .card-header .button[variant="outline"] {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border: 1px solid #232b3b !important;
+    box-shadow: 0 2px 8px 0 rgba(26, 110, 216, 0.15) !important;
+  }
+
+  .dark #result-card .card-header button[variant="outline"]:hover,
+  .dark #result-card .card-header .button[variant="outline"]:hover {
+    background-color: #181f2a !important;
+  }
+
+  /* Dark mode for result card header and buttons */
+  .dark .result-card {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border-color: #232b3b !important;
+  }
+
+  .dark .result-card .CardHeader {
+    background-color: #202634 !important;
+    border-bottom: 1px solid #232b3b !important;
+  }
+
+  .dark .result-card .CardHeader button[variant="outline"],
+  .dark .result-card .CardHeader button {
+    background-color: #232b3b !important;
+    color: #e3eaf3 !important;
+    border: 1px solid #232b3b !important;
+  }
+
+  .dark .result-card .CardHeader button:hover {
+    background-color: #181f2a !important;
+  }
+
+  /* Override for text colors in dark mode */
+  .dark .result-card .text-red-700 {
+    color: #ffb4b4 !important;
+  }
+
+  .dark .result-card .text-green-700 {
+    color: #7fffbe !important;
+  }
+
+  .dark .result-card [class*="text-gray-"] {
+    color: #b6c2d1 !important;
   }
 }
 

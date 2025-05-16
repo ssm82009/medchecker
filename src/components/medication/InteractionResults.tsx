@@ -13,9 +13,10 @@ interface InteractionResultsProps {
   result: InteractionResult | null;
   apiKeyError: boolean;
   scrollToResults: boolean;
+  isDarkMode: boolean;
 }
 
-const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyError, scrollToResults }) => {
+const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyError, scrollToResults, isDarkMode }) => {
   const { t, dir, language } = useTranslation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -94,18 +95,18 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
   };
 
   return (
-    <Card id="result-card" className="animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16" ref={resultRef}>
-      <CardHeader className={result.hasInteractions ? "bg-red-50 rounded-t-lg" : "bg-green-50 rounded-t-lg"}>
+    <Card id="result-card" className={`animate-fade-in shadow-lg transition-all duration-300 w-full border-0 scroll-mt-16 ${isDarkMode ? 'bg-[#232b3b] text-[#e3eaf3]' : ''}`} ref={resultRef}>
+      <CardHeader className={`${result.hasInteractions ? (isDarkMode ? 'bg-[#202634]' : 'bg-red-50') : (isDarkMode ? 'bg-[#1a3a2a]' : 'bg-green-50')} rounded-t-lg`}>
         <CardTitle className="flex items-center">
           {result.hasInteractions ? (
             <>
-              <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-red-500`} />
-              <span className="text-red-700">{t('interactionsFound')}</span>
+              <ActivitySquare className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#ff6b6b]' : 'text-red-500'}`} />
+              <span className={`${isDarkMode ? 'text-[#ffb4b4]' : 'text-red-700'}`}>{t('interactionsFound')}</span>
             </>
           ) : (
             <>
-              <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 text-green-500`} />
-              <span className="text-green-700">{t('noInteractionsFound')}</span>
+              <Heart className={`${dir === 'rtl' ? 'ml-2' : 'mr-2'} h-5 w-5 ${isDarkMode ? 'text-[#7fffbe]' : 'text-green-500'}`} />
+              <span className={`${isDarkMode ? 'text-[#7fffbe]' : 'text-green-700'}`}>{t('noInteractionsFound')}</span>
             </>
           )}
         </CardTitle>
@@ -115,7 +116,7 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             size="sm" 
             onClick={handleShare}
             disabled={isSharing}
-            className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
           >
             {isSharing ? (
               <Loader className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'} animate-spin`} />
@@ -128,7 +129,7 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             variant="outline" 
             size="sm" 
             onClick={copyResults}
-            className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
           >
             {copied ? (
               <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
@@ -141,7 +142,7 @@ const InteractionResults: React.FC<InteractionResultsProps> = ({ result, apiKeyE
             variant="outline" 
             size="sm" 
             onClick={printResults}
-            className="bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600"
+            className={`${isDarkMode ? 'bg-[#232b3b] hover:bg-[#181f2a] border-[#232b3b] text-[#e3eaf3]' : 'bg-white/70 hover:bg-white/90 border-gray-200 text-gray-600'}`}
           >
             <Printer className={`h-4 w-4 ${dir === 'rtl' ? 'ml-1' : 'mr-1'}`} />
             <span>{language === 'ar' ? 'طباعة' : 'Print'}</span>
