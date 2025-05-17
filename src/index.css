@@ -435,18 +435,53 @@
       rgba(99, 102, 241, 0.1), 
       rgba(59, 130, 246, 0.1));
   }
+
+  .dark .bg-gradient-animation {
+    background-color: #0F172A !important; /* Tailwind's slate-900, a dark blue-gray */
+  }
   
   /* Gradient Button Styles */
   .button-gradient-primary {
-    @apply bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:from-blue-700 hover:via-indigo-600 hover:to-purple-700 text-white transition-all duration-300;
+    /* @apply bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:from-blue-700 hover:via-indigo-600 hover:to-purple-700 text-white transition-all duration-300; */
+    background-image: linear-gradient(to right, #2563eb, #4f46e5, #7c3aed);
+    color: #fff;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  .button-gradient-primary:hover {
+    background-image: linear-gradient(to right, #1d4ed8, #4338ca, #6d28d9);
   }
   
   .button-gradient-secondary {
-    @apply bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white transition-all duration-300;
+    /* @apply bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white transition-all duration-300; */
+    background-image: linear-gradient(to right, #4f46e5, #7c3aed);
+    color: #fff;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  .button-gradient-secondary:hover {
+    background-image: linear-gradient(to right, #4338ca, #6d28d9);
   }
   
   .check-button {
-    @apply bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300;
+    /* @apply bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300; */
+    background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+    color: #fff;
+    font-weight: 700;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  .check-button:hover {
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
   }
   
   /* Text Gradient Styles */
@@ -491,13 +526,6 @@
   .dark .result-card .text-red-700,
   .dark .result-card .text-red-600 {
     color: #ff6b6b !important;
-  }
-  .dark .result-card .text-red-700,
-  .dark .result-card .text-green-700,
-  .dark .result-card .text-amber-700,
-  .dark .result-card .text-blue-700,
-  .dark .result-card .text-amber-800 {
-    color: #ffb4b4 !important;
   }
   .dark .result-card .text-blue-700 {
     color: #7ecbff !important;
@@ -644,6 +672,23 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* أضف تنسيق hover للعناصر في الوضع المظلم */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #202634 !important;
+}
+
+.dark .border.rounded-lg.p-4:hover {
+  background-color: #202634 !important;
+}
+
+.dark [class*="hover:bg-gray-50"]:hover {
+  background-color: #202634 !important;
+}
+
+.dark table tbody tr:hover {
+  background-color: #202634 !important;
 }
 
 @keyframes gradientAnimation {

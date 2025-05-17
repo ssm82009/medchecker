@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -173,3 +172,9 @@ const Subscribe: React.FC = () => {
 };
 
 export default Subscribe;
+
+// It appears the main container for Subscribe.tsx is within the SubscriptionCard component.
+// For now, I will assume SubscriptionCard itself needs the dark mode background if it's the top-level visible container on that page.
+// If SubscriptionCard is wrapped by another div in its own file, that would be the target.
+// However, if the issue is the page background itself, we need to ensure the body or a root div in App.tsx has the dark gradient.
+// Let's check SubscriptionCard.tsx to be sure.

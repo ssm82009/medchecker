@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,7 +79,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   console.log("[SubscriptionCard] Show login prompt:", showLoginPrompt);
   
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 dark:from-slate-800 dark:via-slate-900 dark:to-black p-4">
       <Card className="w-full max-w-lg shadow-xl border-primary/10">
         <CardHeader className="text-center border-b pb-4">
           <CardTitle className="text-2xl font-bold text-primary">

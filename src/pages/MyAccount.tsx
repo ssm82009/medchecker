@@ -383,12 +383,14 @@ const MyAccount: React.FC = () => {
     }
   };
 
+  const priceDirection = language === 'ar' ? 'rtl' : 'ltr';
+
   if (!user) return <div className="text-center py-20">{language === 'ar' ? 'يجب تسجيل الدخول لعرض هذه الصفحة' : 'You must be logged in to view this page'}</div>;
   if (loading && !plan) return <div className="text-center py-20">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 p-4">
-      <Card className="w-full max-w-4xl shadow-xl border-primary/10 dark-mode-card">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 dark:from-slate-800 dark:via-slate-900 dark:to-black p-4">
+      <Card className="w-full max-w-4xl shadow-xl border-primary/10">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center text-primary">
             {language === 'ar' ? 'حسابي' : 'My Account'}
@@ -426,7 +428,7 @@ const MyAccount: React.FC = () => {
                     <div className="font-bold text-primary">{language === 'ar' ? 'الباقة الحالية:' : 'Current Plan:'}</div>
                     <div className="text-lg font-semibold">{language === 'ar' ? plan?.name_ar : plan?.name || '---'}</div>
                     <div className="text-gray-500 text-sm">{language === 'ar' ? plan?.description_ar : plan?.description}</div>
-                    <div className="text-green-600 font-bold mt-2">
+                    <div className="text-green-600 font-bold mt-2" style={{ direction: priceDirection }}>
                       {plan?.price === 0 
                         ? (language === 'ar' ? 'مجانية' : 'Free') 
                         : `${plan?.price} ${language === 'ar' ? 'دولار / ' + getBillingPeriodDisplay(plan?.code) : 'USD / ' + getBillingPeriodDisplay(plan?.code)}`
@@ -470,7 +472,7 @@ const MyAccount: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="transactions">
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 dark:text-gray-200 rounded-lg shadow p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">
                       {language === 'ar' ? 'سجل المعاملات' : 'Transaction History'}
@@ -545,7 +547,7 @@ const MyAccount: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="history">
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 dark:text-gray-200 rounded-lg shadow p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">
                       {language === 'ar' ? 'سجل البحث' : 'Search History'}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -38,17 +37,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ plans, selectedPlanCode, on
           `}
           onClick={() => onPlanChange(plan.code)}
           >
-            <RadioGroupItem value={plan.code} id={plan.code} className="mr-3" />
+            <RadioGroupItem value={plan.code} id={plan.code} className={`mr-3 ${language === 'ar' ? 'ml-3' : ''}`} />
             <Label htmlFor={plan.code} className="flex flex-col flex-1 cursor-pointer">
-              <span className="font-medium text-lg">
+              <span className="font-medium text-lg text-center">
                 {language === 'ar' ? plan.nameAr : plan.name}
               </span>
-              <span className="text-gray-500 text-sm">
+              <span className="text-gray-500 text-sm text-center">
                 {language === 'ar' ? plan.descriptionAr : plan.description}
               </span>
             </Label>
-            <div className="text-xl font-bold text-green-600">
-              {plan.price} {language === 'ar' ? 'دولار' : 'USD'}
+            <div className={`text-xl font-bold text-green-600 ${language === 'ar' ? 'text-right mr-auto' : 'text-left ml-auto'}`}>
+              {language === 'ar' ? (
+                <>
+                  <span dir="rtl">{plan.price}</span>&nbsp;$
+                </>
+              ) : (
+                <>
+                  <span dir="ltr">{plan.price}</span>&nbsp;$
+                </>
+              )}
             </div>
           </div>
         ))}
