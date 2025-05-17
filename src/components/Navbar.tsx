@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
             <span>{logoText}</span>
           </Link>
         </div>
-
+        
         {/* Menu and Dark Mode Toggle */}
         <div className={`flex items-center gap-2 ${language === 'ar' ? 'order-first' : 'order-last'}`}>
           {/* Dark Mode Toggle */}          <Button

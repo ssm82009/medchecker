@@ -40,12 +40,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('[AuthProvider] onAuthStateChange event:', _event, 'Session:', session);
         setSession(session);
         if (session?.user) {
+          const authUid = session.user.id;
           const currentUser: AuthUser = {
-            id: session.user.id,
+            id: authUid,
             email: session.user.email,
+            role: undefined,
           };
-          setUser(currentUser);
-          console.log('[AuthProvider] onAuthStateChange: User set.', currentUser);
+          // Fetch role from users table
+          supabase
+            .from('users')
+            .select('role')
+            .eq('auth_uid', authUid)
+            .single()
+            .then(({ data, error }) => {
+              if (!error && data?.role) {
+                setUser({ ...currentUser, role: data.role });
+                console.log('[AuthProvider] User role fetched:', data.role);
+              } else {
+                setUser(currentUser);
+                if (error) console.warn('[AuthProvider] Error fetching user role:', error);
+              }
+            });
         } else {
           setUser(null);
           console.log('[AuthProvider] onAuthStateChange: User set to null.');
