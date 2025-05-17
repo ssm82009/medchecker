@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
   return <>
       <SecondaryAdvertisement />
       
-      <footer dir={dir} className="bg-white border-t mt-auto sm:py-10 sm:px-8 mx-0 px-0 py-[35px] my-[36px]">
+      <footer dir={dir} className="bg-white border-t mt-auto sm:py-10 sm:px-8 mx-0 px-0 py-[35px]">
         <div className="container mx-auto">
           <div className="text-center">
             <p className="text-gray-800 text-sm">
