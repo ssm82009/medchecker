@@ -82,7 +82,7 @@ const Login: React.FC = () => {
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <CardContent className="space-y-4 bg-[#000a00]/0">
+            <CardContent className="space-y-4">
               <FormField control={form.control} name="email" render={({
               field
             }) => <FormItem className="space-y-2">
